@@ -308,15 +308,30 @@ Sub tratamentoDosCamposDescricao(descricao1 As String, descricao2 As String)
     Dim quantidadeMaxDescricao2 As Long
     
     quantidadeMaxDescricao1 = 100 ' quantidade de caracteres do campo desc. 1
-    quantidadeMaxDescricao2 = 60 ' quantidade de caracteres do campo desc. 1
+    quantidadeMaxDescricao2 = 60 ' quantidade de caracteres do campo desc. 2
+	
+	    ' MsgBox Len(descricaoProduto) & " - " & Len(descricaoProduto2)
     
     tamanhoDescricao1 = Len(descricao1)
     descricaoProduto = descricao1 & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
     
     tamanhoDescricao2 = Len(descricao2)
     descricaoProduto2 = descricao2 & Space(quantidadeMaxDescricao2 - tamanhoDescricao2)
-    
-    ' MsgBox Len(descricaoProduto) & " - " & Len(descricaoProduto2)
+	
+	On Error GoTo ErrorHandler
+		
+	If Len(descricaoProduto) > 100 And Len(descricaoProduto2) < 60 Then
+		Err.Raise 9999, Description:= "O campo DESCRIÇÃO 1 excedeu o limite de caracteres"
+	Else If Len(descricaoProduto2) > 60 And Len(descricaoProduto2) < 100 Then
+		Err.Raise 9999, Description:= "O campo DESCRIÇÃO 2 excedeu o limite de caracteres"
+	Else If Len(descricaoProduto2) > 60 And Len(descricaoProduto2) > 100 Then
+		Err.Raise 9999, Description:= "Os campos DESCRIÇÃO 1 e 2 excederam o limite de caracteres"
+	End If
+	
+	On Error GoTo 0
+	
+	ErrorHandler:
+		MsgBox Err.Description
 
 End Sub
 Sub FormatarDataAtual()
