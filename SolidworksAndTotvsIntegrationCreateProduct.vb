@@ -219,9 +219,11 @@ Sub validacaoDeDadosDoFormularioDeCadastro()
 Call tratamentoDosCamposDescricao(descricaoProduto, descricaoProduto2)
 
    On Error GoTo ErrorHandler
+    
     If Len(Trim(caixaTextoCodigo)) = 0 And editarCodigo = "Checked" Or Len(Trim(descricaoProduto)) = 0 Or tipo = "" Or unidade = "" Or armazem(0) = "" Or grupo(0) = "" Or centroDeCusto(0) = "" Then
         Err.Raise 9999
     End If
+
 Exit Sub
 
 ErrorHandler:
@@ -323,31 +325,38 @@ Sub tratamentoDosCamposDescricao(descricao1 As String, descricao2 As String)
     Dim tamanhoDescricao2 As Long
     Dim quantidadeMaxDescricao1 As Long
     Dim quantidadeMaxDescricao2 As Long
+    Dim descricao1Local As String
+    Dim descricao2Local As String
     
     quantidadeMaxDescricao1 = 100 ' quantidade de caracteres do campo desc. 1
     quantidadeMaxDescricao2 = 60 ' quantidade de caracteres do campo desc. 2
     
     On Error GoTo ErrorHandler
         
-    If Len(descricaoProduto) > 100 And Len(descricaoProduto2) < 60 Then
-        Err.Raise 9999, Description:="O campo DESCRIÇÃO 1 excedeu o limite de caracteres"
-    ElseIf Len(descricaoProduto2) > 60 And Len(descricaoProduto) < 100 Then
-        Err.Raise 9999, Description:="O campo DESCRIÇÃO 2 excedeu o limite de caracteres"
-    ElseIf Len(descricaoProduto2) > 60 And Len(descricaoProduto) > 100 Then
-        Err.Raise 9999, Description:="Os campos DESCRIÇÃO 1 e 2 excederam o limite de caracteres"
+    If Len(descricaoProduto) <= 100 Then
+        tamanhoDescricao1 = Len(descricaoProduto)
+        descricaoProduto = descricaoProduto & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
+      
+        descricaoProduto2 = Space(quantidadeMaxDescricao2)
+      
     Else
-        tamanhoDescricao1 = Len(descricao1)
-        descricaoProduto = descricao1 & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
         
-        tamanhoDescricao2 = Len(descricao2)
-        descricaoProduto2 = descricao2 & Space(quantidadeMaxDescricao2 - tamanhoDescricao2)
-        'MsgBox Len(descricaoProduto) & " - " & Len(descricaoProduto2)
+        descricao1Local = Mid(descricaoProduto, 1, 100)
+        descricao2Local = Mid(descricaoProduto, 101, 160)
+        
+        tamanhoDescricao1 = Len(descricao1Local)
+        descricaoProduto = descricao1Local & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
+             
+        tamanhoDescricao2 = Len(descricao2Local)
+        descricaoProduto2 = descricao2Local & Space(quantidadeMaxDescricao2 - tamanhoDescricao2)
+        
+        ' MsgBox descricaoProduto & " - " & Len(descricaoProduto) & " - " & descricaoProduto2 & Len(descricaoProduto2)
     End If
     
     On Error GoTo 0
     
 ErrorHandler:
-        'MsgBox Err.Description
+        ' MsgBox Err.Description
 End Sub
 Sub FormatarDataAtual()
     Dim dataAtual As Date
