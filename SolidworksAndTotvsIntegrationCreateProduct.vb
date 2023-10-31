@@ -16,6 +16,8 @@ Dim swApp As Object
     Dim baseDeDados As String
     Dim dataCadastro As String
     Dim incrementoChavePrimariaBanco As Long
+    Dim respostaSimOuNaoAlterarCadastro As VbMsgBoxResult
+    
 Sub main()
 
 baseDeDados = "PROTHEUS12_R27" ' PROTHEUS12_R27 => PRODUCAO PROTHEUS1233_HML => TESTE
@@ -30,12 +32,28 @@ If editarCodigo = "Unchecked" Then
     If produtoJaCadastrado = False Then
         Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
         Call cadastrarProdutoNoTotvs(codigo)
+    Else
+        Call exibirJanelaDePerguntaParaAlterarProduto
+        If respostaSimOuNaoAlterarCadastro = vbYes Then
+            Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
+            Call alterarProdutoNoTotvs(codigo)
+        Else
+            End
+    End If
     End If
 Else
     Call verificarSeProdutoJaEstaCadastrado(caixaTextoCodigo)
     If produtoJaCadastrado = False Then
         Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
         Call cadastrarProdutoNoTotvs(caixaTextoCodigo)
+    Else
+        Call exibirJanelaDePerguntaParaAlterarProduto
+        If respostaSimOuNaoAlterarCadastro = vbYes Then
+            Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
+            Call alterarProdutoNoTotvs(caixaTextoCodigo)
+        Else
+            End
+    End If
     End If
 End If
 
@@ -119,7 +137,7 @@ Dim sqlPart7 As String
             ' Defina o comando SQL INSERT INTO com o novoResultado
             Dim strSQL As String
                                    
-sqlPart1 = "INSERT INTO PROTHEUS12_R27.dbo.SB1010 (B1_AFAMAD, B1_FILIAL, B1_COD, B1_DESC, B1_XDESC2, B1_CODITE, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZLOCAL, B1_POSIPI, B1_ESPECIE, B1_EX_NCM, B1_EX_NBM, B1_PICM, B1_IPI, B1_ALIQISS, B1_CODISS, B1_TE, B1_TS, B1_PICMRET, B1_BITMAP, B1_SEGUM, B1_PICMENT, B1_IMPZFRC, B1_CONV, B1_TIPCONV, B1_ALTER, B1_QE, B1_PRV1, B1_EMIN, B1_CUSTD, B1_UCALSTD, B1_UCOM, B1_UPRC, B1_MCUSTD, B1_ESTFOR, B1_PESO, B1_ESTSEG, B1_FORPRZ, B1_PE, B1_TIPE, B1_LE, B1_LM, B1_CONTA, B1_TOLER, B1_CC, B1_ITEMCC, B1_PROC, B1_LOJPROC, B1_FAMILIA, B1_QB, B1_APROPRI, B1_TIPODEC, B1_ORIGEM, B1_CLASFIS, B1_UREV, B1_DATREF, B1_FANTASM, B1_RASTRO, B1_FORAEST, B1_COMIS, B1_DTREFP1, B1_MONO, B1_PERINV, B1_GRTRIB, B1_MRP, B1_NOTAMIN, B1_CONINI, B1_CONTSOC, B1_PRVALID, B1_CODBAR, B1_GRADE, B1_NUMCOP, B1_FORMLOT, B1_IRRF, B1_FPCOD, B1_CODGTIN, B1_DESC_P, B1_CONTRAT, B1_DESC_GI, B1_DESC_I, B1_LOCALIZ, B1_OPERPAD, B1_ANUENTE, B1_OPC, B1_CODOBS, B1_VLREFUS, B1_IMPORT, B1_FABRIC, B1_SITPROD, "
+sqlPart1 = "INSERT INTO " & baseDeDados & ".dbo.SB1010 (B1_AFAMAD, B1_FILIAL, B1_COD, B1_DESC, B1_XDESC2, B1_CODITE, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZLOCAL, B1_POSIPI, B1_ESPECIE, B1_EX_NCM, B1_EX_NBM, B1_PICM, B1_IPI, B1_ALIQISS, B1_CODISS, B1_TE, B1_TS, B1_PICMRET, B1_BITMAP, B1_SEGUM, B1_PICMENT, B1_IMPZFRC, B1_CONV, B1_TIPCONV, B1_ALTER, B1_QE, B1_PRV1, B1_EMIN, B1_CUSTD, B1_UCALSTD, B1_UCOM, B1_UPRC, B1_MCUSTD, B1_ESTFOR, B1_PESO, B1_ESTSEG, B1_FORPRZ, B1_PE, B1_TIPE, B1_LE, B1_LM, B1_CONTA, B1_TOLER, B1_CC, B1_ITEMCC, B1_PROC, B1_LOJPROC, B1_FAMILIA, B1_QB, B1_APROPRI, B1_TIPODEC, B1_ORIGEM, B1_CLASFIS, B1_UREV, B1_DATREF, B1_FANTASM, B1_RASTRO, B1_FORAEST, B1_COMIS, B1_DTREFP1, B1_MONO, B1_PERINV, B1_GRTRIB, B1_MRP, B1_NOTAMIN, B1_CONINI, B1_CONTSOC, B1_PRVALID, B1_CODBAR, B1_GRADE, B1_NUMCOP, B1_FORMLOT, B1_IRRF, B1_FPCOD, B1_CODGTIN, B1_DESC_P, B1_CONTRAT, B1_DESC_GI, B1_DESC_I, B1_LOCALIZ, B1_OPERPAD, B1_ANUENTE, B1_OPC, B1_CODOBS, B1_VLREFUS, B1_IMPORT, B1_FABRIC, B1_SITPROD, "
 sqlPart2 = "B1_MODELO, B1_SETOR, B1_PRODPAI, B1_BALANCA, B1_TECLA, B1_DESPIMP, B1_TIPOCQ, B1_SOLICIT, B1_GRUPCOM, B1_QUADPRO, B1_BASE3, B1_DESBSE3, B1_AGREGCU, B1_NUMCQPR, B1_CONTCQP, B1_REVATU, B1_CODEMB, B1_INSS, B1_ESPECIF, B1_NALNCCA, B1_MAT_PRI, B1_NALSH, B1_REDINSS, B1_REDIRRF, B1_ALADI, B1_TAB_IPI, B1_GRUDES, B1_DATASUB, B1_REDPIS, B1_REDCOF, B1_PCSLL, B1_PCOFINS, B1_PPIS, B1_MTBF, B1_MTTR, B1_FLAGSUG, B1_CLASSVE, B1_MIDIA, B1_QTMIDIA, B1_QTDSER, B1_VLR_IPI, B1_ENVOBR, B1_SERIE, B1_FAIXAS, B1_NROPAG, B1_ISBN, B1_TITORIG, B1_LINGUA, B1_EDICAO, B1_OBSISBN, B1_CLVL, B1_ATIVO, B1_EMAX, B1_PESBRU, B1_TIPCAR, B1_FRACPER, B1_VLR_ICM, B1_INT_ICM, B1_CORPRI, B1_CORSEC, B1_NICONE, B1_ATRIB1, B1_ATRIB2, B1_ATRIB3, B1_REGSEQ, B1_VLRSELO, B1_CODNOR, B1_CPOTENC, B1_POTENCI, B1_REQUIS, B1_SELO, B1_LOTVEN, B1_OK, B1_USAFEFO, B1_QTDACUM, B1_QTDINIC, B1_CNATREC, B1_TNATREC, B1_AFASEMT, B1_AIMAMT, B1_TERUM, B1_AFUNDES, B1_CEST, B1_GRPCST, B1_IAT, B1_IPPT, B1_GRPNATR, B1_DTFIMNT, B1_DTCORTE, B1_FECP, B1_MARKUP, "
 sqlPart3 = "B1_CODPROC, B1_LOTESBP, B1_QBP, B1_VALEPRE, B1_CODQAD, B1_AFABOV, B1_VIGENC, B1_VEREAN, B1_DIFCNAE, B1_ESCRIPI, B1_PMACNUT, B1_PMICNUT, B1_INTEG, B1_HREXPO, B1_CRICMS, B1_REFBAS, B1_MOPC, B1_USERLGI, B1_USERLGA, B1_UMOEC, B1_UVLRC, B1_PIS, B1_GCCUSTO, B1_CCCUSTO, B1_TALLA, B1_PARCEI, B1_GDODIF, B1_VLR_PIS, B1_TIPOBN, B1_TPREG, B1_MSBLQL, B1_VLCIF, B1_DCRE, B1_DCR, B1_DCRII, B1_TPPROD, B1_DCI, B1_COEFDCR, B1_CHASSI, B1_CLASSE, B1_FUSTF, B1_GRPTI, B1_PRDORI, B1_APOPRO, B1_PRODREC, B1_ALFECOP, B1_ALFECST, B1_CFEMA, B1_FECPBA, B1_MSEXP, B1_PAFMD5, B1_PRODSBP, B1_CODANT, B1_IDHIST, B1_CRDEST, B1_REGRISS, B1_FETHAB, B1_ESTRORI, B1_CALCFET, B1_PAUTFET, B1_CARGAE, B1_PRN944I, B1_ALFUMAC, B1_PRINCMG, B1_PR43080, B1_RICM65, B1_SELOEN, B1_TRIBMUN, B1_RPRODEP, B1_FRETISS, B1_AFETHAB, B1_DESBSE2, B1_BASE2, B1_VLR_COF, B1_PRFDSUL, B1_TIPVEC, B1_COLOR, B1_RETOPER, B1_COFINS, B1_CSLL, B1_CNAE, B1_ADMIN, B1_AFACS, B1_AJUDIF, B1_ALFECRN, B1_CFEM, B1_CFEMS, B1_MEPLES, B1_REGESIM, B1_RSATIVO, B1_TFETHAB, "
 sqlPart4 = "B1_TPDP, B1_CRDPRES, B1_CRICMST, B1_FECOP, B1_CODLAN, B1_GARANT, B1_PERGART, B1_SITTRIB, B1_PORCPRL, B1_IMPNCM, B1_IVAAJU, B1_BASE, B1_ZZCODAN, B1_ZZNOGRP, B1_ZZOBS1, B1_XFORDEN, B1_ZZMEN1, B1_ZZLEGIS, D_E_L_E_T_, R_E_C_N_O_, R_E_C_D_E_L_) VALUES(0.0, N'    ', N'" & codigoProduto & "', N'" & descricaoProduto & "', N'" & descricaoProduto2 & "', N'                           ', N'" & tipo & "', N'" & unidade & "', N'" & armazem(0) & "', N'" & grupo(0) & "', N'      ', N'          ', N'  ', N'   ', N'   ', 0.0, 0.0, 0.0, N'         ', N'   ', N'   ', 0.0, N'                    ', N'  ', 0.0, N' ', 0.0, N'M', N'               ', 0.0, 0.0, 0.0, 0.0, N'        ', N'        ', 0.0, N'1', N'   ', 0.0, 0.0, N'   ', 0.0, N' ', 0.0, 0.0, N'                    ', 0.0, N'" & centroDeCusto(0) & "', N'         ', N'      ', N'  ', N' ', 1.0, N' ', N'N', N' ', N'  ', N'" & dataCadastro & "', N'" & dataCadastro & "', N' ', N'N', N' ', 0.0, N'        ', N' ', 0.0, N'      ', N'S', 0.0, "
@@ -138,6 +156,42 @@ sqlPart7 = "N'  ', N'N', N'               ', N' ', 0.0, N' ', N'S', 0.0, 0.0, 0.
             cn.Close
             Set cn = Nothing
         End If
+    Else
+        MsgBox "Falha na conexão ao banco de dados TOTVS.", vbCritical, "CADASTRO TOTVS"
+        
+    End If
+End Sub
+Sub alterarProdutoNoTotvs(codigoProduto As String)
+
+    ' Defina as variáveis de conexão
+    Dim cn As Object
+    Set cn = CreateObject("ADODB.Connection")
+    
+    ' Defina a string de conexão com o SQL Server
+    Dim strCon As String
+    strCon = "Provider=SQLOLEDB;Data Source=SVRERP;Initial Catalog=PROTHEUS12_R27;User ID=coognicao;Password=0705@Abc;"
+    
+    ' Tente abrir a conexão
+    On Error Resume Next
+    cn.Open strCon
+    On Error GoTo 0 ' Restaura o tratamento de erros normal
+    
+    ' Verifique se a conexão foi aberta com sucesso
+    If cn.State = 1 Then ' 1 indica que a conexão está aberta
+     
+            ' Defina o comando SQL UPDATE
+            Dim strSQL As String
+                                     
+            strSQL = "UPDATE " & baseDeDados & ".dbo.SB1010 SET B1_DESC = N'" & descricaoProduto & "', B1_XDESC2 = N'" & descricaoProduto2 & "', B1_TIPO = N'" & tipo & "', B1_UM = N'" & unidade & "', B1_LOCPAD = N'" & armazem(0) & "', B1_GRUPO = N'" & grupo(0) & "', B1_ZZNOGRP = N'" & descricaoGrupo & "', B1_CC = N'" & centroDeCusto(0) & "' WHERE B1_COD = N'" & codigoProduto & "';"
+            
+            ' Execute o comando SQL
+            cn.Execute strSQL
+            
+            MsgBox "Produto alterado com sucesso!" & vbNewLine & vbNewLine & codigoProduto & " - " & descricaoProduto, vbInformation, "CADASTRO TOTVS"
+            
+            ' Feche a conexão quando terminar
+            cn.Close
+            Set cn = Nothing
     Else
         MsgBox "Falha na conexão ao banco de dados TOTVS.", vbCritical, "CADASTRO TOTVS"
         
@@ -258,7 +312,7 @@ Sub verificarSeProdutoJaEstaCadastrado(codigo As String)
         If Not rs.EOF Then
             ' Se o produto estiver cadastrado, faça algo aqui
             produtoJaCadastrado = True
-            MsgBox "Já existe um produto cadastrado com o código " & codigo, vbExclamation, "CADASTRO TOTVS"
+            'MsgBox "Já existe um produto cadastrado com o código " & codigo, vbExclamation, "CADASTRO TOTVS"
         Else
         produtoJaCadastrado = False
             ' Se o produto não estiver cadastrado, faça algo aqui
@@ -331,32 +385,34 @@ Sub tratamentoDosCamposDescricao(descricao1 As String, descricao2 As String)
     quantidadeMaxDescricao1 = 100 ' quantidade de caracteres do campo desc. 1
     quantidadeMaxDescricao2 = 60 ' quantidade de caracteres do campo desc. 2
     
-    On Error GoTo ErrorHandler
+On Error GoTo ErrorHandler
         
     If Len(descricaoProduto) <= 100 Then
         tamanhoDescricao1 = Len(descricaoProduto)
         descricaoProduto = descricaoProduto & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
-      
         descricaoProduto2 = Space(quantidadeMaxDescricao2)
-      
-    Else
-        
-        descricao1Local = Mid(descricaoProduto, 1, 100)
-        descricao2Local = Mid(descricaoProduto, 101, 160)
-        
-        tamanhoDescricao1 = Len(descricao1Local)
-        descricaoProduto = descricao1Local & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
-             
-        tamanhoDescricao2 = Len(descricao2Local)
-        descricaoProduto2 = descricao2Local & Space(quantidadeMaxDescricao2 - tamanhoDescricao2)
-        
-        ' MsgBox descricaoProduto & " - " & Len(descricaoProduto) & " - " & descricaoProduto2 & Len(descricaoProduto2)
-    End If
-    
-    On Error GoTo 0
+        ElseIf Len(descricaoProduto) > 100 Then
+            
+            descricao1Local = Mid(descricaoProduto, 1, 100)
+            descricao2Local = Mid(descricaoProduto, 101, 160)
+            
+            tamanhoDescricao1 = Len(descricao1Local)
+            descricaoProduto = descricao1Local & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
+                 
+            tamanhoDescricao2 = Len(descricao2Local)
+            descricaoProduto2 = descricao2Local & Space(quantidadeMaxDescricao2 - tamanhoDescricao2)
+            
+            ' MsgBox descricaoProduto & " - " & Len(descricaoProduto) & " - " & descricaoProduto2 & Len(descricaoProduto2)
+            
+        ElseIf Len(descricaoProduto) > 160 Then
+           Err.Raise 9999
+           
+        End If
+    Exit Sub
     
 ErrorHandler:
-        ' MsgBox Err.Description
+        MsgBox "OPS!" & vbNewLine & vbNewLine & "Você excedeu o número de caracteres do campo DESCRIÇÃO que é de 160 caracteres." & vbNewLine & "Reduza a descrição e tente novamente! =)", vbExclamation, "CADASTRO TOTVS"
+        End
 End Sub
 Sub FormatarDataAtual()
     Dim dataAtual As Date
@@ -368,4 +424,12 @@ Sub FormatarDataAtual()
     ' Use dataString para salvar no banco de dados ou para outros fins
     ' Exemplo de uso para exibição em uma caixa de mensagem:
     ' MsgBox "Data formatada: " & dataCadastro
+End Sub
+
+Sub exibirJanelaDePerguntaParaAlterarProduto()
+Dim textoCorpo As String
+textoCorpo = "Já existe um produto cadastrado com o código " & codigo & vbNewLine & vbNewLine & "Deseja alterar o cadastro deste produto?"
+
+respostaSimOuNaoAlterarCadastro = MsgBox(textoCorpo, vbYesNo + vbQuestion, "CADASTRO TOTVS")
+
 End Sub
