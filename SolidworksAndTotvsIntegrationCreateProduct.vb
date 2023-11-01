@@ -239,10 +239,10 @@ Sub buscarValoresNoFormularioPropriedadesPersonalizadasSW()
                         editarCodigo = CStr(vConfValue(j))
                         ' MsgBox "A segunda parte é 'codigo' e o valor é " & vConfValue(j)
                     Case "descricaoProduto"
-                        descricaoProduto = CStr(vConfValue(j))
+                        descricaoProduto = UCase(CStr(vConfValue(j)))
                         ' MsgBox "A segunda parte é 'descricaoProduto' e o valor é " & vConfValue(j)
                     Case "descricaoProduto2"
-                        descricaoProduto2 = CStr(vConfValue(j))
+                        descricaoProduto2 = UCase(CStr(vConfValue(j)))
                         ' MsgBox "A segunda parte é 'descricaoProduto' e o valor é " & vConfValue(j)
                     Case "tipo"
                         tipo = CStr(vConfValue(j))
@@ -381,9 +381,17 @@ Sub tratamentoDosCamposDescricao(descricao1 As String, descricao2 As String)
     Dim quantidadeMaxDescricao2 As Long
     Dim descricao1Local As String
     Dim descricao2Local As String
+    Dim descricaoTemCaracteresEspeciais As Boolean
     
     quantidadeMaxDescricao1 = 100 ' quantidade de caracteres do campo desc. 1
     quantidadeMaxDescricao2 = 60 ' quantidade de caracteres do campo desc. 2
+    
+    descricaoTemCaracteresEspeciais = HasSpecialCharacters(descricaoProduto)
+    
+    If descricaoTemCaracteresEspeciais = True Then
+        MsgBox "OPS!" & vbNewLine & vbNewLine & "O campo DESCRIÇÃO contém caracteres especiais." & vbNewLine & "Remova os caracteres especiais e tente novamente! =)" & vbNewLine & vbNewLine & "Caracteres especiais permitidos: . / - = ", vbExclamation, "CADASTRO TOTVS"
+        End
+    End If
     
 On Error GoTo ErrorHandler
         
@@ -428,8 +436,18 @@ End Sub
 
 Sub exibirJanelaDePerguntaParaAlterarProduto()
 Dim textoCorpo As String
-textoCorpo = "Já existe um produto cadastrado com o código " & codigo & vbNewLine & vbNewLine & "Deseja alterar o cadastro deste produto?"
+textoCorpo = "Já existe um produto cadastrado com o código " & codigo & vbNewLine & vbNewLine & "Você TEM CERTEZA que deseja alterar os dados de cadastro deste produto?" & vbNewLine & vbNewLine & "SIM - Altera os dados do produto atual no TOTVS pelos dados atuais do formulário de cadastro." & vbNewLine & vbNewLine & "NÃO - Os dados de cadastro do produto não são alterados."
 
-respostaSimOuNaoAlterarCadastro = MsgBox(textoCorpo, vbYesNo + vbQuestion, "CADASTRO TOTVS")
+respostaSimOuNaoAlterarCadastro = MsgBox(textoCorpo, vbYesNo + vbExclamation, "CADASTRO TOTVS")
 
 End Sub
+Function HasSpecialCharacters(inputString As String) As Boolean
+    Dim regEx As Object
+    Set regEx = CreateObject("VBScript.RegExp")
+
+    regEx.IgnoreCase = True
+    regEx.Global = True
+    regEx.Pattern = "[~!@#$Ø%^&*()+\[\]{};:'"",<>?\\|çãÇÃ]" ' Padrão para verificar se há caracteres que não sejam letras, números, ponto, barra, hífen ou sinal de igual
+
+    HasSpecialCharacters = regEx.Test(inputString)
+End Function
