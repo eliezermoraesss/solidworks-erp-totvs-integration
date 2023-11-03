@@ -281,7 +281,7 @@ Call tratamentoDosCamposDescricao(descricaoProduto, descricaoProduto2)
 Exit Sub
 
 ErrorHandler:
-    MsgBox "Por favor preencher TODOS os campos do formulário de cadastro, pois são obrigatórios!", vbExclamation, "CADASTRO TOTVS"
+    MsgBox "Por favor preencher TODOS os campos obrigatórios (*) do formulário de cadastro!", vbExclamation, "CADASTRO TOTVS"
     End
 End Sub
 Sub verificarSeProdutoJaEstaCadastrado(codigo As String)
@@ -372,7 +372,6 @@ Sub consultarGrupoPeloCodigoRetornarDescricao(grupo As String)
         MsgBox "Falha na conexão ao banco de dados TOTVS.", vbCritical, "CADASTRO TOTVS"
     End If
 End Sub
-
 Sub tratamentoDosCamposDescricao(descricao1 As String, descricao2 As String)
 
     Dim tamanhoDescricao1 As Long
@@ -399,11 +398,11 @@ Sub tratamentoDosCamposDescricao(descricao1 As String, descricao2 As String)
 On Error GoTo ErrorHandler
 
 If Len(descricaoProduto) > 100 And Len(descricaoProduto2) <= 60 Then
-        Err.Raise 9999, Description:="O campo DESCRIÇÃO 1 excedeu o limite de caracteres"
+        Err.Raise 9999, Description:="O campo DESCRIÇÃO excedeu o limite de caracteres."
     ElseIf Len(descricaoProduto2) > 60 And Len(descricaoProduto) <= 100 Then
-        Err.Raise 9999, Description:="O campo DESCRIÇÃO 2 excedeu o limite de caracteres"
+        Err.Raise 9999, Description:="O campo DESCRIÇÃO COMPLEMENTAR excedeu o limite de caracteres."
     ElseIf Len(descricaoProduto2) > 60 And Len(descricaoProduto) > 100 Then
-        Err.Raise 9999, Description:="Os campos DESCRIÇÃO 1 e 2 excederam o limite de caracteres"
+        Err.Raise 9999, Description:="Os campos DESCRIÇÃO e DESCRIÇÃO COMPLEMENTAR excederam o limite de caracteres."
     Else
         tamanhoDescricao1 = Len(descricao1)
         descricaoProduto = descricao1 & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
