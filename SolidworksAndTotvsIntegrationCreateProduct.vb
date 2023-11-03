@@ -33,7 +33,7 @@ If editarCodigo = "Unchecked" Then
         Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
         Call cadastrarProdutoNoTotvs(codigo)
     Else
-        Call exibirJanelaDePerguntaParaAlterarProduto
+        Call exibirJanelaDePerguntaParaAlterarProduto(codigo)
         If respostaSimOuNaoAlterarCadastro = vbYes Then
             Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
             Call alterarProdutoNoTotvs(codigo)
@@ -47,7 +47,7 @@ Else
         Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
         Call cadastrarProdutoNoTotvs(caixaTextoCodigo)
     Else
-        Call exibirJanelaDePerguntaParaAlterarProduto
+        Call exibirJanelaDePerguntaParaAlterarProduto(caixaTextoCodigo)
         If respostaSimOuNaoAlterarCadastro = vbYes Then
             Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
             Call alterarProdutoNoTotvs(caixaTextoCodigo)
@@ -150,7 +150,7 @@ sqlPart7 = "N'  ', N'N', N'               ', N' ', 0.0, N' ', N'S', 0.0, 0.0, 0.
             ' Execute o comando SQL
             cn.Execute strSQL
             
-            MsgBox "Produto cadastrado com sucesso!" & vbNewLine & vbNewLine & codigoProduto & " - " & descricaoProduto, vbInformation, "CADASTRO TOTVS"
+            MsgBox "Produto cadastrado com sucesso!" & vbNewLine & vbNewLine & codigoProduto & " - " & descricaoProduto & descricaoProduto2, vbInformation, "CADASTRO TOTVS"
             
             ' Feche a conexão quando terminar
             cn.Close
@@ -187,7 +187,7 @@ Sub alterarProdutoNoTotvs(codigoProduto As String)
             ' Execute o comando SQL
             cn.Execute strSQL
             
-            MsgBox "Produto alterado com sucesso!" & vbNewLine & vbNewLine & codigoProduto & " - " & descricaoProduto, vbInformation, "CADASTRO TOTVS"
+            MsgBox "Produto alterado com sucesso!" & vbNewLine & vbNewLine & codigoProduto & " - " & descricaoProduto & descricaoProduto2, vbInformation, "CADASTRO TOTVS"
             
             ' Feche a conexão quando terminar
             cn.Close
@@ -281,7 +281,7 @@ Call tratamentoDosCamposDescricao(descricaoProduto, descricaoProduto2)
 Exit Sub
 
 ErrorHandler:
-    MsgBox "Preencha TODOS os campos do formulário de cadastro!", vbExclamation, "CADASTRO TOTVS"
+    MsgBox "Por favor preencher TODOS os campos do formulário de cadastro, pois são obrigatórios!", vbExclamation, "CADASTRO TOTVS"
     End
 End Sub
 Sub verificarSeProdutoJaEstaCadastrado(codigo As String)
@@ -382,11 +382,14 @@ Sub tratamentoDosCamposDescricao(descricao1 As String, descricao2 As String)
     Dim descricao1Local As String
     Dim descricao2Local As String
     Dim descricaoTemCaracteresEspeciais As Boolean
+    Dim descricaoUmMaisDescricaoComplementar As String
     
     quantidadeMaxDescricao1 = 100 ' quantidade de caracteres do campo desc. 1
     quantidadeMaxDescricao2 = 60 ' quantidade de caracteres do campo desc. 2
     
-    descricaoTemCaracteresEspeciais = HasSpecialCharacters(descricaoProduto)
+    descricaoUmMaisDescricaoComplementar = descricao1 & descricao2
+    
+    descricaoTemCaracteresEspeciais = HasSpecialCharacters(descricaoUmMaisDescricaoComplementar)
     
     If descricaoTemCaracteresEspeciais = True Then
         MsgBox "OPS!" & vbNewLine & vbNewLine & "O campo DESCRIÇÃO contém caracteres especiais." & vbNewLine & "Remova os caracteres especiais e tente novamente! =)" & vbNewLine & vbNewLine & "Caracteres especiais permitidos: . / - = ", vbExclamation, "CADASTRO TOTVS"
@@ -394,32 +397,26 @@ Sub tratamentoDosCamposDescricao(descricao1 As String, descricao2 As String)
     End If
     
 On Error GoTo ErrorHandler
+
+If Len(descricaoProduto) > 100 And Len(descricaoProduto2) <= 60 Then
+        Err.Raise 9999, Description:="O campo DESCRIÇÃO 1 excedeu o limite de caracteres"
+    ElseIf Len(descricaoProduto2) > 60 And Len(descricaoProduto) <= 100 Then
+        Err.Raise 9999, Description:="O campo DESCRIÇÃO 2 excedeu o limite de caracteres"
+    ElseIf Len(descricaoProduto2) > 60 And Len(descricaoProduto) > 100 Then
+        Err.Raise 9999, Description:="Os campos DESCRIÇÃO 1 e 2 excederam o limite de caracteres"
+    Else
+        tamanhoDescricao1 = Len(descricao1)
+        descricaoProduto = descricao1 & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
         
-    If Len(descricaoProduto) <= 100 Then
-        tamanhoDescricao1 = Len(descricaoProduto)
-        descricaoProduto = descricaoProduto & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
-        descricaoProduto2 = Space(quantidadeMaxDescricao2)
-        ElseIf Len(descricaoProduto) > 100 Then
-            
-            descricao1Local = Mid(descricaoProduto, 1, 100)
-            descricao2Local = Mid(descricaoProduto, 101, 160)
-            
-            tamanhoDescricao1 = Len(descricao1Local)
-            descricaoProduto = descricao1Local & Space(quantidadeMaxDescricao1 - tamanhoDescricao1)
-                 
-            tamanhoDescricao2 = Len(descricao2Local)
-            descricaoProduto2 = descricao2Local & Space(quantidadeMaxDescricao2 - tamanhoDescricao2)
-            
-            ' MsgBox descricaoProduto & " - " & Len(descricaoProduto) & " - " & descricaoProduto2 & Len(descricaoProduto2)
-            
-        ElseIf Len(descricaoProduto) > 160 Then
-           Err.Raise 9999
-           
-        End If
+        tamanhoDescricao2 = Len(descricao2)
+        descricaoProduto2 = descricao2 & Space(quantidadeMaxDescricao2 - tamanhoDescricao2)
+        'MsgBox Len(descricaoProduto) & " - " & Len(descricaoProduto2)
+    End If
     Exit Sub
     
 ErrorHandler:
-        MsgBox "OPS!" & vbNewLine & vbNewLine & "Você excedeu o número de caracteres do campo DESCRIÇÃO que é de 160 caracteres." & vbNewLine & "Reduza a descrição e tente novamente! =)", vbExclamation, "CADASTRO TOTVS"
+        MsgBox Err.Description
+        'MsgBox "OPS!" & vbNewLine & vbNewLine & "Você excedeu o número de caracteres do campo DESCRIÇÃO que é de 160 caracteres." & vbNewLine & "Reduza a descrição e tente novamente! =)", vbExclamation, "CADASTRO TOTVS"
         End
 End Sub
 Sub FormatarDataAtual()
@@ -434,9 +431,9 @@ Sub FormatarDataAtual()
     ' MsgBox "Data formatada: " & dataCadastro
 End Sub
 
-Sub exibirJanelaDePerguntaParaAlterarProduto()
+Sub exibirJanelaDePerguntaParaAlterarProduto(codigoMensagem As String)
 Dim textoCorpo As String
-textoCorpo = "Já existe um produto cadastrado com o código " & codigo & vbNewLine & vbNewLine & "Você TEM CERTEZA que deseja alterar os dados de cadastro deste produto?" & vbNewLine & vbNewLine & "SIM - Altera os dados do produto atual no TOTVS pelos dados atuais do formulário de cadastro." & vbNewLine & vbNewLine & "NÃO - Os dados de cadastro do produto não são alterados."
+textoCorpo = "Já existe um produto cadastrado com o código " & codigoMensagem & vbNewLine & vbNewLine & "Você TEM CERTEZA que deseja alterar os dados de cadastro deste produto?" & vbNewLine & vbNewLine & "SIM - Altera os dados do produto atual no TOTVS pelos dados atuais do formulário de cadastro." & vbNewLine & vbNewLine & "NÃO - Os dados de cadastro do produto não são alterados."
 
 respostaSimOuNaoAlterarCadastro = MsgBox(textoCorpo, vbYesNo + vbExclamation, "CADASTRO TOTVS")
 
