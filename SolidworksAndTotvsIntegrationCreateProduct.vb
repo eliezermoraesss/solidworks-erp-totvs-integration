@@ -414,7 +414,7 @@ If Len(descricaoProduto) > 100 And Len(descricaoProduto2) <= 60 Then
     Exit Sub
     
 ErrorHandler:
-        MsgBox Err.Description
+        MsgBox Err.Description, vbExclamation, "CADASTRO TOTVS"
         'MsgBox "OPS!" & vbNewLine & vbNewLine & "Você excedeu o número de caracteres do campo DESCRIÇÃO que é de 160 caracteres." & vbNewLine & "Reduza a descrição e tente novamente! =)", vbExclamation, "CADASTRO TOTVS"
         End
 End Sub
@@ -432,7 +432,7 @@ End Sub
 
 Sub exibirJanelaDePerguntaParaAlterarProduto(codigoMensagem As String)
 Dim textoCorpo As String
-textoCorpo = "Já existe um produto cadastrado com o código " & codigoMensagem & vbNewLine & vbNewLine & "Você TEM CERTEZA que deseja alterar os dados de cadastro deste produto?" & vbNewLine & vbNewLine & "SIM - Altera os dados do produto atual no TOTVS pelos dados atuais do formulário de cadastro." & vbNewLine & vbNewLine & "NÃO - Os dados de cadastro do produto não são alterados."
+textoCorpo = "Já existe um produto cadastrado com o código " & codigoMensagem & vbNewLine & vbNewLine & "Você TEM CERTEZA que deseja alterar os dados de cadastro deste produto?" & vbNewLine & vbNewLine & "SIM - Sobrescrever os dados do produto atual no TOTVS pelos dados atuais do formulário de cadastro." & vbNewLine & vbNewLine & "NÃO - Os dados de cadastro do produto não são alterados."
 
 respostaSimOuNaoAlterarCadastro = MsgBox(textoCorpo, vbYesNo + vbExclamation, "CADASTRO TOTVS")
 
