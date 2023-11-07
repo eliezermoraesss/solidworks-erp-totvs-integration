@@ -75,7 +75,6 @@ Sub testarConexaoAoSQLServer()
     
     ' Verifique se a conexão foi aberta com sucesso
     If cn.State = 1 Then ' 1 indica que a conexão está aberta
-        ' MsgBox "Conexão bem-sucedida ao banco de dados!"
        
         ' Feche a conexão quando terminar
         cn.Close
@@ -110,31 +109,24 @@ Dim sqlPart7 As String
     
     ' Verifique se a conexão foi aberta com sucesso
     If cn.State = 1 Then ' 1 indica que a conexão está aberta
-    
-        ' Defina o comando SQL COUNT para obter o número de registros na tabela
+
         Dim strSQLCount As String
         strSQLCount = "SELECT TOP 1 R_E_C_N_O_ FROM " & baseDeDados & ".dbo.SB1010 ORDER BY R_E_C_N_O_ DESC;"
         
-        ' Execute o comando SQL COUNT e obtenha o resultado
         Dim rs As Object
         Set rs = cn.Execute(strSQLCount)
         
         ' Verifique se o resultado foi obtido com sucesso
         If Not rs.EOF Then
-            ' Obtém o valor COUNT retornado (primeira coluna da primeira linha)
             Dim resultado As Long
             resultado = rs.Fields(0).Value
-            
-            ' MsgBox resultado
             
             ' Feche o recordset
             rs.Close
             
-            ' Agora, você pode calcular o valor a ser inserido na consulta SQL
             Dim novoResultado As Long
             novoResultado = resultado + incrementoChavePrimariaBanco ' *******************************
             
-            ' Defina o comando SQL INSERT INTO com o novoResultado
             Dim strSQL As String
                                    
 sqlPart1 = "INSERT INTO " & baseDeDados & ".dbo.SB1010 (B1_AFAMAD, B1_FILIAL, B1_COD, B1_DESC, B1_XDESC2, B1_CODITE, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZLOCAL, B1_POSIPI, B1_ESPECIE, B1_EX_NCM, B1_EX_NBM, B1_PICM, B1_IPI, B1_ALIQISS, B1_CODISS, B1_TE, B1_TS, B1_PICMRET, B1_BITMAP, B1_SEGUM, B1_PICMENT, B1_IMPZFRC, B1_CONV, B1_TIPCONV, B1_ALTER, B1_QE, B1_PRV1, B1_EMIN, B1_CUSTD, B1_UCALSTD, B1_UCOM, B1_UPRC, B1_MCUSTD, B1_ESTFOR, B1_PESO, B1_ESTSEG, B1_FORPRZ, B1_PE, B1_TIPE, B1_LE, B1_LM, B1_CONTA, B1_TOLER, B1_CC, B1_ITEMCC, B1_PROC, B1_LOJPROC, B1_FAMILIA, B1_QB, B1_APROPRI, B1_TIPODEC, B1_ORIGEM, B1_CLASFIS, B1_UREV, B1_DATREF, B1_FANTASM, B1_RASTRO, B1_FORAEST, B1_COMIS, B1_DTREFP1, B1_MONO, B1_PERINV, B1_GRTRIB, B1_MRP, B1_NOTAMIN, B1_CONINI, B1_CONTSOC, B1_PRVALID, B1_CODBAR, B1_GRADE, B1_NUMCOP, B1_FORMLOT, B1_IRRF, B1_FPCOD, B1_CODGTIN, B1_DESC_P, B1_CONTRAT, B1_DESC_GI, B1_DESC_I, B1_LOCALIZ, B1_OPERPAD, B1_ANUENTE, B1_OPC, B1_CODOBS, B1_VLREFUS, B1_IMPORT, B1_FABRIC, B1_SITPROD, "
@@ -231,37 +223,26 @@ Sub buscarValoresNoFormularioPropriedadesPersonalizadasSW()
                 Select Case partes(1)
                     Case "codigo"
                         codigo = CStr(vConfValue(j))
-                        ' MsgBox "A segunda parte é 'codigo' e o valor é " & vConfValue(j)
                     Case "caixaTextoCodigo"
                         caixaTextoCodigo = CStr(vConfValue(j))
-                        ' MsgBox "A segunda parte é 'codigo' e o valor é " & vConfValue(j)
                     Case "editarCodigo"
                         editarCodigo = CStr(vConfValue(j))
-                        ' MsgBox "A segunda parte é 'codigo' e o valor é " & vConfValue(j)
                     Case "descricaoProduto"
                         descricaoProduto = UCase(CStr(vConfValue(j)))
-                        ' MsgBox "A segunda parte é 'descricaoProduto' e o valor é " & vConfValue(j)
                     Case "descricaoProduto2"
                         descricaoProduto2 = UCase(CStr(vConfValue(j)))
-                        ' MsgBox "A segunda parte é 'descricaoProduto' e o valor é " & vConfValue(j)
                     Case "tipo"
                         tipo = CStr(vConfValue(j))
-                        ' MsgBox "A segunda parte é 'tipo' e o valor é " & vConfValue(j)
                     Case "unidade"
                         unidade = CStr(vConfValue(j))
-                        ' MsgBox "A segunda parte é 'unidade' e o valor é " & vConfValue(j)
                     Case "armazem"
                         armazem = Split(CStr(vConfValue(j)), " ")
-                        ' MsgBox "A segunda parte é 'armazem' e o valor é " & armazem(0)
                     Case "grupo"
                         grupo = Split(CStr(vConfValue(j)), " ")
-                        ' MsgBox "A segunda parte é 'grupo' e o valor é " & grupo(0)
                     Case "centroDeCusto"
                         centroDeCusto = Split(CStr(vConfValue(j)), " ")
-                        ' MsgBox "A segunda parte é 'centro de custo' e o valor é " & centroDeCusto(0)
                     Case Else
                         End Select
-                        
                     End If
             Next j
         End If
@@ -310,13 +291,9 @@ Sub verificarSeProdutoJaEstaCadastrado(codigo As String)
         
         ' Verifique se o resultado foi obtido com sucesso
         If Not rs.EOF Then
-            ' Se o produto estiver cadastrado, faça algo aqui
             produtoJaCadastrado = True
-            'MsgBox "Já existe um produto cadastrado com o código " & codigo, vbExclamation, "CADASTRO TOTVS"
         Else
         produtoJaCadastrado = False
-            ' Se o produto não estiver cadastrado, faça algo aqui
-            ' MsgBox "O produto não está cadastrado."
         End If
 
         ' Feche o recordset
@@ -391,7 +368,7 @@ Sub tratamentoDosCamposDescricao(descricao1 As String, descricao2 As String)
     descricaoTemCaracteresEspeciais = HasSpecialCharacters(descricaoUmMaisDescricaoComplementar)
     
     If descricaoTemCaracteresEspeciais = True Then
-        MsgBox "OPS!" & vbNewLine & vbNewLine & "O campo DESCRIÇÃO contém caracteres especiais." & vbNewLine & "Remova os caracteres especiais e tente novamente! =)" & vbNewLine & vbNewLine & "Caracteres especiais permitidos: . / - = ", vbExclamation, "CADASTRO TOTVS"
+        MsgBox "OPS!" & vbNewLine & vbNewLine & "O campo DESCRIÇÃO contém caracteres especiais." & vbNewLine & "Remova os caracteres especiais e tente novamente! =)" & vbNewLine & vbNewLine & "Caracteres especiais permitidos: . / - = ( )", vbExclamation, "CADASTRO TOTVS"
         End
     End If
     
@@ -409,13 +386,11 @@ If Len(descricaoProduto) > 100 And Len(descricaoProduto2) <= 60 Then
         
         tamanhoDescricao2 = Len(descricao2)
         descricaoProduto2 = descricao2 & Space(quantidadeMaxDescricao2 - tamanhoDescricao2)
-        'MsgBox Len(descricaoProduto) & " - " & Len(descricaoProduto2)
     End If
     Exit Sub
     
 ErrorHandler:
         MsgBox Err.Description, vbExclamation, "CADASTRO TOTVS"
-        'MsgBox "OPS!" & vbNewLine & vbNewLine & "Você excedeu o número de caracteres do campo DESCRIÇÃO que é de 160 caracteres." & vbNewLine & "Reduza a descrição e tente novamente! =)", vbExclamation, "CADASTRO TOTVS"
         End
 End Sub
 Sub FormatarDataAtual()
@@ -425,9 +400,6 @@ Sub FormatarDataAtual()
     dataString = Format(dataAtual, "yyyymmdd") ' Formata a data como string no formato desejado
     
     dataCadastro = dataString
-    ' Use dataString para salvar no banco de dados ou para outros fins
-    ' Exemplo de uso para exibição em uma caixa de mensagem:
-    ' MsgBox "Data formatada: " & dataCadastro
 End Sub
 
 Sub exibirJanelaDePerguntaParaAlterarProduto(codigoMensagem As String)
@@ -443,7 +415,7 @@ Function HasSpecialCharacters(inputString As String) As Boolean
 
     regEx.IgnoreCase = True
     regEx.Global = True
-    regEx.Pattern = "[~!@#$Ø%^&*()+\[\]{};:'"",<>?\\|çãÇÃ]" ' Padrão para verificar se há caracteres que não sejam letras, números, ponto, barra, hífen ou sinal de igual
+    regEx.Pattern = "[~!@#$Ø%^&*+\[\]{};:'"",<>?\\|çãÇÃáÁÀàíÍêÊóÓúÚõÕ]"
 
     HasSpecialCharacters = regEx.Test(inputString)
 End Function
