@@ -75,6 +75,7 @@ Sub testarConexaoAoSQLServer()
     
     ' Verifique se a conexão foi aberta com sucesso
     If cn.State = 1 Then ' 1 indica que a conexão está aberta
+        ' MsgBox "Conexão bem-sucedida ao banco de dados!"
        
         ' Feche a conexão quando terminar
         cn.Close
