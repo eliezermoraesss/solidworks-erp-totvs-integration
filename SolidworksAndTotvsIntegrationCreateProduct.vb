@@ -259,8 +259,12 @@ Call tratamentoDosCamposDescricao(descricaoProduto, descricaoProduto2)
     If Len(Trim(caixaTextoCodigo)) = 0 And editarCodigo = "Checked" Or Len(Trim(descricaoProduto)) = 0 Or tipo = "" Or unidade = "" Or armazem(0) = "" Or grupo(0) = "" Or centroDeCusto(0) = "" Then
         Err.Raise 9999
     End If
-
-Exit Sub
+    
+    If centroDeCusto(0) = "0.0.0.0" Then
+        centroDeCusto(0) = "         "
+    End If
+    
+    Exit Sub
 
 ErrorHandler:
     MsgBox "Por favor preencher TODOS os campos obrigatórios (*) do formulário de cadastro!", vbExclamation, "CADASTRO TOTVS"
