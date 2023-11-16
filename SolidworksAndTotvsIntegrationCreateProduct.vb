@@ -3,6 +3,7 @@ Dim swApp As Object
     Dim caixaTextoCodigo As String
     Dim descricaoProduto As String
     Dim descricaoProduto2 As String
+    Dim descricaoProdutoJaCadastrado As String
     Dim tipo As String
     Dim unidade As String
     Dim editarCodigo As String
@@ -33,7 +34,7 @@ If editarCodigo = "Unchecked" Then
         Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
         Call cadastrarProdutoNoTotvs(codigo)
     Else
-        Call exibirJanelaDePerguntaParaAlterarProduto(codigo)
+        Call exibirJanelaDePerguntaParaAlterarProduto(codigo, descricaoProdutoJaCadastrado)
         If respostaSimOuNaoAlterarCadastro = vbYes Then
             Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
             Call alterarProdutoNoTotvs(codigo)
@@ -47,7 +48,7 @@ Else
         Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
         Call cadastrarProdutoNoTotvs(caixaTextoCodigo)
     Else
-        Call exibirJanelaDePerguntaParaAlterarProduto(caixaTextoCodigo)
+        Call exibirJanelaDePerguntaParaAlterarProduto(caixaTextoCodigo, descricaoProdutoJaCadastrado)
         If respostaSimOuNaoAlterarCadastro = vbYes Then
             Call consultarGrupoPeloCodigoRetornarDescricao(grupo(0))
             Call alterarProdutoNoTotvs(caixaTextoCodigo)
@@ -288,7 +289,7 @@ Sub verificarSeProdutoJaEstaCadastrado(codigo As String)
     If cn.State = 1 Then ' 1 indica que a conexão está aberta
     
         Dim strSQL As String
-        strSQL = "SELECT B1_COD FROM " & baseDeDados & ".dbo.SB1010 s WHERE B1_COD = '" & codigo & "';"
+        strSQL = "SELECT B1_COD, B1_DESC FROM " & baseDeDados & ".dbo.SB1010 s WHERE B1_COD = '" & codigo & "';"
         
         ' Execute o comando SQL COUNT e obtenha o resultado
         Dim rs As Object
@@ -297,6 +298,7 @@ Sub verificarSeProdutoJaEstaCadastrado(codigo As String)
         ' Verifique se o resultado foi obtido com sucesso
         If Not rs.EOF Then
             produtoJaCadastrado = True
+            descricaoProdutoJaCadastrado = rs.Fields(1).Value
         Else
         produtoJaCadastrado = False
         End If
@@ -407,9 +409,9 @@ Sub FormatarDataAtual()
     dataCadastro = dataString
 End Sub
 
-Sub exibirJanelaDePerguntaParaAlterarProduto(codigoMensagem As String)
+Sub exibirJanelaDePerguntaParaAlterarProduto(codigoMensagem As String, descricaoProdutoMensagem As String)
 Dim textoCorpo As String
-textoCorpo = "Já existe um produto cadastrado com o código " & codigoMensagem & vbNewLine & vbNewLine & "Você TEM CERTEZA que deseja alterar os dados de cadastro deste produto?" & vbNewLine & vbNewLine & "SIM - Sobrescrever os dados do produto atual no TOTVS pelos dados atuais do formulário de cadastro." & vbNewLine & vbNewLine & "NÃO - Os dados de cadastro do produto não são alterados."
+textoCorpo = "Já existe um produto cadastrado com esse código. " & vbNewLine & vbNewLine & codigoMensagem & " - " & descricaoProdutoMensagem & vbNewLine & "Você TEM CERTEZA que deseja alterar os dados de cadastro deste produto?" & vbNewLine & vbNewLine & "SIM - Sobrescrever os dados do produto atual no TOTVS pelos dados atuais do formulário de cadastro." & vbNewLine & vbNewLine & "NÃO - Os dados de cadastro do produto não são alterados."
 
 respostaSimOuNaoAlterarCadastro = MsgBox(textoCorpo, vbYesNo + vbExclamation, "CADASTRO TOTVS")
 
