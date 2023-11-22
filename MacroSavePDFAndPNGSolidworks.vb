@@ -239,6 +239,6 @@ End Sub
 
 Public Sub ExibirMsgBox()
      textoCorpo = "Já existe uma revisão deste desenho." & vbNewLine & vbNewLine & "Deseja prosseguir?" & vbNewLine & vbNewLine & "CERTIFIQUE-SE QUE O DESENHO ATUAL ESTEJA ATUALIZADO!" & vbNewLine & vbNewLine & "Tenha um excelente dia! =)" & vbNewLine & "Engenharia ENAPLIC."
-     resultado = MsgBox(textoCorpo, vbYesNo + vbQuestion, "ATENÇÃO!")
+     resultado = MsgBox(textoCorpo, vbYesNo + vbQuestion, "Salvamento automático de PDF/PNG - SolidWorks")
      'MsgBox resultado
 End Sub
