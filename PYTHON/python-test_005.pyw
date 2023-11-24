@@ -13,8 +13,9 @@ driver = '{ODBC Driver 17 for SQL Server}'
 excel_file_path = r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\M-048-020-284.xlsx'
 
 # Arrays para armazenar os códigos
-codigos_excel = []
-codigos_sql = []
+codigos_somente_bom_excel = []
+codigos_somente_totvs_sql = []
+codigos_em_comum = []
 
 # Tente estabelecer a conexão com o banco de dados
 try:
@@ -32,8 +33,9 @@ try:
     # Remove espaços em branco da coluna 'G1_COD'
     df_sql['G1_COMP'] = df_sql['G1_COMP'].str.strip()
 
-    # Carrega a planilha do Excel em um DataFrame
-    df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1')
+    # Carrega a planilha do Excel em um DataFrame e inverte as linhas
+    df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)[::-1]
+    print(df_excel)
 
     # Obtém a posição da coluna número 2 no DataFrame do Excel
     posicao_coluna_excel = 1  # A coluna número 2 tem índice 1 (índices começam do 0)
@@ -42,19 +44,19 @@ try:
     df_excel.iloc[:, posicao_coluna_excel] = df_excel.iloc[:, posicao_coluna_excel].str.strip()
 
     # Encontra códigos que são iguais entre SQL e Excel
-    codigos_comuns = df_sql['G1_COMP'].loc[df_sql['G1_COMP'].isin(df_excel.iloc[:, posicao_coluna_excel])].tolist()
-    codigos_excel = df_excel.iloc[:, posicao_coluna_excel].loc[~df_excel.iloc[:, posicao_coluna_excel].isin(df_sql['G1_COMP'])].tolist()
-    codigos_sql = df_sql['G1_COMP'].loc[~df_sql['G1_COMP'].isin(df_excel.iloc[:, posicao_coluna_excel])].tolist()
+    codigos_em_comum = df_sql['G1_COMP'].loc[df_sql['G1_COMP'].isin(df_excel.iloc[:, posicao_coluna_excel])].tolist()
+    codigos_somente_bom_excel = df_excel.iloc[:, posicao_coluna_excel].loc[~df_excel.iloc[:, posicao_coluna_excel].isin(df_sql['G1_COMP'])].tolist()
+    codigos_somente_totvs_sql = df_sql['G1_COMP'].loc[~df_sql['G1_COMP'].isin(df_excel.iloc[:, posicao_coluna_excel])].tolist()
 
     # Exibe uma caixa de diálogo com base nos resultados
-    if codigos_comuns:
-        ctypes.windll.user32.MessageBoxW(0, f"Códigos comuns: {codigos_comuns}", "Códigos comuns", 1)
+    if codigos_em_comum:
+        ctypes.windll.user32.MessageBoxW(0, f"Códigos comuns: {codigos_em_comum}", "Códigos comuns", 1)
 
-    if codigos_excel:
-        ctypes.windll.user32.MessageBoxW(0, f"Códigos no Excel, mas não no SQL: {codigos_excel}", "Excel > SQL", 1)
+    if codigos_somente_bom_excel:
+        ctypes.windll.user32.MessageBoxW(0, f"Códigos no Excel, mas não no SQL: {codigos_somente_bom_excel}", "Excel > SQL", 1)
 
-    if codigos_sql:
-        ctypes.windll.user32.MessageBoxW(0, f"Códigos no SQL, mas não no Excel: {codigos_sql}", "SQL > Excel", 1)
+    if codigos_somente_totvs_sql:
+        ctypes.windll.user32.MessageBoxW(0, f"Códigos no SQL, mas não no Excel: {codigos_somente_totvs_sql}", "SQL > Excel", 1)
 
 except pyodbc.Error as ex:
     # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
