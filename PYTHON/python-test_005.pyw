@@ -13,9 +13,9 @@ driver = '{ODBC Driver 17 for SQL Server}'
 excel_file_path = r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\M-048-020-284.xlsx'
 
 # Arrays para armazenar os códigos
-codigos_somente_bom_excel = []
-codigos_somente_totvs_sql = []
-codigos_em_comum = []
+codigos_somente_bom_excel = [] # ITENS ADICIONADOS
+codigos_somente_totvs_sql = [] # ITENS REMOVIDOS
+codigos_em_comum = [] # ITENS EM COMUM
 
 # Tente estabelecer a conexão com o banco de dados
 try:
@@ -34,7 +34,7 @@ try:
     df_sql['G1_COMP'] = df_sql['G1_COMP'].str.strip()
 
     # Carrega a planilha do Excel em um DataFrame e inverte as linhas
-    df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)[::-1]
+    df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
     print(df_excel)
 
     # Obtém a posição da coluna número 2 no DataFrame do Excel
