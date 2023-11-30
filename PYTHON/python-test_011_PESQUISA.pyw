@@ -6,7 +6,7 @@ import pyperclip
 class ConsultaApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Consulta SQL Server")
+        self.root.title("Consulta de Produtos no TOTVS - Engenharia ENAPLIC")
 
         # Variáveis para armazenar os dados da consulta
         self.codigo_var = tk.StringVar()
@@ -16,17 +16,17 @@ class ConsultaApp:
         # Criar campos para a consulta
         lbl_codigo = tk.Label(root, text="Código:")
         lbl_codigo.grid(row=0, column=0, padx=10, pady=5, sticky="w")
-        entry_codigo = tk.Entry(root, textvariable=self.codigo_var)
+        entry_codigo = tk.Entry(root, textvariable=self.codigo_var, width=200)
         entry_codigo.grid(row=0, column=1, padx=50, pady=5)
 
         lbl_descricao = tk.Label(root, text="Descrição:")
         lbl_descricao.grid(row=1, column=0, padx=10, pady=5, sticky="w")
-        entry_descricao = tk.Entry(root, textvariable=self.descricao_var)
+        entry_descricao = tk.Entry(root, textvariable=self.descricao_var, width=200)
         entry_descricao.grid(row=1, column=1, padx=50, pady=5)
 
         lbl_descricao2 = tk.Label(root, text="Contém na descrição:")
         lbl_descricao2.grid(row=2, column=0, padx=10, pady=5, sticky="w")
-        entry_descricao2 = tk.Entry(root, textvariable=self.descricao2_var)
+        entry_descricao2 = tk.Entry(root, textvariable=self.descricao2_var, width=200)
         entry_descricao2.grid(row=2, column=1, padx=50, pady=5)
 
         # Botão para executar a consulta
@@ -38,7 +38,7 @@ class ConsultaApp:
         scroll_x = tk.Scrollbar(root, orient="horizontal")
 
         # Tabela para exibir os resultados
-        self.tree = ttk.Treeview(root, columns=("Código", "Descrição", "XDESC2", "Tipo", "UM", "Localização", "Grupo", "ZZNOGRP", "CC", "MSBLQL", "Revatu"), yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+        self.tree = ttk.Treeview(root, columns=("CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZEM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO", "REV."), yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
         self.tree.grid(row=4, column=0, columnspan=2, padx=10, pady=5, sticky="nsew")
         scroll_y.grid(row=4, column=2, sticky="ns")
         scroll_x.grid(row=5, column=0, columnspan=2, sticky="ew")
@@ -51,17 +51,17 @@ class ConsultaApp:
         root.grid_rowconfigure(3, weight=1)
         root.grid_columnconfigure(1, weight=1)
 
-        self.tree.heading("Código", text="Código")
-        self.tree.heading("Descrição", text="Descrição")
-        self.tree.heading("XDESC2", text="XDESC2")
-        self.tree.heading("Tipo", text="Tipo")
+        self.tree.heading("CÓDIGO", text="CÓDIGO")
+        self.tree.heading("DESCRIÇÃO", text="DESCRIÇÃO")
+        self.tree.heading("DESC. COMP.", text="DESC. COMP.")
+        self.tree.heading("TIPO", text="TIPO")
         self.tree.heading("UM", text="UM")
-        self.tree.heading("Localização", text="Localização")
-        self.tree.heading("Grupo", text="Grupo")
-        self.tree.heading("ZZNOGRP", text="ZZNOGRP")
+        self.tree.heading("ARMAZEM", text="ARMAZEM")
+        self.tree.heading("GRUPO", text="GRUPO")
+        self.tree.heading("DESC. GRUPO", text="DESC. GRUPO")
         self.tree.heading("CC", text="CC")
-        self.tree.heading("MSBLQL", text="MSBLQL")
-        self.tree.heading("Revatu", text="Revatu")
+        self.tree.heading("BLOQUEADO", text="BLOQUEADO")
+        self.tree.heading("REV.", text="REV.")
 
         # Adicionar evento de clique para copiar linha para a área de transferência
         self.tree.bind("<ButtonRelease-1>", self.copiar_linha)
@@ -98,7 +98,6 @@ class ConsultaApp:
 
                 # Inserir os valores formatados na tabela
                 self.tree.insert("", i, values=row_values)
-                print(row_values)
                 
             # Ajustar automaticamente a largura das colunas
             for coluna in self.tree["columns"]:
@@ -152,4 +151,16 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     app = ConsultaApp(root)
+    
+    largura_janela = 900  # Substitua pelo valor desejado
+    altura_janela = 700  # Substitua pelo valor desejado
+
+    largura_tela = root.winfo_screenwidth()
+    altura_tela = root.winfo_screenheight()
+
+    pos_x = (largura_tela - largura_janela) // 2
+    pos_y = (altura_tela - altura_janela) // 2
+
+    root.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
+    
     root.mainloop()
