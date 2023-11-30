@@ -13,8 +13,8 @@ driver = '{ODBC Driver 17 for SQL Server}'
 excel_file_path = r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\M-048-020-284.xlsx'
 
 # Arrays para armazenar os códigos
-codigos_somente_bom_excel = [] # ITENS ADICIONADOS
-codigos_somente_totvs_sql = [] # ITENS REMOVIDOS
+codigos_adicionados_bom = [] # ITENS ADICIONADOS
+codigos_removidos_bom = [] # ITENS REMOVIDOS
 codigos_em_comum = [] # ITENS EM COMUM
 
 # Tente estabelecer a conexão com o banco de dados
@@ -45,18 +45,18 @@ try:
 
     # Encontra códigos que são iguais entre SQL e Excel
     codigos_em_comum = df_sql['G1_COMP'].loc[df_sql['G1_COMP'].isin(df_excel.iloc[:, posicao_coluna_excel])].tolist()
-    codigos_somente_bom_excel = df_excel.iloc[:, posicao_coluna_excel].loc[~df_excel.iloc[:, posicao_coluna_excel].isin(df_sql['G1_COMP'])].tolist()
-    codigos_somente_totvs_sql = df_sql['G1_COMP'].loc[~df_sql['G1_COMP'].isin(df_excel.iloc[:, posicao_coluna_excel])].tolist()
+    codigos_adicionados_bom = df_excel.iloc[:, posicao_coluna_excel].loc[~df_excel.iloc[:, posicao_coluna_excel].isin(df_sql['G1_COMP'])].tolist()
+    codigos_removidos_bom = df_sql['G1_COMP'].loc[~df_sql['G1_COMP'].isin(df_excel.iloc[:, posicao_coluna_excel])].tolist()
 
     # Exibe uma caixa de diálogo com base nos resultados
     if codigos_em_comum:
-        ctypes.windll.user32.MessageBoxW(0, f"Códigos comuns: {codigos_em_comum}", "Códigos comuns", 1)
+        ctypes.windll.user32.MessageBoxW(0, f"Códigos em comuns: {codigos_em_comum}", "ITENS EM COMUM", 1)
 
-    if codigos_somente_bom_excel:
-        ctypes.windll.user32.MessageBoxW(0, f"Códigos no Excel, mas não no SQL: {codigos_somente_bom_excel}", "Excel > SQL", 1)
+    if codigos_adicionados_bom:
+        ctypes.windll.user32.MessageBoxW(0, f"Itens adicionados: {codigos_adicionados_bom}", "ITENS ADICIONADOS", 1)
 
-    if codigos_somente_totvs_sql:
-        ctypes.windll.user32.MessageBoxW(0, f"Códigos no SQL, mas não no Excel: {codigos_somente_totvs_sql}", "SQL > Excel", 1)
+    if codigos_removidos_bom:
+        ctypes.windll.user32.MessageBoxW(0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
 
 except pyodbc.Error as ex:
     # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
