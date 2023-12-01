@@ -28,7 +28,7 @@ class ConsultaApp:
 
         # Tabela para exibir os resultados
         self.tree = ttk.Treeview(root, columns=("Código", "Descrição", "XDESC2", "Tipo", "UM", "Localização", "Grupo", "ZZNOGRP", "CC", "MSBLQL", "Revatu"))
-        self.tree.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
+        self.tree.grid(row=3, column=1, columnspan=2, padx=10, pady=5)
         self.tree.heading("Código", text="Código")
         self.tree.heading("Descrição", text="Descrição")
         self.tree.heading("XDESC2", text="Descrição Complementar")

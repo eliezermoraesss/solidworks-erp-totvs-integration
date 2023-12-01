@@ -65,23 +65,6 @@ class ConsultaApp:
         FROM PROTHEUS12_R27.dbo.SB1010
         WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%'
         """
-        
-    def copiar_campo(self, event):
-        # Obter a coluna clicada
-        coluna_clicada = self.tree.identify_column(event.x)
-        
-        # Obter o item (linha) clicado
-        item_clicado = self.tree.selection()
-
-        if item_clicado and coluna_clicada:
-            # Obter o índice da coluna clicada
-            indice_coluna = int(coluna_clicada.replace("#", ""))
-
-            # Obter o valor do campo clicado
-            valor_campo = self.tree.item(item_clicado, "values")[indice_coluna - 1]
-
-            # Copiar para a área de transferência
-            pyperclip.copy(str(valor_campo))
 
         try:
             # Estabelecer a conexão com o banco de dados

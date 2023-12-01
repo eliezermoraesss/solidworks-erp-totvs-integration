@@ -116,7 +116,7 @@ class ConsultaApp:
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
     server = 'SVRERP,1433'
-    database = 'PROTHEUS12_R27'
+    database = 'PROTHEUS1233_HML'
     username = 'coognicao'
     password = '0705@Abc'
     driver = '{ODBC Driver 17 for SQL Server}'

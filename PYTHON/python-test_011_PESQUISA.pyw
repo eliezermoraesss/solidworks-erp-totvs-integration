@@ -2,11 +2,15 @@ import tkinter as tk
 from tkinter import ttk
 import pyodbc
 import pyperclip
+from ttkbootstrap import Style
 
 class ConsultaApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Consulta de Produtos no TOTVS - Engenharia ENAPLIC")
+        
+        # Configuração de estilo do ttkbootstrap
+        self.style = Style()
 
         # Variáveis para armazenar os dados da consulta
         self.codigo_var = tk.StringVar()
@@ -32,6 +36,14 @@ class ConsultaApp:
         # Botão para executar a consulta
         btn_consultar = tk.Button(root, text="Pesquisar", command=self.executar_consulta)
         btn_consultar.grid(row=3, column=0, columnspan=2, pady=10)
+
+        # Adicionar estilo Bootstrap
+        self.style = Style(theme='bootstrap')
+        self.style.configure('.', font=('Helvetica', 12))
+
+        # Aplicar o estilo ao Treeview
+        self.style.configure('Treeview', background='#FFF')
+        self.style.configure('Treeview.Heading', font=('Helvetica', 14, 'bold'))
 
         # Criar barras de rolagem vertical e horizontal
         scroll_y = tk.Scrollbar(root, orient="vertical")
@@ -65,6 +77,11 @@ class ConsultaApp:
 
         # Adicionar evento de clique para copiar linha para a área de transferência
         self.tree.bind("<ButtonRelease-1>", self.copiar_linha)
+        
+        # Estilo semelhante ao Bootstrap
+        style = ttk.Style()
+        style.configure("TButton", padding=6, relief="flat", background="#007BFF", foreground="white")
+        style.map("TButton", background=[("active", "#0056b3")])
 
     def executar_consulta(self):
         # Obter os valores dos campos de consulta
@@ -144,7 +161,7 @@ class ConsultaApp:
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
     server = 'SVRERP,1433'
-    database = 'PROTHEUS12_R27'
+    database = 'PROTHEUS1233_HML'
     username = 'coognicao'
     password = '0705@Abc'
     driver = '{ODBC Driver 17 for SQL Server}'
