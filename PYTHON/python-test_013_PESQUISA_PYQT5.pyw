@@ -153,14 +153,14 @@ class ConsultaApp(QWidget):
         self.setLayout(layout)
 
     def configurar_campos(self):
-        self.codigo_var.setMinimumWidth(80)
-        self.descricao_var.setMinimumWidth(200)
-        self.descricao2_var.setMinimumWidth(200)
-        self.tipo_var.setMinimumWidth(200)
-        self.um_var.setMinimumWidth(200)
-        self.armazem_var.setMinimumWidth(200)
-        self.grupo_var.setMinimumWidth(200)
-        self.grupo_desc_var.setMinimumWidth(200)
+        self.codigo_var
+        self.descricao_var
+        self.descricao2_var
+        self.tipo_var
+        self.um_var
+        self.armazem_var
+        self.grupo_var
+        self.grupo_desc_var
 
     def configurar_tabela(self):
         self.tree = QTableWidget(self)
