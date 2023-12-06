@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt, QUrl, QCoreApplication
 import pyodbc
 import pyperclip
 import os
+import time
 
 class ConsultaApp(QWidget):
     def __init__(self):
@@ -65,6 +66,11 @@ class ConsultaApp(QWidget):
 
             QTableWidget QHeaderView::section:horizontal {
                 border-top: 1px solid #ccc;
+            }
+            
+            QTableWidget::item:selected {
+                background-color: #8EC4FF; /* Altere para a cor desejada */
+                color: #000; /* Cor do texto no item selecionado */
             }
         """)
             
@@ -241,6 +247,8 @@ class ConsultaApp(QWidget):
 
             # Limpar a tabela
             self.tree.setRowCount(0)
+            
+            time.sleep(0.1)
 
             # Preencher a tabela com os resultados
             for i, row in enumerate(cursor.fetchall()):
