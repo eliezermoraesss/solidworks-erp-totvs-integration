@@ -10,7 +10,7 @@ password = '0705@Abc'
 driver = '{ODBC Driver 17 for SQL Server}'
 
 # Caminho para o arquivo Excel (caminho bruto)
-excel_file_path = r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\M-048-020-284.xlsx'
+excel_file_path = r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\E7158-001-004.xlsx'
 
 # Arrays para armazenar os códigos
 codigos_adicionados_bom = [] # ITENS ADICIONADOS
@@ -25,7 +25,10 @@ try:
     cursor = conn.cursor()
 
     # Query SELECT
-    select_query = "SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = 'M-048-020-284' AND D_E_L_E_T_ <> '*'"
+    select_query = """SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = 'E7158-001-004' 
+AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = 'E7158-001-004'AND G1_REVFIM <> 'ZZZ');
+"""
 
     # Executa a query SELECT e obtém os resultados em um DataFrame
     df_sql = pd.read_sql(select_query, conn)
