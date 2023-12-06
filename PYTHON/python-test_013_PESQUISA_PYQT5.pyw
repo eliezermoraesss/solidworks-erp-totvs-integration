@@ -1,13 +1,12 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
-    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem
+    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices
 from PyQt5.QtCore import Qt, QUrl, QCoreApplication
 import pyodbc
 import pyperclip
 import os
 import time
-
 class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -97,6 +96,10 @@ class ConsultaApp(QWidget):
         self.btn_nova_janela.clicked.connect(self.abrir_nova_janela)
         self.btn_nova_janela.setMinimumWidth(100)  # Definindo o comprimento mínimo
         
+        self.btn_abrir_desenho = QPushButton("Abrir Desenho", self)
+        self.btn_abrir_desenho.clicked.connect(self.abrir_desenho)
+        self.btn_abrir_desenho.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        
         self.btn_fechar = QPushButton("Fechar", self)
         self.btn_fechar.clicked.connect(self.fechar_janela)
         self.btn_fechar.setMinimumWidth(100)  # Definindo o comprimento mínimo
@@ -145,6 +148,7 @@ class ConsultaApp(QWidget):
         layout_linha_03.addWidget(self.btn_consultar)
         layout_linha_03.addWidget(self.btn_limpar)
         layout_linha_03.addWidget(self.btn_nova_janela)
+        layout_linha_03.addWidget(self.btn_abrir_desenho)
         layout_linha_03.addWidget(self.btn_fechar)
         
         # Adicione um espaçador esticável para centralizar os botões
@@ -190,9 +194,6 @@ class ConsultaApp(QWidget):
         
         # Conectar o evento sectionClicked ao método ordenar_tabela
         self.tree.horizontalHeader().sectionClicked.connect(self.ordenar_tabela)
-        
-        # Conectar o evento itemClicked da tabela ao método tree_item_clicked
-        self.tree.itemClicked.connect(self.tree_item_clicked)
         
     def ordenar_tabela(self, logicalIndex):
         # Obter o índice real da coluna (considerando a ordem de classificação)
@@ -271,16 +272,20 @@ class ConsultaApp(QWidget):
             # Fechar a conexão com o banco de dados
             conn.close()
             
-    def tree_item_clicked(self, item):
-        if item.column() == 10:  # Verifica se o item clicado é da coluna de hyperlink
-            codigo = self.tree.item(item.row(), 0).text()
+    def abrir_desenho(self):
+        item_selecionado = self.tree.currentItem()
+
+        if item_selecionado:
+            codigo = self.tree.item(item_selecionado.row(), 0).text()
             pdf_path = os.path.join("Y:/PDF-OFICIAL/", f"{codigo}.PDF")
             pdf_path = os.path.normpath(pdf_path)
+
             if os.path.exists(pdf_path):
                 QCoreApplication.processEvents()
                 QDesktopServices.openUrl(QUrl.fromLocalFile(pdf_path))
             else:
-                print(f"Arquivo PDF não encontrado para o código {codigo}.")
+                mensagem = f"O desenho no formato PDF do código {codigo} não foi encontrado!"
+                QMessageBox.information(self, "Desenho não encontrado", mensagem)
 
     def copiar_linha(self):
         item_clicado = self.tree.currentItem()
