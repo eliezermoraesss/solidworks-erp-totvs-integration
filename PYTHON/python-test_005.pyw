@@ -1,6 +1,7 @@
 import pyodbc
 import pandas as pd
 import ctypes
+import os
 
 # Parâmetros de conexão com o banco de dados SQL Server
 server = 'SVRERP,1433'
@@ -9,8 +10,19 @@ username = 'coognicao'
 password = '0705@Abc'
 driver = '{ODBC Driver 17 for SQL Server}'
 
-# Caminho para o arquivo Excel (caminho bruto)
-excel_file_path = r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\E7158-001-004.xlsx'
+def ler_variavel_ambiente_codigo_desenho():
+    # Recupera o valor da variável de ambiente
+    return os.getenv('CODIGO_DESENHO')
+
+def delete_file_if_exists(excel_file_path):
+    if os.path.exists(excel_file_path):
+        os.remove(excel_file_path)       
+    
+nome_desenho = ler_variavel_ambiente_codigo_desenho()
+print(nome_desenho)
+
+base_path = r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS'
+excel_file_path = os.path.join(base_path, nome_desenho + '.xlsx')
 
 # Arrays para armazenar os códigos
 codigos_adicionados_bom = [] # ITENS ADICIONADOS
@@ -25,10 +37,10 @@ try:
     cursor = conn.cursor()
 
     # Query SELECT
-    select_query = """SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = 'E7158-001-004' 
-AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = 'E7158-001-004'AND G1_REVFIM <> 'ZZZ');
-"""
+    select_query = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
+        AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
+    """
 
     # Executa a query SELECT e obtém os resultados em um DataFrame
     df_sql = pd.read_sql(select_query, conn)
@@ -38,6 +50,7 @@ AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_C
 
     # Carrega a planilha do Excel em um DataFrame e inverte as linhas
     df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
+
     print(df_excel)
 
     # Obtém a posição da coluna número 2 no DataFrame do Excel
@@ -68,3 +81,4 @@ except pyodbc.Error as ex:
 finally:
     # Fecha a conexão com o banco de dados
     conn.close()
+    delete_file_if_exists(excel_file_path)

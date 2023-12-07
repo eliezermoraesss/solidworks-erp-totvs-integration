@@ -7,19 +7,13 @@ import pyodbc
 import pyperclip
 import os
 import time
+
 class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
-
-        self.setWindowTitle("Consulta de Produtos TOTVS")
-        self.setWindowIcon(QIcon(r'//192.175.175.4/f/ELIEZER/PROJETO SOLIDWORKS TOTVS/VBA/assets/images/004.png'))
-        #self.setGeometry(0, 0, 400, 300) 
-        #self.label = QLabel("Icon is set", self) 
-        #self.label.move(100, 100) 
-        #self.label.setStyleSheet("border: 1px solid black;") 
-  
-        #self.show() 
         
+        self.setWindowTitle("Consulta de Produtos TOTVS")
+            
         # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
         self.nova_janela = None  # Adicione esta linha
 
@@ -245,6 +239,9 @@ class ConsultaApp(QWidget):
 
             # Executar a consulta
             cursor.execute(select_query)
+            
+            # Limpar a ordenação
+            self.tree.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
 
             # Limpar a tabela
             self.tree.setRowCount(0)
@@ -264,6 +261,16 @@ class ConsultaApp(QWidget):
                     
                 # Permitir que a interface gráfica seja atualizada
                 QCoreApplication.processEvents()
+                
+            # Calcular a largura total das colunas
+            largura_total_colunas = self.tree.horizontalHeader().length()
+
+            # Definir a largura mínima da janela (opcional)
+            largura_minima_janela = 800
+
+            # Ajustar a largura da janela
+            nova_largura_janela = max(largura_minima_janela, largura_total_colunas + 100)  # Adicione uma folga de 20 pixels
+            self.setFixedWidth(nova_largura_janela)
 
         except pyodbc.Error as ex:
             print(f"Falha na consulta. Erro: {str(ex)}")
@@ -284,8 +291,8 @@ class ConsultaApp(QWidget):
                 QCoreApplication.processEvents()
                 QDesktopServices.openUrl(QUrl.fromLocalFile(pdf_path))
             else:
-                mensagem = f"O desenho no formato PDF do código {codigo} não foi encontrado!"
-                QMessageBox.information(self, "Desenho não encontrado", mensagem)
+                mensagem = f"Desenho {codigo} não encontrado!"
+                QMessageBox.information(self, "DESENHO PDF", mensagem)
 
     def copiar_linha(self):
         item_clicado = self.tree.currentItem()
