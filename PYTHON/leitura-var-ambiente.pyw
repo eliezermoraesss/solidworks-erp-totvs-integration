@@ -12,3 +12,5 @@ if nome_arquivo is None:
 print(f"Código do desenho: {nome_arquivo}")
 
 ctypes.windll.user32.MessageBoxW(0, f"env: {nome_arquivo}", "Var. Ambiente", 1)
+
+nome_arquivo = None

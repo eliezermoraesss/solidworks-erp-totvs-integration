@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
     QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox
-from PyQt5.QtGui import QFont, QIcon, QDesktopServices
+from PyQt5.QtGui import QFont, QIcon, QDesktopServices, QColor
 from PyQt5.QtCore import Qt, QUrl, QCoreApplication
 import pyodbc
 import pyperclip
@@ -12,15 +12,23 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("Consulta de Produtos TOTVS")
+        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS")
+        
+        # Ajuste a cor de fundo da janela
+        self.setAutoFillBackground(True)
+        palette = self.palette()
+        palette.setColor(self.backgroundRole(), QColor('#c7e0f7'))  # Substitua pela cor desejada
+        self.setPalette(palette)
             
         # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
         self.nova_janela = None  # Adicione esta linha
 
         # Aplicar folha de estilo ao aplicativo
-        self.setStyleSheet("""
+        self.setStyleSheet("""                                                                         
             QLabel {
-                color: #333;
+                color: #000;
+                font-size: 11px;
+                font-weight: bold;
             }
 
             QLineEdit {
@@ -28,19 +36,25 @@ class ConsultaApp(QWidget):
                 border: 1px solid #5ab3ee;
                 padding: 5px;
                 border: none;
-                border-radius: 3px;
+                border-radius: 5px;
             }
 
             QPushButton {
-                background-color: #0c9af8;
+                background-color: #2416e0;
                 color: #fff;
-                padding: 5px 10px;
+                padding: 5px 15px;
                 border: none;
-                border-radius: 3px;
+                border-radius: 5px;
+                font-size: 11px;
+                height: 20px;
+                font-weight: bold;
+                margin-top: 3px;
+                margin-bottom: 3px;
+                margin-right: 8px;
             }
 
             QPushButton:hover {
-                background-color: #2416e0;  /* Nova cor ao passar o mouse sobre o botão */
+                background-color: #0c9af8;  /* Nova cor ao passar o mouse sobre o botão */
             }
 
             QPushButton:pressed {
@@ -58,13 +72,14 @@ class ConsultaApp(QWidget):
             }
 
             QTableWidget QHeaderView::section:horizontal {
-                border-top: 1px solid #ccc;
+                border-top: 1px solid #333;
             }
             
             QTableWidget::item:selected {
                 background-color: #8EC4FF; /* Altere para a cor desejada */
                 color: #000; /* Cor do texto no item selecionado */
             }
+            
         """)
             
         self.codigo_var = QLineEdit(self)
@@ -291,8 +306,8 @@ class ConsultaApp(QWidget):
                 QCoreApplication.processEvents()
                 QDesktopServices.openUrl(QUrl.fromLocalFile(pdf_path))
             else:
-                mensagem = f"Desenho {codigo} não encontrado!"
-                QMessageBox.information(self, "DESENHO PDF", mensagem)
+                mensagem = f"Desenho não encontrado!\n\n:-("
+                QMessageBox.information(self, f"{codigo}", mensagem)            
 
     def copiar_linha(self):
         item_clicado = self.tree.currentItem()
