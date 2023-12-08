@@ -14,15 +14,19 @@ class ConsultaApp(QWidget):
         
         self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS")
         
+        # Configurar o ícone da janela
+        icon_path = "010.png"
+        self.setWindowIcon(QIcon(icon_path))
+        
         # Ajuste a cor de fundo da janela
         self.setAutoFillBackground(True)
         palette = self.palette()
-        palette.setColor(self.backgroundRole(), QColor('#c7e0f7'))  # Substitua pela cor desejada
+        palette.setColor(self.backgroundRole(), QColor('#eeeeee'))  # Substitua pela cor desejada
         self.setPalette(palette)
             
         # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
         self.nova_janela = None  # Adicione esta linha
-
+        
         # Aplicar folha de estilo ao aplicativo
         self.setStyleSheet("""                                                                         
             QLabel {
@@ -40,21 +44,20 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton {
-                background-color: #2416e0;
+                background-color: #0c9af8;
                 color: #fff;
                 padding: 5px 15px;
-                border: none;
+                border: 2px;
                 border-radius: 5px;
                 font-size: 11px;
                 height: 20px;
                 font-weight: bold;
                 margin-top: 3px;
                 margin-bottom: 3px;
-                margin-right: 8px;
             }
 
             QPushButton:hover {
-                background-color: #0c9af8;  /* Nova cor ao passar o mouse sobre o botão */
+                background-color: #2416e0;  /* Nova cor ao passar o mouse sobre o botão */
             }
 
             QPushButton:pressed {

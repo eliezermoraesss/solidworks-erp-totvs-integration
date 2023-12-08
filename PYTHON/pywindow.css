@@ -1,21 +1,23 @@
 QLabel {
     color: #333;
+    font-size: large;
 }
 
 QLineEdit {
     background-color: #fff;
-    border: 1px solid #ccc;
+    border: 1px solid #eeeeee;
     padding: 5px;
     border: none;
     border-radius: 3px;
 }
 
 QPushButton {
-    background-color: #0c9af8 147, 216);
+    background-color: #c7e0f7, 158, 192), 116, 192) 147, 216);
     color: #fff;
     padding: 5px 10px;
     border: none;
     border-radius: 3px;
+    font-height: bold
 }
 
 QPushButton:hover {
