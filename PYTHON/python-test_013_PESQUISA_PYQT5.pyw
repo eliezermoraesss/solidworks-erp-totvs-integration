@@ -39,7 +39,7 @@ class ConsultaApp(QWidget):
                 background-color: #fff;
                 border: 1px solid #5ab3ee;
                 padding: 5px;
-                border: none;
+                border-color: #c0d1f7;
                 border-radius: 5px;
             }
 
@@ -50,7 +50,7 @@ class ConsultaApp(QWidget):
                 border: 2px;
                 border-radius: 5px;
                 font-size: 11px;
-                height: 20px;
+                height: 18px;
                 font-weight: bold;
                 margin-top: 3px;
                 margin-bottom: 3px;
@@ -72,6 +72,7 @@ class ConsultaApp(QWidget):
                 background-color: #7d85f0;
                 color: #fff;
                 padding: 5px;
+                height: 18px;
             }
 
             QTableWidget QHeaderView::section:horizontal {
@@ -145,7 +146,7 @@ class ConsultaApp(QWidget):
         layout_linha_02.addWidget(QLabel("Tipo:"))
         layout_linha_02.addWidget(self.tipo_var)
 
-        layout_linha_02.addWidget(QLabel("Unidade de Medida:"))
+        layout_linha_02.addWidget(QLabel("Unid. Medida:"))
         layout_linha_02.addWidget(self.um_var)
 
         layout_linha_02.addWidget(QLabel("Armazém:"))
@@ -156,6 +157,8 @@ class ConsultaApp(QWidget):
         
         layout_linha_02.addWidget(QLabel("Desc. Grupo:"))
         layout_linha_02.addWidget(self.grupo_desc_var)
+        
+        layout_linha_03.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
         
         layout_linha_03.addWidget(self.btn_consultar)
         layout_linha_03.addWidget(self.btn_limpar)
@@ -196,6 +199,9 @@ class ConsultaApp(QWidget):
         self.tree.setSelectionMode(QTableWidget.SingleSelection)
         self.tree.setSortingEnabled(True)  # Permitir ordenação
         
+        # Conectar o evento itemDoubleClicked ao método copiar_linha
+        self.tree.itemDoubleClicked.connect(self.copiar_linha)
+        
         # Configurar a fonte da tabela
         fonte_tabela = QFont("Roboto", 8)  # Substitua por sua fonte desejada e tamanho
         self.tree.setFont(fonte_tabela)
@@ -206,6 +212,12 @@ class ConsultaApp(QWidget):
         
         # Conectar o evento sectionClicked ao método ordenar_tabela
         self.tree.horizontalHeader().sectionClicked.connect(self.ordenar_tabela)
+        
+    def copiar_linha(self, item):
+        # Verificar se um item foi clicado
+        if item is not None:
+            valor_campo = item.text()
+            pyperclip.copy(str(valor_campo))
         
     def ordenar_tabela(self, logicalIndex):
         # Obter o índice real da coluna (considerando a ordem de classificação)
