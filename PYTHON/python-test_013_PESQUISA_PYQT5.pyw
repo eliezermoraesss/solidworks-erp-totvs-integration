@@ -44,7 +44,7 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton {
-                background-color: #0c9af8;
+                background-color: #2416e0;
                 color: #fff;
                 padding: 5px 15px;
                 border: 2px;
@@ -57,11 +57,11 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #2416e0;  /* Nova cor ao passar o mouse sobre o botão */
+                background-color: #0c9af8;  /* Nova cor ao passar o mouse sobre o botão */
             }
 
             QPushButton:pressed {
-                background-color: #ef08f7;  /* Nova cor ao clicar no botão */
+                background-color: #6703c5;  /* Nova cor ao clicar no botão */
             }
 
             QTableWidget {
