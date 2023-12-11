@@ -32,6 +32,10 @@ def validar_formato_codigos(df_excel, posicao_coluna_codigo):
     validacao_codigos = df_excel.iloc[:, posicao_coluna_codigo].apply(lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
 
     return validacao_codigos
+
+def verificar_codigo_duplicado(df_excel):
+    codigos_duplicados = df_excel.iloc[:, posicao_coluna_codigo_excel][df_excel.iloc[:, posicao_coluna_codigo_excel].duplicated()]
+    return codigos_duplicados
     
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 print(nome_desenho)
@@ -84,6 +88,12 @@ try:
 
     if not valid_quantidades.all():
         ctypes.windll.user32.MessageBoxW(0, "Quantidades inválidas encontradas. As quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.", "Erro", 0)
+        
+    codigos_duplicados = verificar_codigo_duplicado(df_excel)
+    
+    # Exibe uma mensagem se houver códigos duplicados
+    if not codigos_duplicados.empty:
+        raise ValueError("Códigos duplicados encontrados. Programa encerrado.")
 
     if valid_codigos.all() and valid_quantidades.all():
 
@@ -104,10 +114,13 @@ try:
 
         if codigos_removidos_bom:
             ctypes.windll.user32.MessageBoxW(0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
-
+            
 except pyodbc.Error as ex:
     # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
     ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro", 0)
+
+except ValueError as ve:
+    ctypes.windll.user32.MessageBoxW(0, f"Códigos duplicados encontrados: {codigos_duplicados.tolist()}", "Aviso", 0)
 
 finally:
     # Fecha a conexão com o banco de dados
