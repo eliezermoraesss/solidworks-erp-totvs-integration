@@ -17,7 +17,21 @@ def ler_variavel_ambiente_codigo_desenho():
 
 def delete_file_if_exists(excel_file_path):
     if os.path.exists(excel_file_path):
-        os.remove(excel_file_path)
+        os.remove(excel_file_path)     
+        
+def verificar_cadastro_produtos(codigos):
+    codigos_sem_cadastro = []
+    for codigo_produto in codigos:
+        query_consulta_produto = f"""
+        SELECT B1_COD FROM PROTHEUS12_R27.dbo.SB1010 WHERE B1_COD = '{codigo_produto}';
+        """
+        cursor.execute(query_consulta_produto)
+        resultado = cursor.fetchone()
+
+        if not resultado:
+            codigos_sem_cadastro.append(codigo_produto)
+
+    return codigos_sem_cadastro
     
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 print(nome_desenho)
@@ -90,6 +104,13 @@ try:
 
         if codigos_removidos_bom:
             ctypes.windll.user32.MessageBoxW(0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
+            
+        # Verificar cadastro dos códigos adicionados
+        codigos_sem_cadastro = verificar_cadastro_produtos(codigos_adicionados_bom)
+
+        if codigos_sem_cadastro:
+            mensagem = f"Os seguintes códigos não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}"
+            ctypes.windll.user32.MessageBoxW(0, mensagem, "Códigos sem Cadastro", 1)
 
 except pyodbc.Error as ex:
     # Exibe uma caixa de diálogo se a conexão ou a consulta falhar

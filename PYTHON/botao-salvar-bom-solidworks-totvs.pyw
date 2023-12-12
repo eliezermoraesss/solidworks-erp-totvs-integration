@@ -33,9 +33,23 @@ def validar_formato_codigos(df_excel, posicao_coluna_codigo):
 
     return validacao_codigos
 
-def verificar_codigo_duplicado(df_excel):
-    codigos_duplicados = df_excel.iloc[:, posicao_coluna_codigo_excel][df_excel.iloc[:, posicao_coluna_codigo_excel].duplicated()]
-    return codigos_duplicados
+def verificar_codigo_repetido(df_excel):
+    codigos_repetidos = df_excel.iloc[:, posicao_coluna_codigo_excel][df_excel.iloc[:, posicao_coluna_codigo_excel].duplicated()]
+    return codigos_repetidos
+
+def verificar_cadastro_produtos(codigos):
+    codigos_sem_cadastro = []
+    for codigo_produto in codigos:
+        query_consulta_produto = f"""
+        SELECT B1_COD FROM PROTHEUS12_R27.dbo.SB1010 WHERE B1_COD = '{codigo_produto}';
+        """
+        cursor.execute(query_consulta_produto)
+        resultado = cursor.fetchone()
+
+        if not resultado:
+            codigos_sem_cadastro.append(codigo_produto)
+
+    return codigos_sem_cadastro
     
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 print(nome_desenho)
@@ -89,11 +103,11 @@ try:
     if not valid_quantidades.all():
         ctypes.windll.user32.MessageBoxW(0, "Quantidades inválidas encontradas. As quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.", "Erro", 0)
         
-    codigos_duplicados = verificar_codigo_duplicado(df_excel)
+    codigos_repetidos = verificar_codigo_repetido(df_excel)
     
-    # Exibe uma mensagem se houver códigos duplicados
-    if not codigos_duplicados.empty:
-        raise ValueError("Códigos duplicados encontrados. Programa encerrado.")
+    # Exibe uma mensagem se houver códigos repetidos
+    if not codigos_repetidos.empty:
+        raise ValueError("Códigos repetidos encontrados.")
 
     if valid_codigos.all() and valid_quantidades.all():
 
@@ -115,12 +129,19 @@ try:
         if codigos_removidos_bom:
             ctypes.windll.user32.MessageBoxW(0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
             
+        # Verificar cadastro dos códigos em comum e adicionados
+        codigos_sem_cadastro = verificar_cadastro_produtos(codigos_em_comum + codigos_adicionados_bom)
+
+        if codigos_sem_cadastro:
+            mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
+            ctypes.windll.user32.MessageBoxW(0, mensagem, "Códigos sem Cadastro", 1)
+            
 except pyodbc.Error as ex:
     # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
     ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro", 0)
 
 except ValueError as ve:
-    ctypes.windll.user32.MessageBoxW(0, f"Códigos duplicados encontrados: {codigos_duplicados.tolist()}", "Aviso", 0)
+    ctypes.windll.user32.MessageBoxW(0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
 
 finally:
     # Fecha a conexão com o banco de dados
