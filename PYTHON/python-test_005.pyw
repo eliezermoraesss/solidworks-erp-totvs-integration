@@ -17,7 +17,7 @@ def ler_variavel_ambiente_codigo_desenho():
 
 def delete_file_if_exists(excel_file_path):
     if os.path.exists(excel_file_path):
-        os.remove(excel_file_path)       
+        os.remove(excel_file_path)
     
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 print(nome_desenho)

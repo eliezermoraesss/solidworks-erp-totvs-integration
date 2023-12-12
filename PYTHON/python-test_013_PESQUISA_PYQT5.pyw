@@ -1,12 +1,13 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
-    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox
+    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices, QColor
 from PyQt5.QtCore import Qt, QUrl, QCoreApplication
 import pyodbc
 import pyperclip
 import os
 import time
+import pandas as pd
 
 class ConsultaApp(QWidget):
     def __init__(self):
@@ -113,6 +114,11 @@ class ConsultaApp(QWidget):
         self.btn_abrir_desenho.clicked.connect(self.abrir_desenho)
         self.btn_abrir_desenho.setMinimumWidth(100)  # Definindo o comprimento mínimo
         
+        self.btn_exportar_excel = QPushButton("Exportar Excel", self)
+        self.btn_exportar_excel.clicked.connect(self.exportar_excel)
+        self.btn_exportar_excel.setMinimumWidth(100)
+        self.btn_exportar_excel.setEnabled(False)  # Desativar inicialmente
+        
         self.btn_fechar = QPushButton("Fechar", self)
         self.btn_fechar.clicked.connect(self.fechar_janela)
         self.btn_fechar.setMinimumWidth(100)  # Definindo o comprimento mínimo
@@ -164,6 +170,7 @@ class ConsultaApp(QWidget):
         layout_linha_03.addWidget(self.btn_limpar)
         layout_linha_03.addWidget(self.btn_nova_janela)
         layout_linha_03.addWidget(self.btn_abrir_desenho)
+        layout_linha_03.addWidget(self.btn_exportar_excel)
         layout_linha_03.addWidget(self.btn_fechar)
         
         # Adicione um espaçador esticável para centralizar os botões
@@ -176,6 +183,35 @@ class ConsultaApp(QWidget):
         layout.addWidget(self.tree)
 
         self.setLayout(layout)
+    
+    def exportar_excel(self):
+        # Obter o caminho do arquivo para salvar
+        file_path, _ = QFileDialog.getSaveFileName(self, 'Salvar como', '', 'Arquivos Excel (*.xlsx);;Todos os arquivos (*)')
+
+        if file_path:
+            # Obter os dados da tabela
+            data = self.obter_dados_tabela()
+
+            # Criar um DataFrame pandas
+            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM",
+                                             "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."])
+
+            # Salvar o DataFrame como um arquivo Excel
+            df.to_excel(file_path, index=False)
+            
+    def obter_dados_tabela(self):
+        # Obter os dados da tabela
+        data = []
+        for i in range(self.tree.rowCount()):
+            row_data = []
+            for j in range(self.tree.columnCount()):
+                item = self.tree.item(i, j)
+                if item is not None:
+                    row_data.append(item.text())
+                else:
+                    row_data.append("")
+            data.append(row_data)
+        return data
 
     def configurar_campos(self):
         self.codigo_var
@@ -291,6 +327,7 @@ class ConsultaApp(QWidget):
                     
                 # Permitir que a interface gráfica seja atualizada
                 QCoreApplication.processEvents()
+            
                 
             # Calcular a largura total das colunas
             largura_total_colunas = self.tree.horizontalHeader().length()
@@ -301,6 +338,9 @@ class ConsultaApp(QWidget):
             # Ajustar a largura da janela
             nova_largura_janela = max(largura_minima_janela, largura_total_colunas + 100)  # Adicione uma folga de 20 pixels
             self.setFixedWidth(nova_largura_janela)
+            
+            # Ativar o botão Exportar Excel após o carregamento da tabela
+            self.btn_exportar_excel.setEnabled(True)
 
         except pyodbc.Error as ex:
             print(f"Falha na consulta. Erro: {str(ex)}")
