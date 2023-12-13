@@ -9,15 +9,7 @@ server = 'SVRERP,1433'
 database = 'PROTHEUS12_R27'
 username = 'coognicao'
 password = '0705@Abc'
-driver = '{ODBC Driver 17 for SQL Server}'
-
-def ler_variavel_ambiente_codigo_desenho():
-    # Recupera o valor da variável de ambiente
-    return os.getenv('CODIGO_DESENHO')
-
-def delete_file_if_exists(excel_file_path):
-    if os.path.exists(excel_file_path):
-        os.remove(excel_file_path)       
+driver = '{ODBC Driver 17 for SQL Server}'   
         
 def validar_formato_codigos(df_excel, posicao_coluna_codigo):
     # Valida os códigos do Excel
@@ -53,33 +45,26 @@ def verificar_cadastro_produtos(codigos):
     return codigos_sem_cadastro
 
 def remover_linhas_duplicadas_e_consolidar_quantidade(df):
-    # Remove linhas duplicadas com base nos campos de código e descrição
-    df_sem_duplicatas = df.drop_duplicates(subset=[posicao_coluna_codigo_excel, posicao_coluna_descricao_excel])
+    # Agrupa o DataFrame pela combinação única de código e descrição
+    grouped = df.groupby([posicao_coluna_codigo_excel, posicao_coluna_descricao_excel])
 
-    # Inicializa um dicionário para armazenar as quantidades consolidadas
-    quantidades_consolidadas = {}
+    # Inicializa um novo DataFrame para armazenar o resultado
+    df_sem_duplicatas = pd.DataFrame(columns=df.columns)
 
-    # Itera sobre as linhas originais para consolidar as quantidades
-    for index, row in df.iterrows():
-        codigo = row[posicao_coluna_codigo_excel]
-        descricao = row[posicao_coluna_descricao_excel]
-        quantidade = row[posicao_coluna_quantidade_excel]
+    # Itera sobre os grupos consolidando as quantidades
+    for _, group in grouped:
+        codigo = group[posicao_coluna_codigo_excel].iloc[0]
+        descricao = group[posicao_coluna_descricao_excel].iloc[0]
+        quantidade_consolidada = group[posicao_coluna_quantidade_excel].sum()
 
-        # Verifica se a linha foi removida como duplicata
-        if (codigo, descricao) not in df_sem_duplicatas[[posicao_coluna_codigo_excel, posicao_coluna_descricao_excel]].values:
-            # Adiciona a quantidade à linha correspondente nas linhas sem duplicatas
-            linha_sem_duplicata = df_sem_duplicatas[
-                (df_sem_duplicatas[posicao_coluna_codigo_excel] == codigo) & (df_sem_duplicatas[posicao_coluna_descricao_excel] == descricao)
-            ]
-            df_sem_duplicatas.at[linha_sem_duplicata.index, posicao_coluna_quantidade_excel] += quantidade
+        # Adiciona uma linha ao DataFrame sem duplicatas
+        df_sem_duplicatas = pd.concat([df_sem_duplicatas, group.head(1)])
+        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], posicao_coluna_quantidade_excel] = quantidade_consolidada
 
     return df_sem_duplicatas
     
-nome_desenho = ler_variavel_ambiente_codigo_desenho()
-print(nome_desenho)
-
 base_path = os.environ.get('TEMP')
-excel_file_path = os.path.join(base_path, nome_desenho + '.xlsx')
+excel_file_path = os.path.join(base_path, 'E7158-004-A00' + '.xlsx')
 
 # Arrays para armazenar os códigos
 codigos_adicionados_bom = [] # ITENS ADICIONADOS
@@ -94,9 +79,9 @@ try:
     cursor = conn.cursor()
 
     # Query SELECT
-    select_query = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
+    select_query = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{'E7158-004-A00'}'
         AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
+        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = 'E7158-004-A00' AND G1_REVFIM <> 'ZZZ');
     """
 
     # Executa a query SELECT e obtém os resultados em um DataFrame
@@ -119,6 +104,7 @@ try:
     df_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
 
     print(df_excel)
+    print(df_excel_sem_duplicatas)
 
     valid_codigos = validar_formato_codigos(df_excel, posicao_coluna_codigo_excel)
 
@@ -174,4 +160,3 @@ except ValueError as ve:
 finally:
     # Fecha a conexão com o banco de dados
     conn.close()
-    delete_file_if_exists(excel_file_path)

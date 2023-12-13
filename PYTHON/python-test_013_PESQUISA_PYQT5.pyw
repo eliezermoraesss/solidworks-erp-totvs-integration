@@ -22,7 +22,7 @@ class ConsultaApp(QWidget):
         # Ajuste a cor de fundo da janela
         self.setAutoFillBackground(True)
         palette = self.palette()
-        palette.setColor(self.backgroundRole(), QColor('#6703c5'))  # Substitua pela cor desejada
+        palette.setColor(self.backgroundRole(), QColor('#eeeeee'))  # Substitua pela cor desejada
         self.setPalette(palette)
             
         # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
@@ -31,7 +31,7 @@ class ConsultaApp(QWidget):
         # Aplicar folha de estilo ao aplicativo
         self.setStyleSheet("""                                                                         
             QLabel {
-                color: #FFF;
+                color: #000;
                 font-size: 11px;
                 font-weight: bold;
             }
@@ -41,16 +41,15 @@ class ConsultaApp(QWidget):
                 border: 1px solid #5ab3ee;
                 padding: 5px;
                 border-color: #c0d1f7;
-                border-radius: 9px;
-                height: 18px;
+                border-radius: 5px;
             }
 
             QPushButton {
-                background-color: #ff7b00;
+                background-color: #2416e0;
                 color: #fff;
                 padding: 5px 15px;
                 border: 2px;
-                border-radius: 9px;
+                border-radius: 5px;
                 font-size: 11px;
                 height: 18px;
                 font-weight: bold;
@@ -59,13 +58,11 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #f1b5f1;
-                color: #6703c5;
+                background-color: #0c9af8;  /* Nova cor ao passar o mouse sobre o botão */
             }
 
             QPushButton:pressed {
-                background-color: #0c9af8;
-                color: #fff
+                background-color: #6703c5;  /* Nova cor ao clicar no botão */
             }
 
             QTableWidget {
@@ -84,8 +81,8 @@ class ConsultaApp(QWidget):
             }
             
             QTableWidget::item:selected {
-                background-color: #8EC4FF;
-                color: #000;
+                background-color: #8EC4FF; /* Altere para a cor desejada */
+                color: #000; /* Cor do texto no item selecionado */
             }
             
         """)
