@@ -35,6 +35,7 @@ def validar_formato_codigos(df_excel, posicao_coluna_codigo):
 
 def verificar_codigo_repetido(df_excel):
     codigos_repetidos = df_excel.iloc[:, posicao_coluna_codigo_excel][df_excel.iloc[:, posicao_coluna_codigo_excel].duplicated()]
+    
     return codigos_repetidos
 
 def verificar_cadastro_produtos(codigos):
@@ -82,6 +83,7 @@ try:
     df_sql['G1_COMP'] = df_sql['G1_COMP'].str.strip()
 
     posicao_coluna_codigo_excel = 1
+    posicao_coluna_descricao_excel = 2
     posicao_coluna_quantidade_excel = 3
     
     # Carrega a planilha do Excel em um DataFrame
@@ -102,12 +104,6 @@ try:
 
     if not valid_quantidades.all():
         ctypes.windll.user32.MessageBoxW(0, "Quantidades inválidas encontradas. As quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.", "Erro", 0)
-        
-    codigos_repetidos = verificar_codigo_repetido(df_excel)
-    
-    # Exibe uma mensagem se houver códigos repetidos
-    if not codigos_repetidos.empty:
-        raise ValueError("Códigos repetidos encontrados.")
 
     if valid_codigos.all() and valid_quantidades.all():
 
@@ -131,10 +127,16 @@ try:
             
         # Verificar cadastro dos códigos em comum e adicionados
         codigos_sem_cadastro = verificar_cadastro_produtos(codigos_em_comum + codigos_adicionados_bom)
-
+        
         if codigos_sem_cadastro:
             mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
             ctypes.windll.user32.MessageBoxW(0, mensagem, "Códigos sem Cadastro", 1)
+            
+        codigos_repetidos = verificar_codigo_repetido(df_excel)
+    
+        # Exibe uma mensagem se houver códigos repetidos
+        if not codigos_repetidos.empty:
+            raise ValueError("Códigos repetidos encontrados.")  
             
 except pyodbc.Error as ex:
     # Exibe uma caixa de diálogo se a conexão ou a consulta falhar

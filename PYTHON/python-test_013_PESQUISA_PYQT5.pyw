@@ -13,7 +13,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS")
+        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS® - v2.0")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -22,7 +22,7 @@ class ConsultaApp(QWidget):
         # Ajuste a cor de fundo da janela
         self.setAutoFillBackground(True)
         palette = self.palette()
-        palette.setColor(self.backgroundRole(), QColor('#eeeeee'))  # Substitua pela cor desejada
+        palette.setColor(self.backgroundRole(), QColor('#6703c5'))  # Substitua pela cor desejada
         self.setPalette(palette)
             
         # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
@@ -31,7 +31,7 @@ class ConsultaApp(QWidget):
         # Aplicar folha de estilo ao aplicativo
         self.setStyleSheet("""                                                                         
             QLabel {
-                color: #000;
+                color: #FFF;
                 font-size: 11px;
                 font-weight: bold;
             }
@@ -41,15 +41,16 @@ class ConsultaApp(QWidget):
                 border: 1px solid #5ab3ee;
                 padding: 5px;
                 border-color: #c0d1f7;
-                border-radius: 5px;
+                border-radius: 9px;
+                height: 18px;
             }
 
             QPushButton {
-                background-color: #2416e0;
+                background-color: #ff7b00;
                 color: #fff;
                 padding: 5px 15px;
                 border: 2px;
-                border-radius: 5px;
+                border-radius: 9px;
                 font-size: 11px;
                 height: 18px;
                 font-weight: bold;
@@ -58,11 +59,11 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #0c9af8;  /* Nova cor ao passar o mouse sobre o botão */
+                background-color: #0c9af8;
             }
 
             QPushButton:pressed {
-                background-color: #6703c5;  /* Nova cor ao clicar no botão */
+                background-color: #6703c5;
             }
 
             QTableWidget {
@@ -81,8 +82,8 @@ class ConsultaApp(QWidget):
             }
             
             QTableWidget::item:selected {
-                background-color: #8EC4FF; /* Altere para a cor desejada */
-                color: #000; /* Cor do texto no item selecionado */
+                background-color: #8EC4FF;
+                color: #000;
             }
             
         """)
@@ -391,7 +392,7 @@ if __name__ == "__main__":
     window = ConsultaApp()
 
     largura_janela = 1024  # Substitua pelo valor desejado
-    altura_janela = 600 # Substitua pelo valor desejado
+    altura_janela = 800 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
     altura_tela = app.primaryScreen().size().height()
