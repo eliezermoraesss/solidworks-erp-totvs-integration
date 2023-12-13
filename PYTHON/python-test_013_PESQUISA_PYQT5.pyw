@@ -59,11 +59,13 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #0c9af8;
+                background-color: #f1b5f1;
+                color: #6703c5;
             }
 
             QPushButton:pressed {
-                background-color: #6703c5;
+                background-color: #0c9af8;
+                color: #fff
             }
 
             QTableWidget {
