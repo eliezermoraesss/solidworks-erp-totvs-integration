@@ -20,6 +20,16 @@ posicao_coluna_codigo_excel = 1
 posicao_coluna_descricao_excel = 2
 posicao_coluna_quantidade_excel = 3
 
+def validar_formato_codigos(df_excel, posicao_coluna_codigo):
+    formatos_codigo = [
+        r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
+        r'^(E\d{4}\-\d{3}\-\d{3})$',
+    ]
+
+    validacao_codigos = df_excel.iloc[:, posicao_coluna_codigo].apply(lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
+
+    return validacao_codigos
+
 def ler_variavel_ambiente_codigo_desenho():
     return os.getenv('CODIGO_DESENHO')
 
@@ -30,15 +40,6 @@ def obter_caminho_arquivo_excel():
 def delete_file_if_exists(excel_file_path):
     if os.path.exists(excel_file_path):
         os.remove(excel_file_path)       
-        
-def validar_formato_codigos(df_excel, posicao_coluna_codigo):
-    formatos_codigo = [
-        r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
-        r'^(E\d{4}\-\d{3}\-\d{3})$',
-    ]
-    
-    validacao_codigos = df_excel.iloc[:, posicao_coluna_codigo].apply(lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
-    return validacao_codigos
 
 def verificar_codigo_repetido(df_excel):
     codigos_repetidos = df_excel.iloc[:, posicao_coluna_codigo_excel][df_excel.iloc[:, posicao_coluna_codigo_excel].duplicated()]
@@ -102,12 +103,10 @@ try:
     
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])
-    
-    # Após a exclusão da última linha
-    df_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
 
-    valid_codigos = validar_formato_codigos(df_excel_sem_duplicatas, posicao_coluna_codigo_excel)
-    valid_quantidades = df_excel_sem_duplicatas.iloc[:, posicao_coluna_quantidade_excel].notna() & (df_excel_sem_duplicatas.iloc[:, posicao_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel_sem_duplicatas.iloc[:, posicao_coluna_quantidade_excel], errors='coerce') > 0)
+    valid_codigos = validar_formato_codigos(df_excel, posicao_coluna_codigo_excel)
+    
+    valid_quantidades = df_excel.iloc[:, posicao_coluna_quantidade_excel].notna() & (df_excel.iloc[:, posicao_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, posicao_coluna_quantidade_excel], errors='coerce') > 0)
 
     # Exibe uma mensagem de erro se os códigos ou quantidades não estiverem no formato esperado
     if not valid_codigos.all():
@@ -117,6 +116,8 @@ try:
         ctypes.windll.user32.MessageBoxW(0, "Quantidades inválidas encontradas. As quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.", "Erro", 0)
 
     if valid_codigos.all() and valid_quantidades.all():
+        
+        df_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
 
         # Remove espaços em branco da coluna número 2
         df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()
