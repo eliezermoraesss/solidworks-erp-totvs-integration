@@ -58,11 +58,11 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #0c9af8;  /* Nova cor ao passar o mouse sobre o botão */
+                background-color: #0c9af8;
             }
 
             QPushButton:pressed {
-                background-color: #6703c5;  /* Nova cor ao clicar no botão */
+                background-color: #6703c5;
             }
 
             QTableWidget {
@@ -81,10 +81,10 @@ class ConsultaApp(QWidget):
             }
             
             QTableWidget::item:selected {
-                background-color: #8EC4FF; /* Altere para a cor desejada */
-                color: #000; /* Cor do texto no item selecionado */
-            }
-            
+                background-color: #5f00b8;
+                color: #fff;
+                font-weight: bold;
+            }        
         """)
             
         self.codigo_var = QLineEdit(self)
