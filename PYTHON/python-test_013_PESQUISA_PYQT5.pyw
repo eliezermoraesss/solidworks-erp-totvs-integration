@@ -81,7 +81,7 @@ class ConsultaApp(QWidget):
             }
             
             QTableWidget::item:selected {
-                background-color: #5f00b8;
+                background-color: #41007e;
                 color: #fff;
                 font-weight: bold;
             }        
