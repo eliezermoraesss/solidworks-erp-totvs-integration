@@ -11,6 +11,11 @@ username = 'coognicao'
 password = '0705@Abc'
 driver = '{ODBC Driver 17 for SQL Server}'
 
+# Arrays para armazenar os códigos
+codigos_adicionados_bom = [] # ITENS ADICIONADOS
+codigos_removidos_bom = [] # ITENS REMOVIDOS
+codigos_em_comum = [] # ITENS EM COMUM
+
 def ler_variavel_ambiente_codigo_desenho():
     # Recupera o valor da variável de ambiente
     return os.getenv('CODIGO_DESENHO')
@@ -52,39 +57,37 @@ def verificar_cadastro_produtos(codigos):
 
     return codigos_sem_cadastro
 
-def remover_linhas_duplicadas_e_consolidar_quantidade(df):
-    # Remove linhas duplicadas com base nos campos de código e descrição
-    df_sem_duplicatas = df.drop_duplicates(subset=[posicao_coluna_codigo_excel, posicao_coluna_descricao_excel])
+def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
+    # Agrupa o DataFrame pela combinação única de código e descrição
+    grouped = df_excel.groupby([posicao_coluna_codigo_excel, posicao_coluna_descricao_excel])
 
-    # Inicializa um dicionário para armazenar as quantidades consolidadas
-    quantidades_consolidadas = {}
+    # Inicializa um novo DataFrame para armazenar o resultado
+    df_sem_duplicatas = pd.DataFrame(columns=df_excel.columns)
 
-    # Itera sobre as linhas originais para consolidar as quantidades
-    for index, row in df.iterrows():
-        codigo = row[posicao_coluna_codigo_excel]
-        descricao = row[posicao_coluna_descricao_excel]
-        quantidade = row[posicao_coluna_quantidade_excel]
+    # Itera sobre os grupos consolidando as quantidades
+    for _, group in grouped:
+        codigo = group[posicao_coluna_codigo_excel].iloc[0]
+        descricao = group[posicao_coluna_descricao_excel].iloc[0]
+        quantidade_consolidada = group[posicao_coluna_quantidade_excel].sum()
 
-        # Verifica se a linha foi removida como duplicata
-        if (codigo, descricao) not in df_sem_duplicatas[[posicao_coluna_codigo_excel, posicao_coluna_descricao_excel]].values:
-            # Adiciona a quantidade à linha correspondente nas linhas sem duplicatas
-            linha_sem_duplicata = df_sem_duplicatas[
-                (df_sem_duplicatas[posicao_coluna_codigo_excel] == codigo) & (df_sem_duplicatas[posicao_coluna_descricao_excel] == descricao)
-            ]
-            df_sem_duplicatas.at[linha_sem_duplicata.index, posicao_coluna_quantidade_excel] += quantidade
+        # Adiciona uma linha ao DataFrame sem duplicatas
+        df_sem_duplicatas = pd.concat([df_sem_duplicatas, group.head(1)])
+        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], posicao_coluna_quantidade_excel] = quantidade_consolidada
 
     return df_sem_duplicatas
-    
+
+def obter_caminho_arquivo_excel():
+    base_path = os.environ.get('TEMP')
+    return os.path.join(base_path, nome_desenho + '.xlsx')
+
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
-print(nome_desenho)
+excel_file_path = obter_caminho_arquivo_excel()
 
-base_path = os.environ.get('TEMP')
-excel_file_path = os.path.join(base_path, nome_desenho + '.xlsx')
-
-# Arrays para armazenar os códigos
-codigos_adicionados_bom = [] # ITENS ADICIONADOS
-codigos_removidos_bom = [] # ITENS REMOVIDOS
-codigos_em_comum = [] # ITENS EM COMUM
+# Query SELECT
+select_query = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
+        AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
+    """
 
 # Tente estabelecer a conexão com o banco de dados
 try:
@@ -92,12 +95,6 @@ try:
     
     # Cria um cursor para executar comandos SQL
     cursor = conn.cursor()
-
-    # Query SELECT
-    select_query = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
-        AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
-    """
 
     # Executa a query SELECT e obtém os resultados em um DataFrame
     df_sql = pd.read_sql(select_query, conn)
@@ -118,11 +115,8 @@ try:
     # Após a exclusão da última linha
     df_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
 
-    print(df_excel)
-
-    valid_codigos = validar_formato_codigos(df_excel, posicao_coluna_codigo_excel)
-
-    valid_quantidades = df_excel.iloc[:, posicao_coluna_quantidade_excel].notna() & (df_excel.iloc[:, posicao_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, posicao_coluna_quantidade_excel], errors='coerce') > 0)
+    valid_codigos = validar_formato_codigos(df_excel_sem_duplicatas, posicao_coluna_codigo_excel)
+    valid_quantidades = df_excel_sem_duplicatas.iloc[:, posicao_coluna_quantidade_excel].notna() & (df_excel_sem_duplicatas.iloc[:, posicao_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel_sem_duplicatas.iloc[:, posicao_coluna_quantidade_excel], errors='coerce') > 0)
 
     # Exibe uma mensagem de erro se os códigos ou quantidades não estiverem no formato esperado
     if not valid_codigos.all():
@@ -134,12 +128,12 @@ try:
     if valid_codigos.all() and valid_quantidades.all():
 
         # Remove espaços em branco da coluna número 2
-        df_excel.iloc[:, posicao_coluna_codigo_excel] = df_excel.iloc[:, posicao_coluna_codigo_excel].str.strip()
+        df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()
 
         # Encontra códigos que são iguais entre SQL e Excel
-        codigos_em_comum = df_sql['G1_COMP'].loc[df_sql['G1_COMP'].isin(df_excel.iloc[:, posicao_coluna_codigo_excel])].tolist()
-        codigos_adicionados_bom = df_excel.iloc[:, posicao_coluna_codigo_excel].loc[~df_excel.iloc[:, posicao_coluna_codigo_excel].isin(df_sql['G1_COMP'])].tolist()
-        codigos_removidos_bom = df_sql['G1_COMP'].loc[~df_sql['G1_COMP'].isin(df_excel.iloc[:, posicao_coluna_codigo_excel])].tolist()
+        codigos_em_comum = df_sql['G1_COMP'].loc[df_sql['G1_COMP'].isin(df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
+        codigos_adicionados_bom = df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].loc[~df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].isin(df_sql['G1_COMP'])].tolist()
+        codigos_removidos_bom = df_sql['G1_COMP'].loc[~df_sql['G1_COMP'].isin(df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
 
         # Exibe uma caixa de diálogo com base nos resultados
         if codigos_em_comum:
@@ -158,18 +152,15 @@ try:
             mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
             ctypes.windll.user32.MessageBoxW(0, mensagem, "Códigos sem Cadastro", 1)
             
-        codigos_repetidos = verificar_codigo_repetido(df_excel)
+        codigos_repetidos = verificar_codigo_repetido(df_excel_sem_duplicatas)
     
         # Exibe uma mensagem se houver códigos repetidos
         if not codigos_repetidos.empty:
-            raise ValueError("Códigos repetidos encontrados.")  
+            ctypes.windll.user32.MessageBoxW(0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
             
 except pyodbc.Error as ex:
     # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
     ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro", 0)
-
-except ValueError as ve:
-    ctypes.windll.user32.MessageBoxW(0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
 
 finally:
     # Fecha a conexão com o banco de dados
