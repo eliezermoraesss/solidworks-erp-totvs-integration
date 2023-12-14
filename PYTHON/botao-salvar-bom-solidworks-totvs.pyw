@@ -16,31 +16,32 @@ codigos_adicionados_bom = [] # ITENS ADICIONADOS
 codigos_removidos_bom = [] # ITENS REMOVIDOS
 codigos_em_comum = [] # ITENS EM COMUM
 
+posicao_coluna_codigo_excel = 1
+posicao_coluna_descricao_excel = 2
+posicao_coluna_quantidade_excel = 3
+
 def ler_variavel_ambiente_codigo_desenho():
-    # Recupera o valor da variável de ambiente
     return os.getenv('CODIGO_DESENHO')
+
+def obter_caminho_arquivo_excel():
+    base_path = os.environ.get('TEMP')
+    return os.path.join(base_path, nome_desenho + '.xlsx')
 
 def delete_file_if_exists(excel_file_path):
     if os.path.exists(excel_file_path):
         os.remove(excel_file_path)       
         
 def validar_formato_codigos(df_excel, posicao_coluna_codigo):
-    # Valida os códigos do Excel
-
-    # Formatos de código permitidos
     formatos_codigo = [
         r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
         r'^(E\d{4}\-\d{3}\-\d{3})$',
     ]
-
-    # Valida cada código
+    
     validacao_codigos = df_excel.iloc[:, posicao_coluna_codigo].apply(lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
-
     return validacao_codigos
 
 def verificar_codigo_repetido(df_excel):
     codigos_repetidos = df_excel.iloc[:, posicao_coluna_codigo_excel][df_excel.iloc[:, posicao_coluna_codigo_excel].duplicated()]
-    
     return codigos_repetidos
 
 def verificar_cadastro_produtos(codigos):
@@ -54,7 +55,7 @@ def verificar_cadastro_produtos(codigos):
 
         if not resultado:
             codigos_sem_cadastro.append(codigo_produto)
-
+            
     return codigos_sem_cadastro
 
 def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
@@ -76,10 +77,6 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 
     return df_sem_duplicatas
 
-def obter_caminho_arquivo_excel():
-    base_path = os.environ.get('TEMP')
-    return os.path.join(base_path, nome_desenho + '.xlsx')
-
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel()
 
@@ -92,8 +89,6 @@ select_query = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome
 # Tente estabelecer a conexão com o banco de dados
 try:
     conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
-    
-    # Cria um cursor para executar comandos SQL
     cursor = conn.cursor()
 
     # Executa a query SELECT e obtém os resultados em um DataFrame
@@ -101,10 +96,6 @@ try:
 
     # Remove espaços em branco da coluna 'G1_COD'
     df_sql['G1_COMP'] = df_sql['G1_COMP'].str.strip()
-
-    posicao_coluna_codigo_excel = 1
-    posicao_coluna_descricao_excel = 2
-    posicao_coluna_quantidade_excel = 3
     
     # Carrega a planilha do Excel em um DataFrame
     df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
