@@ -124,6 +124,9 @@ class ConsultaApp(QWidget):
         self.btn_fechar.setMinimumWidth(100)  # Definindo o comprimento mínimo
 
         self.configurar_tabela()
+        
+        # Configurar a tabela
+        self.configurar_tabela_tooltips()
 
         # Conectar o evento returnPressed dos campos de entrada ao método executar_consulta
         self.codigo_var.returnPressed.connect(self.executar_consulta)
@@ -248,6 +251,26 @@ class ConsultaApp(QWidget):
         
         # Conectar o evento sectionClicked ao método ordenar_tabela
         self.tree.horizontalHeader().sectionClicked.connect(self.ordenar_tabela)
+        
+    def configurar_tabela_tooltips(self):
+        headers = ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."]
+        tooltips = [
+            "Código do produto",
+            "Descrição do produto",
+            "Descrição completa do produto",
+            "Tipo de produto\n\nMC - Material de consumo\nMP - Matéria-prima\nPA - Produto Acabado\nPI - Produto Intermediário\nSV - Serviço",
+            "Unidade de medida",
+            "Armazém padrão\n\n01 - Matéria-prima\n02 - Produto Intermediário\n03 - Produto Comercial\n04 - Produto Acabado",
+            "Grupo do produto",
+            "Descrição do grupo do produto",
+            "Centro de custo",
+            "Indica se o produto está bloqueado",
+            "Revisão atual do produto"
+        ]
+
+        for i, header in enumerate(headers):
+            self.tree.setHorizontalHeaderItem(i, QTableWidgetItem(header))
+            self.tree.horizontalHeaderItem(i).setToolTip(tooltips[i])
         
     def copiar_linha(self, item):
         # Verificar se um item foi clicado

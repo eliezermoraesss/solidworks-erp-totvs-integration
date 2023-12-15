@@ -35,7 +35,7 @@ def validar_formato_codigos(df_excel, posicao_coluna_codigo):
 def ler_variavel_ambiente_codigo_desenho():
     return os.getenv('CODIGO_DESENHO')
 
-def obter_caminho_arquivo_excel(codigo_desenho):
+def obter_caminho_arquivo_excel():
     base_path = os.environ.get('TEMP')
     return os.path.join(base_path, nome_desenho + '.xlsx')
 
@@ -79,8 +79,7 @@ def verificar_cadastro_produtos(codigos):
         # Fecha a conexão com o banco de dados se estiver aberta
         if 'conn' in locals():
             conn.close()
-
-
+            
 def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     # Agrupa o DataFrame pela combinação única de código e descrição
     grouped = df_excel.groupby([posicao_coluna_codigo_excel, posicao_coluna_descricao_excel])
@@ -101,7 +100,8 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     return df_sem_duplicatas
 
 
-def validacao_de_dados_bom(excel_file_path):
+def validacao_de_dados_bom():
+    nome_desenho = ler_variavel_ambiente_codigo_desenho()
 
     # Carrega a planilha do Excel em um DataFrame
     df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
@@ -126,32 +126,35 @@ def validacao_de_dados_bom(excel_file_path):
 
     if valid_codigos.all() and valid_quantidades.all():
 
-        bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
+        df_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(
+            df_excel)
 
         # Remove espaços em branco da coluna número 2
-        bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()
+        df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()
 
-        codigos_sem_cadastro = verificar_cadastro_produtos(bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())
+        # Verificar cadastro dos códigos em comum e adicionados
+        codigos_sem_cadastro = verificar_cadastro_produtos(df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())
 
         if codigos_sem_cadastro:
             mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
             ctypes.windll.user32.MessageBoxW(
                 0, mensagem, "Códigos sem Cadastro", 1)
 
-        codigos_repetidos = verificar_codigo_repetido(bom_excel_sem_duplicatas)
+        codigos_repetidos = verificar_codigo_repetido(df_excel_sem_duplicatas)
 
         # Exibe uma mensagem se houver códigos repetidos
         if not codigos_repetidos.empty:
             ctypes.windll.user32.MessageBoxW(
                 0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
             
-    return bom_excel_sem_duplicatas
+    print(df_excel_sem_duplicatas)
+    return df_excel_sem_duplicatas
 
 def verificar_se_existe_estrutura_totvs(nome_desenho):
-
-    query_consulta_estrutura_totvs = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
+    # Query SELECT
+    query_consulta_estrutura_totvs = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{'E7158-004-A00'}'
         AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
+        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = 'E7158-004-A00' AND G1_REVFIM <> 'ZZZ');
     """
     # Tente estabelecer a conexão com o banco de dados
     try:
@@ -159,9 +162,9 @@ def verificar_se_existe_estrutura_totvs(nome_desenho):
         cursor = conn.cursor()
 
         # Executa a query SELECT e obtém os resultados em um DataFrame
-        resultado_query_consulta_estrutura_totvs = pd.read_sql(query_consulta_estrutura_totvs, conn)
+        df_sql = pd.read_sql(query_consulta_estrutura_totvs, conn)
 
-        return resultado_query_consulta_estrutura_totvs
+        return df_sql
 
     except pyodbc.Error as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
@@ -172,23 +175,19 @@ def verificar_se_existe_estrutura_totvs(nome_desenho):
         # Fecha a conexão com o banco de dados se estiver aberta
         if 'conn' in locals():
             conn.close()
-            
-            
-def criar_nova_estrutura_totvs():
-    return None
 
 
-def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
+def alterar_estrutura_existente(df_excel_sem_duplicatas, df_sql):
     # Remove espaços em branco da coluna 'G1_COD'
-    resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs['G1_COMP'].str.strip()
+    df_sql['G1_COMP'] = df_sql['G1_COMP'].str.strip()
 
     # Encontra códigos que são iguais entre SQL e Excel
-    codigos_em_comum = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-        bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
-    codigos_adicionados_bom = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].loc[~bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].isin(
-        resultado_query_consulta_estrutura_totvs['G1_COMP'])].tolist()
-    codigos_removidos_bom = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-        bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
+    codigos_em_comum = df_sql['G1_COMP'].loc[df_sql['G1_COMP'].isin(
+        df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
+    codigos_adicionados_bom = df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].loc[~df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].isin(
+        df_sql['G1_COMP'])].tolist()
+    codigos_removidos_bom = df_sql['G1_COMP'].loc[~df_sql['G1_COMP'].isin(
+        df_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
 
     # Exibe uma caixa de diálogo com base nos resultados
     if codigos_em_comum:
@@ -203,12 +202,13 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
         ctypes.windll.user32.MessageBoxW(
             0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
 
-nome_desenho = ler_variavel_ambiente_codigo_desenho()
-excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
+nome_desenho =  'E7158-004-A00'
+excel_file_path = obter_caminho_arquivo_excel()
 
-bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
-resultado_query_consulta_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
+df_excel_sem_duplicatas = validacao_de_dados_bom()
 
-alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
+df_sql = verificar_se_existe_estrutura_totvs(nome_desenho)
 
-delete_file_if_exists(excel_file_path)
+alterar_estrutura_existente(df_excel_sem_duplicatas, df_sql)
+
+#delete_file_if_exists(excel_file_path)
