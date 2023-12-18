@@ -7,7 +7,7 @@ from datetime import date
 
 # Parâmetros de conexão com o banco de dados SQL Server
 server = 'SVRERP,1433'
-database = 'PROTHEUS12_R27'
+database = 'PROTHEUS1233_HML'
 username = 'coognicao'
 password = '0705@Abc'
 driver = '{ODBC Driver 17 for SQL Server}'
@@ -36,9 +36,10 @@ def validar_formato_codigos(df_excel, posicao_coluna_codigo):
 def ler_variavel_ambiente_codigo_desenho():
     return os.getenv('CODIGO_DESENHO')
 
+
 def obter_caminho_arquivo_excel(codigo_desenho):
     base_path = os.environ.get('TEMP')
-    return os.path.join(base_path, nome_desenho + '.xlsx')
+    return os.path.join(base_path, codigo_desenho + '.xlsx')
 
 
 def delete_file_if_exists(excel_file_path):
@@ -47,8 +48,13 @@ def delete_file_if_exists(excel_file_path):
 
 
 def verificar_codigo_repetido(df_excel):
+    
     codigos_repetidos = df_excel.iloc[:, posicao_coluna_codigo_excel][df_excel.iloc[:, posicao_coluna_codigo_excel].duplicated()]
-    return codigos_repetidos
+    
+    # Exibe uma mensagem se houver códigos repetidos
+    if not codigos_repetidos.empty:
+        ctypes.windll.user32.MessageBoxW(
+            0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
 
 
 def verificar_cadastro_produtos(codigos):            
@@ -60,7 +66,7 @@ def verificar_cadastro_produtos(codigos):
         
         for codigo_produto in codigos:
             query_consulta_produto = f"""
-            SELECT B1_COD FROM PROTHEUS12_R27.dbo.SB1010 WHERE B1_COD = '{codigo_produto}';
+            SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto}';
             """
             
             cursor.execute(query_consulta_produto)
@@ -69,12 +75,15 @@ def verificar_cadastro_produtos(codigos):
             if not resultado:
                 codigos_sem_cadastro.append(codigo_produto)
 
-                return codigos_sem_cadastro
+        if codigos_sem_cadastro:
+                mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
+                ctypes.windll.user32.MessageBoxW(
+                    0, mensagem, "Códigos sem Cadastro", 1)
 
-    except pyodbc.Error as ex:
+    except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
         ctypes.windll.user32.MessageBoxW(
-            0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro", 0)
+            0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Verificar Cadastro", 0)
 
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
@@ -127,31 +136,18 @@ def validacao_de_dados_bom(excel_file_path):
     if valid_codigos.all() and valid_quantidades.all():
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
-
-        # Remove espaços em branco da coluna número 2
         bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()
-
-        codigos_sem_cadastro = verificar_cadastro_produtos(bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())
-
-        if codigos_sem_cadastro:
-            mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
-            ctypes.windll.user32.MessageBoxW(
-                0, mensagem, "Códigos sem Cadastro", 1)
-
-        codigos_repetidos = verificar_codigo_repetido(bom_excel_sem_duplicatas)
-
-        # Exibe uma mensagem se houver códigos repetidos
-        if not codigos_repetidos.empty:
-            ctypes.windll.user32.MessageBoxW(
-                0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
+        verificar_cadastro_produtos(bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())
+        verificar_codigo_repetido(bom_excel_sem_duplicatas)
             
     return bom_excel_sem_duplicatas
 
+
 def verificar_se_existe_estrutura_totvs(nome_desenho):
 
-    query_consulta_estrutura_totvs = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
+    query_consulta_estrutura_totvs = f"""SELECT * FROM {database}.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
         AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
+        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
     """
     # Tente estabelecer a conexão com o banco de dados
     try:
@@ -163,42 +159,123 @@ def verificar_se_existe_estrutura_totvs(nome_desenho):
 
         return resultado_query_consulta_estrutura_totvs
 
-    except pyodbc.Error as ex:
+    except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
         ctypes.windll.user32.MessageBoxW(
-            0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro", 0)
+            0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Verificar Existe Estrutura", 0)
 
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
         if 'conn' in locals():
             conn.close()
+
+            
+def obter_ultima_pk_tabela_estrutura():
+    query_ultima_pk_tabela_estrutura = f"""SELECT TOP 1 R_E_C_N_O_ FROM {database}.dbo.SG1010 ORDER BY R_E_C_N_O_ DESC;"""
+    
+    try:
+        # Uso do Context Manager para garantir o fechamento adequado da conexão
+        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            cursor = conn.cursor()
+            cursor.execute(query_ultima_pk_tabela_estrutura)
+            resultado_ultima_pk_tabela_estrutura = cursor.fetchone()
+            
+            ctypes.windll.user32.MessageBoxW(0, f"{resultado_ultima_pk_tabela_estrutura[0]}", "Valor pk", 0)
+
+            return resultado_ultima_pk_tabela_estrutura[0]
+
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ultima pk", 0)
+        return None
+    
+    
+def obter_revisao_inicial_codigo_pai(codigo_pai):
+    query_revisao_inicial = f"""SELECT B1_REVATU FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""
+    
+    try:
+        # Uso do Context Manager para garantir o fechamento adequado da conexão
+        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            cursor = conn.cursor()
+            cursor.execute(query_revisao_inicial)
+            revisao_inicial = cursor.fetchone()
+            valor_revisao_inicial = revisao_inicial[0]
+            
+            if valor_revisao_inicial in ('000', '   '):
+                valor_revisao_inicial = '001'
+            
+            ctypes.windll.user32.MessageBoxW(0, f"{codigo_pai} -> REV. {valor_revisao_inicial}", "last rev value", 0)
+
+            return valor_revisao_inicial
+
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}{revisao_inicial[0]}", "Erro Revisão", 0)
+        return None
+    
+    
+def obter_unidade_medida_codigo_filho(codigo_filho):
+    query_unidade_medida_codigo_filho = f"""SELECT B1_UM FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_filho}'"""
+    
+    try:
+        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            cursor = conn.cursor()
+            cursor.execute(query_unidade_medida_codigo_filho)
+            unidade_medida = cursor.fetchone()
+            valor_unidade_medida = unidade_medida[0]
+            
+            ctypes.windll.user32.MessageBoxW(0, f"{codigo_filho} -> REV. {valor_unidade_medida}", "Unidade Medida", 0)
+
+            return valor_unidade_medida
+
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Unidade", 0)
+        return None
+    
             
 def formatar_data_atual():
     # Formato yyyymmdd
-    data_atual_formatada = date.today().year + date.today().month + date.today().day
+    data_atual_formatada = date.today().strftime("%Y%m%d")
     return data_atual_formatada
+        
             
-def criar_nova_estrutura_totvs(codigo_pai, data_atual_formatada, bom_excel_sem_duplicatas):
+def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas): 
     
-    for item in bom_excel_sem_duplicatas:
+    ultima_pk_tabela_estrutura = obter_ultima_pk_tabela_estrutura()
+    revisao_inicial = obter_revisao_inicial_codigo_pai(codigo_pai)
+    revisao_final = revisao_inicial
+    data_atual_formatada = formatar_data_atual()
     
-        ultima_pk_tabela_estrutura = f"""SELECT TOP 1 R_E_C_N_O_ FROM PROTHEUS12_R27.dbo.SG1010 ORDER BY R_E_C_N_O_ DESC;"""
-        revisao_inicial = f"""SELECT B1_REVATU FROM PROTHEUS12_R27.dbo.SB1010 WHERE B1_COD = {codigo_pai}"""
-        unidade_medida = f"""SELECT B1_UM FROM PROTHEUS12_R27.dbo.SB1010 WHERE B1_COD = {codigo_filho}"""
+    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+    
+    try:
         
-        revisao_final = revisao_inicial
+        cursor = conn.cursor()
+            
+        for index, row in bom_excel_sem_duplicatas.iterrows():
+            ultima_pk_tabela_estrutura += 1
+            codigo_filho = row.iloc[posicao_coluna_codigo_excel]
+            quantidade = row.iloc[posicao_coluna_quantidade_excel]
+            unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+            
+            query_criar_nova_estrutura_totvs = f"""
+                INSERT INTO {database}.dbo.SG1010 
+                (G1_FILIAL, G1_COD, G1_COMP, G1_TRT, G1_XUM, G1_QUANT, G1_PERDA, G1_INI, G1_FIM, G1_OBSERV, G1_FIXVAR, G1_GROPC, G1_OPC, G1_REVINI, G1_NIV, G1_NIVINV, G1_REVFIM, 
+                G1_OK, G1_POTENCI, G1_TIPVEC, G1_VECTOR, G1_VLCOMPE, G1_LOCCONS, G1_USAALT, G1_FANTASM, G1_LISTA, D_E_L_E_T_, R_E_C_N_O_, R_E_C_D_E_L_) 
+                VALUES (N'0101', N'{codigo_pai}  ', N'{codigo_filho}  ', N'   ', N'{unidade_medida}', {quantidade}, 0.0, N'{data_atual_formatada}', N'20491231', 
+                N'                                             ', N'V', N'   ', N'    ', N'{revisao_inicial}', N'01', N'99', N'{revisao_final}', N'    ', 0.0, N'      ', N'      ', 
+                N'N', N'  ', N'1', N' ', N'          ', 
+                N' ', {ultima_pk_tabela_estrutura}, 0);
+            """
+            
+            cursor.execute(query_criar_nova_estrutura_totvs)
+            
+        conn.commit()
         
-        query_criar_nova_estrutura_totvs = f"""
-            INSERT INTO PROTHEUS12_R27.dbo.SG1010 
-            (G1_FILIAL, G1_COD, G1_COMP, G1_TRT, G1_XUM, G1_QUANT, G1_PERDA, G1_INI, G1_FIM, G1_OBSERV, G1_FIXVAR, G1_GROPC, G1_OPC, G1_REVINI, G1_NIV, G1_NIVINV, G1_REVFIM, 
-            G1_OK, G1_POTENCI, G1_TIPVEC, G1_VECTOR, G1_VLCOMPE, G1_LOCCONS, G1_USAALT, G1_FANTASM, G1_LISTA, D_E_L_E_T_, R_E_C_N_O_, R_E_C_D_E_L_) 
-            VALUES (N'0101', N'{codigo_pai}  ', N'{codigo_filho}  ', N'   ', N'{unidade_medida}', {quantidade}, 0.0, N'{data_atual_formatada}', N'20491231', 
-            N'                                             ', N'V', N'   ', N'    ', N'{revisao_inicial}', N'01', N'99', N'{revisao_final}', N'    ', 0.0, N'      ', N'      ', 
-            N'N', N'  ', N'1', N' ', N'          ', 
-            N' ', {ultima_pk_tabela_estrutura}, 0);
-        """
-
-    return None
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}{unidade_medida}", "Erro Criar Nova Estrutura", 0)
+        
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
@@ -228,14 +305,13 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
 
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
-data_atual_formatada = formatar_data_atual()
 
 bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
 resultado_query_consulta_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
 
 if resultado_query_consulta_estrutura_totvs.empty:
-    criar_nova_estrutura_totvs(nome_desenho, data_atual_formatada, bom_excel_sem_duplicatas)
-else:
-    alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
+    criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
+#else:
+    #alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
 
 delete_file_if_exists(excel_file_path)

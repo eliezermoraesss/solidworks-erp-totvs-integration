@@ -45,7 +45,7 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton {
-                background-color: #2416e0;
+                background-color: #0c9af8;
                 color: #fff;
                 padding: 5px 15px;
                 border: 2px;
@@ -58,7 +58,7 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #0c9af8;
+                background-color: #2416e0;
             }
 
             QPushButton:pressed {
