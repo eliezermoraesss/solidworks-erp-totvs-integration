@@ -57,14 +57,14 @@ def verificar_codigo_repetido(df_excel):
             0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
 
 
-def verificar_cadastro_produtos(codigos):            
+def verificar_cadastro_codigo_filho(codigos_filho):            
     try:
         conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
         cursor = conn.cursor()
 
         codigos_sem_cadastro = []
         
-        for codigo_produto in codigos:
+        for codigo_produto in codigos_filho:
             query_consulta_produto = f"""
             SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto}';
             """
@@ -147,7 +147,7 @@ def validacao_de_dados_bom(excel_file_path):
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
         bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()
-        verificar_cadastro_produtos(bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())
+        verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())
         verificar_codigo_repetido(bom_excel_sem_duplicatas)
             
     return bom_excel_sem_duplicatas
@@ -189,8 +189,6 @@ def obter_ultima_pk_tabela_estrutura():
             cursor = conn.cursor()
             cursor.execute(query_ultima_pk_tabela_estrutura)
             resultado_ultima_pk_tabela_estrutura = cursor.fetchone()
-            
-            ctypes.windll.user32.MessageBoxW(0, f"{resultado_ultima_pk_tabela_estrutura[0]}", "Valor pk", 0)
 
             return resultado_ultima_pk_tabela_estrutura[0]
 
@@ -212,8 +210,6 @@ def obter_revisao_inicial_codigo_pai(codigo_pai):
             
             if valor_revisao_inicial in ('000', '   '):
                 valor_revisao_inicial = '001'
-            
-            ctypes.windll.user32.MessageBoxW(0, f"{codigo_pai} -> REV. {valor_revisao_inicial}", "last rev value", 0)
 
             return valor_revisao_inicial
 
@@ -229,10 +225,9 @@ def obter_unidade_medida_codigo_filho(codigo_filho):
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
             cursor = conn.cursor()
             cursor.execute(query_unidade_medida_codigo_filho)
+            
             unidade_medida = cursor.fetchone()
             valor_unidade_medida = unidade_medida[0]
-            
-            ctypes.windll.user32.MessageBoxW(0, f"{codigo_filho} -> REV. {valor_unidade_medida}", "Unidade Medida", 0)
 
             return valor_unidade_medida
 
@@ -245,7 +240,28 @@ def formatar_data_atual():
     # Formato yyyymmdd
     data_atual_formatada = date.today().strftime("%Y%m%d")
     return data_atual_formatada
+
+def verificar_cadastro_codigo_pai(codigo_pai):
+    query_consulta_produto_codigo_pai = f"""SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""
+    
+    try:
+        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            cursor = conn.cursor()
+            cursor.execute(query_consulta_produto_codigo_pai)
+                
+            resultado = cursor.fetchone()
+            
+            if resultado:
+                valor_codigo_pai = resultado[0]
+                ctypes.windll.user32.MessageBoxW(0, f"{valor_codigo_pai}", "Código PAI", 0)
+                return True
+            else:
+                ctypes.windll.user32.MessageBoxW(0, f"Código PAI não encontrado", "Código PAI", 0) 
+                return False
         
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Consulta Código Pai", 0)
+        return None
             
 def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas): 
     
@@ -279,6 +295,8 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             cursor.execute(query_criar_nova_estrutura_totvs)
             
         conn.commit()
+        
+        ctypes.windll.user32.MessageBoxW(0, f"Estrutura criada com sucesso no ERP TOTVS!", "Criar Nova Estrutura", 0)
         
     except Exception as ex:
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}{unidade_medida}", "Erro Criar Nova Estrutura", 0)
@@ -315,13 +333,15 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
 
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
+existe_cadastro_codigo_pai = verificar_cadastro_codigo_pai(nome_desenho)
 
-bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
-resultado_query_consulta_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
+if existe_cadastro_codigo_pai: 
+    bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
+    existe_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
 
-if resultado_query_consulta_estrutura_totvs.empty:
-    criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
-#else:
-    #alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
+    if existe_estrutura_totvs.empty:
+        criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
+    #else:
+        #alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
 
 delete_file_if_exists(excel_file_path)
