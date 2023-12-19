@@ -7,7 +7,7 @@ from datetime import date
 
 # Parâmetros de conexão com o banco de dados SQL Server
 server = 'SVRERP,1433'
-database = 'PROTHEUS1233_HML'
+database = 'PROTHEUS1233_HML' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
 username = 'coognicao'
 password = '0705@Abc'
 driver = '{ODBC Driver 17 for SQL Server}'

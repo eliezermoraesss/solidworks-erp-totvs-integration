@@ -13,7 +13,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS® - v2.0")
+        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS® - v2.0.1")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -95,6 +95,18 @@ class ConsultaApp(QWidget):
         self.armazem_var = QLineEdit(self)
         self.grupo_var = QLineEdit(self)
         self.grupo_desc_var = QLineEdit(self)
+        
+        fonte = "Segoe UI"
+        tamanho_fonte = 11
+
+        self.codigo_var.setFont(QFont(fonte, tamanho_fonte))  # Substitua "Arial" pela fonte desejada e 12 pelo tamanho desejado
+        self.descricao_var.setFont(QFont(fonte, tamanho_fonte))
+        self.descricao2_var.setFont(QFont(fonte, tamanho_fonte))
+        self.tipo_var.setFont(QFont(fonte, tamanho_fonte))
+        self.um_var.setFont(QFont(fonte, tamanho_fonte))
+        self.armazem_var.setFont(QFont(fonte, tamanho_fonte))
+        self.grupo_var.setFont(QFont(fonte, tamanho_fonte))
+        self.grupo_desc_var.setFont(QFont(fonte, tamanho_fonte))
 
         self.configurar_campos()
 
