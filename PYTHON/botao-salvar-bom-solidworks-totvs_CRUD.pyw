@@ -162,6 +162,20 @@ def validacao_de_dados_bom(excel_file_path):
             return bom_excel_sem_duplicatas
 
 
+def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
+    query_atualizar_campo_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_REVATU = '{numero_revisao}' WHERE B1_COD = '{codigo_pai}';"""
+    try:
+        # Uso do Context Manager para garantir o fechamento adequado da conexão
+        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            cursor = conn.cursor()
+            cursor.execute(query_atualizar_campo_revisao)
+            return True
+
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Atualizar Campo Revisão", 0)
+        return False
+    
+
 def verificar_se_existe_estrutura_totvs(codigo_pai):
 
     query_consulta_estrutura_totvs = f"""SELECT * FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}'
@@ -309,9 +323,11 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
         conn.commit()
         
         ctypes.windll.user32.MessageBoxW(0, f"Estrutura criada com sucesso no ERP TOTVS!", "Criar Nova Estrutura", 0)
+        return revisao_final
         
     except Exception as ex:
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro Criar Nova Estrutura", 0)
+        return None
         
     finally:
         cursor.close()
@@ -353,6 +369,8 @@ if existe_cadastro_codigo_pai:
     excluir_arquivo_excel_bom(excel_file_path)
 
     if not bom_excel_sem_duplicatas.empty and nao_existe_estrutura_totvs:
-        criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
+        revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
+        if revisao_atualizada != None:
+            atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
     #else:
         #alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
