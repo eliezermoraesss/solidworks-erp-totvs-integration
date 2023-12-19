@@ -42,7 +42,7 @@ def obter_caminho_arquivo_excel(codigo_desenho):
     return os.path.join(base_path, codigo_desenho + '.xlsx')
 
 
-def delete_file_if_exists(excel_file_path):
+def excluir_arquivo_excel_bom(excel_file_path):
     if os.path.exists(excel_file_path):
         os.remove(excel_file_path)
 
@@ -55,6 +55,9 @@ def verificar_codigo_repetido(df_excel):
     if not codigos_repetidos.empty:
         ctypes.windll.user32.MessageBoxW(
             0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
+        return True
+    else:
+        return False
 
 
 def verificar_cadastro_codigo_filho(codigos_filho):            
@@ -76,20 +79,22 @@ def verificar_cadastro_codigo_filho(codigos_filho):
                 codigos_sem_cadastro.append(codigo_produto)
 
         if codigos_sem_cadastro:
-                mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
-                ctypes.windll.user32.MessageBoxW(
-                    0, mensagem, "Códigos sem Cadastro", 1)
+            mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
+            ctypes.windll.user32.MessageBoxW(0, mensagem, "Códigos sem Cadastro", 0)
+            return False
+        else:
+            return True
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
         ctypes.windll.user32.MessageBoxW(
             0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Verificar Cadastro", 0)
-
+        
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
         if 'conn' in locals():
             conn.close()
-
+        
 
 def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     # Agrupa o DataFrame pela combinação única de código e descrição
@@ -125,8 +130,7 @@ def validacao_de_dados_bom(excel_file_path):
 
     validar_codigos = validar_formato_codigos(df_excel, posicao_coluna_codigo_excel)
 
-    validar_quantidades = df_excel.iloc[:, posicao_coluna_quantidade_excel].notna(
-    ) & (df_excel.iloc[:, posicao_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, posicao_coluna_quantidade_excel], errors='coerce') > 0)
+    validar_quantidades = df_excel.iloc[:, posicao_coluna_quantidade_excel].notna() & (df_excel.iloc[:, posicao_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, posicao_coluna_quantidade_excel], errors='coerce') > 0)
     
     validar_descricoes = validar_descricao(df_excel.iloc[:, posicao_coluna_descricao_excel])
 
@@ -147,17 +151,22 @@ def validacao_de_dados_bom(excel_file_path):
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
         bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()
-        verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())
-        verificar_codigo_repetido(bom_excel_sem_duplicatas)
-            
-    return bom_excel_sem_duplicatas
+        
+        existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
+        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())    
+        
+        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro:
+            return bom_excel_sem_duplicatas
+        else:
+            bom_excel_sem_duplicatas = None
+            return bom_excel_sem_duplicatas
 
 
-def verificar_se_existe_estrutura_totvs(nome_desenho):
+def verificar_se_existe_estrutura_totvs(codigo_pai):
 
-    query_consulta_estrutura_totvs = f"""SELECT * FROM {database}.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
+    query_consulta_estrutura_totvs = f"""SELECT * FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}'
         AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
+        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ');
     """
     # Tente estabelecer a conexão com o banco de dados
     try:
@@ -166,8 +175,12 @@ def verificar_se_existe_estrutura_totvs(nome_desenho):
 
         # Executa a query SELECT e obtém os resultados em um DataFrame
         resultado_query_consulta_estrutura_totvs = pd.read_sql(query_consulta_estrutura_totvs, conn)
-
-        return resultado_query_consulta_estrutura_totvs
+        
+        if resultado_query_consulta_estrutura_totvs.empty:
+            return True
+        else:
+            ctypes.windll.user32.MessageBoxW(0, f"Já existe estrutura cadastrada para o código {codigo_pai}", "Verificar se já existe estrutura TOTVS", 0) 
+            return False
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
@@ -189,8 +202,9 @@ def obter_ultima_pk_tabela_estrutura():
             cursor = conn.cursor()
             cursor.execute(query_ultima_pk_tabela_estrutura)
             resultado_ultima_pk_tabela_estrutura = cursor.fetchone()
+            valor_ultima_pk = resultado_ultima_pk_tabela_estrutura[0]
 
-            return resultado_ultima_pk_tabela_estrutura[0]
+            return valor_ultima_pk
 
     except Exception as ex:
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ultima pk", 0)
@@ -252,8 +266,6 @@ def verificar_cadastro_codigo_pai(codigo_pai):
             resultado = cursor.fetchone()
             
             if resultado:
-                valor_codigo_pai = resultado[0]
-                ctypes.windll.user32.MessageBoxW(0, f"{valor_codigo_pai}", "Código PAI", 0)
                 return True
             else:
                 ctypes.windll.user32.MessageBoxW(0, f"Código PAI não encontrado", "Código PAI", 0) 
@@ -299,7 +311,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
         ctypes.windll.user32.MessageBoxW(0, f"Estrutura criada com sucesso no ERP TOTVS!", "Criar Nova Estrutura", 0)
         
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}{unidade_medida}", "Erro Criar Nova Estrutura", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro Criar Nova Estrutura", 0)
         
     finally:
         cursor.close()
@@ -335,13 +347,12 @@ nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 existe_cadastro_codigo_pai = verificar_cadastro_codigo_pai(nome_desenho)
 
-if existe_cadastro_codigo_pai: 
+if existe_cadastro_codigo_pai:
     bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
-    existe_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
+    nao_existe_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
+    excluir_arquivo_excel_bom(excel_file_path)
 
-    if existe_estrutura_totvs.empty:
+    if not bom_excel_sem_duplicatas.empty and nao_existe_estrutura_totvs:
         criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
     #else:
         #alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
-
-delete_file_if_exists(excel_file_path)
