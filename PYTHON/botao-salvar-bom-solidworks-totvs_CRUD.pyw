@@ -111,6 +111,10 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     return df_sem_duplicatas
 
 
+def validar_descricao(descricoes):
+    return descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
+
+
 def validacao_de_dados_bom(excel_file_path):
 
     # Carrega a planilha do Excel em um DataFrame
@@ -119,21 +123,27 @@ def validacao_de_dados_bom(excel_file_path):
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])
 
-    valid_codigos = validar_formato_codigos(df_excel, posicao_coluna_codigo_excel)
+    validar_codigos = validar_formato_codigos(df_excel, posicao_coluna_codigo_excel)
 
-    valid_quantidades = df_excel.iloc[:, posicao_coluna_quantidade_excel].notna(
+    validar_quantidades = df_excel.iloc[:, posicao_coluna_quantidade_excel].notna(
     ) & (df_excel.iloc[:, posicao_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, posicao_coluna_quantidade_excel], errors='coerce') > 0)
+    
+    validar_descricoes = validar_descricao(df_excel.iloc[:, posicao_coluna_descricao_excel])
 
     # Exibe uma mensagem de erro se os códigos ou quantidades não estiverem no formato esperado
-    if not valid_codigos.all():
+    if not validar_codigos.all():
         ctypes.windll.user32.MessageBoxW(
             0, "Códigos inválidos encontrados. Corrija os códigos no formato correto.", "Erro", 0)
+        
+    if not validar_descricoes.all():
+        ctypes.windll.user32.MessageBoxW(
+            0, "Descrições inválidas encontradas. As descrições não podem ser nulas, vazias ou conter apenas espaços em branco.", "Erro", 0)
 
-    if not valid_quantidades.all():
+    if not validar_quantidades.all():
         ctypes.windll.user32.MessageBoxW(
             0, "Quantidades inválidas encontradas. As quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.", "Erro", 0)
 
-    if valid_codigos.all() and valid_quantidades.all():
+    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all():
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
         bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()

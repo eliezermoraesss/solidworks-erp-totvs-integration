@@ -236,7 +236,6 @@ class ConsultaApp(QWidget):
         self.tree.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tree.setSelectionBehavior(QTableWidget.SelectRows)
         self.tree.setSelectionMode(QTableWidget.SingleSelection)
-        self.tree.setSortingEnabled(True)  # Permitir ordenação
         
         # Conectar o evento itemDoubleClicked ao método copiar_linha
         self.tree.itemDoubleClicked.connect(self.copiar_linha)
@@ -339,6 +338,7 @@ class ConsultaApp(QWidget):
 
             # Preencher a tabela com os resultados
             for i, row in enumerate(cursor.fetchall()):
+                self.tree.setSortingEnabled(False)  # Permitir ordenação
                 # Inserir os valores formatados na tabela
                 self.tree.insertRow(i)
                 for j, value in enumerate(row):
@@ -351,7 +351,8 @@ class ConsultaApp(QWidget):
                 # Permitir que a interface gráfica seja atualizada
                 QCoreApplication.processEvents()
             
-                
+            self.tree.setSortingEnabled(True)  # Permitir ordenação
+            
             # Calcular a largura total das colunas
             largura_total_colunas = self.tree.horizontalHeader().length()
 
