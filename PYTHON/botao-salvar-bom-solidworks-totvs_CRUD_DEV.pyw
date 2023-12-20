@@ -325,7 +325,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
             
             if unidade_medida == 'KG':
-                quantidade = row.iloc[indice_coluna_peso_excel]
+                quantidade = round(row.iloc[indice_coluna_peso_excel])
             
             query_criar_nova_estrutura_totvs = f"""
                 INSERT INTO {database}.dbo.SG1010 
