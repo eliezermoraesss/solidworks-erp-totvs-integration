@@ -7,7 +7,7 @@ from datetime import date
 
 # Parâmetros de conexão com o banco de dados SQL Server
 server = 'SVRERP,1433'
-database = 'PROTHEUS12_R27' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
+database = 'PROTHEUS1233_HML' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
 username = 'coognicao'
 password = '0705@Abc'
 driver = '{ODBC Driver 17 for SQL Server}'
@@ -17,9 +17,10 @@ codigos_adicionados_bom = []  # ITENS ADICIONADOS
 codigos_removidos_bom = []  # ITENS REMOVIDOS
 codigos_em_comum = []  # ITENS EM COMUM
 
-posicao_coluna_codigo_excel = 1
-posicao_coluna_descricao_excel = 2
-posicao_coluna_quantidade_excel = 3
+indice_coluna_codigo_excel = 1
+indice_coluna_descricao_excel = 2
+indice_coluna_quantidade_excel = 3
+indice_coluna_peso_excel = 6
 
 def validar_formato_codigo_pai(codigo_pai):
     
@@ -64,7 +65,7 @@ def excluir_arquivo_excel_bom(excel_file_path):
 
 def verificar_codigo_repetido(df_excel):
     
-    codigos_repetidos = df_excel.iloc[:, posicao_coluna_codigo_excel][df_excel.iloc[:, posicao_coluna_codigo_excel].duplicated()]
+    codigos_repetidos = df_excel.iloc[:, indice_coluna_codigo_excel][df_excel.iloc[:, indice_coluna_codigo_excel].duplicated()]
     
     # Exibe uma mensagem se houver códigos repetidos
     if not codigos_repetidos.empty:
@@ -113,20 +114,22 @@ def verificar_cadastro_codigo_filho(codigos_filho):
 
 def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     # Agrupa o DataFrame pela combinação única de código e descrição
-    grouped = df_excel.groupby([posicao_coluna_codigo_excel, posicao_coluna_descricao_excel])
+    grouped = df_excel.groupby([indice_coluna_codigo_excel, indice_coluna_descricao_excel])
 
     # Inicializa um novo DataFrame para armazenar o resultado
     df_sem_duplicatas = pd.DataFrame(columns=df_excel.columns)
 
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
-        codigo = group[posicao_coluna_codigo_excel].iloc[0]
-        descricao = group[posicao_coluna_descricao_excel].iloc[0]
-        quantidade_consolidada = group[posicao_coluna_quantidade_excel].sum()
+        codigo = group[indice_coluna_codigo_excel].iloc[0]
+        descricao = group[indice_coluna_descricao_excel].iloc[0]
+        quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
+        peso_consolidado = group[indice_coluna_peso_excel].sum()
 
         # Adiciona uma linha ao DataFrame sem duplicatas
         df_sem_duplicatas = pd.concat([df_sem_duplicatas, group.head(1)])
-        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], posicao_coluna_quantidade_excel] = quantidade_consolidada
+        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_quantidade_excel] = quantidade_consolidada
+        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_peso_excel] = peso_consolidado
 
     return df_sem_duplicatas
 
@@ -143,11 +146,11 @@ def validacao_de_dados_bom(excel_file_path):
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])
 
-    validar_codigos = validar_formato_codigos_filho(df_excel, posicao_coluna_codigo_excel)
+    validar_codigos = validar_formato_codigos_filho(df_excel, indice_coluna_codigo_excel)
 
-    validar_quantidades = df_excel.iloc[:, posicao_coluna_quantidade_excel].notna() & (df_excel.iloc[:, posicao_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, posicao_coluna_quantidade_excel], errors='coerce') > 0)
+    validar_quantidades = df_excel.iloc[:, indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_quantidade_excel], errors='coerce') > 0)
     
-    validar_descricoes = validar_descricao(df_excel.iloc[:, posicao_coluna_descricao_excel])
+    validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
 
     # Exibe uma mensagem de erro se os códigos ou quantidades não estiverem no formato esperado
     if not validar_codigos.all():
@@ -165,10 +168,10 @@ def validacao_de_dados_bom(excel_file_path):
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all():
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
-        bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()
+        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
         
         existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
-        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())    
+        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())    
         
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro:
             return bom_excel_sem_duplicatas
@@ -224,7 +227,6 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
             
 def obter_ultima_pk_tabela_estrutura():
     query_ultima_pk_tabela_estrutura = f"""SELECT TOP 1 R_E_C_N_O_ FROM {database}.dbo.SG1010 ORDER BY R_E_C_N_O_ DESC;"""
-    
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
@@ -241,8 +243,7 @@ def obter_ultima_pk_tabela_estrutura():
     
     
 def obter_revisao_inicial_codigo_pai(codigo_pai):
-    query_revisao_inicial = f"""SELECT B1_REVATU FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""
-    
+    query_revisao_inicial = f"""SELECT B1_REVATU FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""   
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
@@ -263,7 +264,6 @@ def obter_revisao_inicial_codigo_pai(codigo_pai):
     
 def obter_unidade_medida_codigo_filho(codigo_filho):
     query_unidade_medida_codigo_filho = f"""SELECT B1_UM FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_filho}'"""
-    
     try:
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
             cursor = conn.cursor()
@@ -284,9 +284,9 @@ def formatar_data_atual():
     data_atual_formatada = date.today().strftime("%Y%m%d")
     return data_atual_formatada
 
+
 def verificar_cadastro_codigo_pai(codigo_pai):
-    query_consulta_produto_codigo_pai = f"""SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""
-    
+    query_consulta_produto_codigo_pai = f"""SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""  
     try:
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
             cursor = conn.cursor()
@@ -303,6 +303,7 @@ def verificar_cadastro_codigo_pai(codigo_pai):
     except Exception as ex:
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Consulta Código Pai", 0)
         return None
+    
             
 def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas): 
     
@@ -319,9 +320,12 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         for index, row in bom_excel_sem_duplicatas.iterrows():
             ultima_pk_tabela_estrutura += 1
-            codigo_filho = row.iloc[posicao_coluna_codigo_excel]
-            quantidade = row.iloc[posicao_coluna_quantidade_excel]
+            codigo_filho = row.iloc[indice_coluna_codigo_excel]
+            quantidade = row.iloc[indice_coluna_quantidade_excel]
             unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+            
+            if unidade_medida == 'KG':
+                quantidade = row.iloc[indice_coluna_peso_excel]
             
             query_criar_nova_estrutura_totvs = f"""
                 INSERT INTO {database}.dbo.SG1010 
@@ -355,11 +359,11 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
 
     # Encontra códigos que são iguais entre SQL e Excel
     codigos_em_comum = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-        bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
-    codigos_adicionados_bom = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].loc[~bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].isin(
+        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
+    codigos_adicionados_bom = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].loc[~bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].isin(
         resultado_query_consulta_estrutura_totvs['G1_COMP'])].tolist()
     codigos_removidos_bom = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-        bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
+        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
 
     # Exibe uma caixa de diálogo com base nos resultados
     if codigos_em_comum:
