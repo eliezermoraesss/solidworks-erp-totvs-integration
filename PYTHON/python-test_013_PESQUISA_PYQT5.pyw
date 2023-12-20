@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
-    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog
+    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices, QColor
 from PyQt5.QtCore import Qt, QUrl, QCoreApplication
 import pyodbc
@@ -13,7 +13,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS® - v2.0.1")
+        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS® - v2.0.2")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -157,27 +157,35 @@ class ConsultaApp(QWidget):
 
         layout_linha_01.addWidget(QLabel("Código:"))
         layout_linha_01.addWidget(self.codigo_var)
+        layout_linha_01.addWidget(self.criar_botao_limpar(self.codigo_var))
 
         layout_linha_01.addWidget(QLabel("Descrição:"))
         layout_linha_01.addWidget(self.descricao_var)
+        layout_linha_01.addWidget(self.criar_botao_limpar(self.descricao_var))
 
         layout_linha_01.addWidget(QLabel("Contém na Descrição:"))
         layout_linha_01.addWidget(self.descricao2_var)
+        layout_linha_01.addWidget(self.criar_botao_limpar(self.descricao2_var))
 
         layout_linha_02.addWidget(QLabel("Tipo:"))
         layout_linha_02.addWidget(self.tipo_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.tipo_var))
 
         layout_linha_02.addWidget(QLabel("Unid. Medida:"))
         layout_linha_02.addWidget(self.um_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.um_var))
 
         layout_linha_02.addWidget(QLabel("Armazém:"))
         layout_linha_02.addWidget(self.armazem_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.armazem_var))
 
         layout_linha_02.addWidget(QLabel("Grupo:"))
         layout_linha_02.addWidget(self.grupo_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.grupo_var))
         
         layout_linha_02.addWidget(QLabel("Desc. Grupo:"))
         layout_linha_02.addWidget(self.grupo_desc_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.grupo_desc_var))
         
         layout_linha_03.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
         
@@ -198,6 +206,15 @@ class ConsultaApp(QWidget):
         layout.addWidget(self.tree)
 
         self.setLayout(layout)
+    
+    
+    def criar_botao_limpar(self, campo):
+        botao_limpar = QToolButton(self)
+        botao_limpar.setIcon(QIcon('clear_icon.png'))  # Substitua 'icone_limpar.png' pelo caminho do ícone desejado
+        botao_limpar.setCursor(Qt.PointingHandCursor)
+        botao_limpar.clicked.connect(lambda: campo.clear())
+        return botao_limpar
+
     
     def exportar_excel(self):
         # Obter o caminho do arquivo para salvar
@@ -253,7 +270,7 @@ class ConsultaApp(QWidget):
         self.tree.itemDoubleClicked.connect(self.copiar_linha)
         
         # Configurar a fonte da tabela
-        fonte_tabela = QFont("Roboto", 8)  # Substitua por sua fonte desejada e tamanho
+        fonte_tabela = QFont("Segoe UI", 10)  # Substitua por sua fonte desejada e tamanho
         self.tree.setFont(fonte_tabela)
 
         # Ajustar a altura das linhas
@@ -320,7 +337,7 @@ class ConsultaApp(QWidget):
         armazem = self.armazem_var.text().upper()
         grupo = self.grupo_var.text().upper()
         desc_grupo = self.grupo_desc_var.text().upper()
-
+        
         # Construir a query de consulta
         select_query = f"""
         SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU

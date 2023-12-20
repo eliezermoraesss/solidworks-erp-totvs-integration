@@ -32,7 +32,7 @@ def validar_formato_codigo_pai(codigo_pai):
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
     
     if not codigo_pai_validado:
-        ctypes.windll.user32.MessageBoxW(0, f"Código Pai {codigo_pai} fora do formato padrão", "Corrija e tente novamente", 0) 
+        ctypes.windll.user32.MessageBoxW(0, f"Este desenho está com o código fora do formato padrão ENAPLIC.\n\nCÓDIGO {codigo_pai}\n\nCorrija e tente novamente!\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
     
     return codigo_pai_validado
     
@@ -70,7 +70,7 @@ def verificar_codigo_repetido(df_excel):
     # Exibe uma mensagem se houver códigos repetidos
     if not codigos_repetidos.empty:
         ctypes.windll.user32.MessageBoxW(
-            0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
+            0, f"Produtos repetidos na BOM.\nOs códigos são iguais com descrições diferentes: {codigos_repetidos.tolist()}\n\nCorrija-os ou exclue da tabela e tente novamente!\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         return True
     else:
         return False
@@ -95,16 +95,15 @@ def verificar_cadastro_codigo_filho(codigos_filho):
                 codigos_sem_cadastro.append(codigo_produto)
 
         if codigos_sem_cadastro:
-            mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
-            ctypes.windll.user32.MessageBoxW(0, mensagem, "Códigos sem Cadastro", 0)
+            mensagem = f"Identifiquei produtos sem cadastro no TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!\n\n=)"
+            ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
             return False
         else:
             return True
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-        ctypes.windll.user32.MessageBoxW(
-            0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Verificar Cadastro", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar o cadastro de produtos", 16 | 0)
         
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
@@ -155,15 +154,15 @@ def validacao_de_dados_bom(excel_file_path):
     # Exibe uma mensagem de erro se os códigos ou quantidades não estiverem no formato esperado
     if not validar_codigos.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Códigos inválidos encontrados. Corrija os códigos no formato correto.", "Erro", 0)
+            0, "Códigos da BOM fora do formato padrão ENAPLIC!\n\nCorrija-os e tente novamente!\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         
     if not validar_descricoes.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Descrições inválidas encontradas. As descrições não podem ser nulas, vazias ou conter apenas espaços em branco.", "Erro", 0)
+            0, "Descrição inválida encontrada!\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nCorrija e tente novamente.\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if not validar_quantidades.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Quantidades inválidas encontradas. As quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.", "Erro", 0)
+            0, "Quantidade inválida encontrada!\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nCorrija e tente novamente.\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all():
 
@@ -190,7 +189,7 @@ def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
             return True
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Atualizar Campo Revisão", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar o campo revisão do código pai", 16 | 0)
         return False
     
 
@@ -211,13 +210,12 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
         if resultado_query_consulta_estrutura_totvs.empty:
             return True
         else:
-            ctypes.windll.user32.MessageBoxW(0, f"Já existe estrutura cadastrada para o código {codigo_pai}", "Verificar se já existe estrutura TOTVS", 0) 
+            ctypes.windll.user32.MessageBoxW(0, f"Estrutura já cadastrada no TOTVS para este produto!\n\n{codigo_pai}", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
             return False
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-        ctypes.windll.user32.MessageBoxW(
-            0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Verificar Existe Estrutura", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao verificar se existe estrutura no TOTVS", 16 | 0)
 
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
@@ -238,7 +236,7 @@ def obter_ultima_pk_tabela_estrutura():
             return valor_ultima_pk
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ultima pk", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao obter última PK da tabela estrutura", 16 | 0)
         return None
     
     
@@ -258,7 +256,7 @@ def obter_revisao_inicial_codigo_pai(codigo_pai):
             return valor_revisao_inicial
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}{revisao_inicial[0]}", "Erro Revisão", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar revisão do código pai na tabela de produtos", 16 | 0)
         return None
     
     
@@ -275,7 +273,7 @@ def obter_unidade_medida_codigo_filho(codigo_filho):
             return valor_unidade_medida
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Unidade", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar Unidade de Medida de código-filho", 16 | 0)
         return None
     
             
@@ -297,11 +295,11 @@ def verificar_cadastro_codigo_pai(codigo_pai):
             if resultado:
                 return True
             else:
-                ctypes.windll.user32.MessageBoxW(0, f"Código PAI não encontrado", "Código PAI", 0) 
+                ctypes.windll.user32.MessageBoxW(0, f"O cadastro do código PAI {codigo_pai} não foi encontrado.\n\nPor favor, efetue o cadastro e tente novamente! =)", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
                 return False
         
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Consulta Código Pai", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar cadastro do código-pai", 16 | 0)
         return None
     
             
@@ -341,11 +339,11 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"Estrutura criada com sucesso no ERP TOTVS!", "Criar Nova Estrutura", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"ESTRUTURA CADASTRADA COM SUCESSO!\n\n{codigo_pai}", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
         return revisao_final
         
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro Criar Nova Estrutura", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro ao Criar Nova Estrutura", 16 | 0)
         return None
         
     finally:

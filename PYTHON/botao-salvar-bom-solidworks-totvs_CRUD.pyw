@@ -17,9 +17,10 @@ codigos_adicionados_bom = []  # ITENS ADICIONADOS
 codigos_removidos_bom = []  # ITENS REMOVIDOS
 codigos_em_comum = []  # ITENS EM COMUM
 
-posicao_coluna_codigo_excel = 1
-posicao_coluna_descricao_excel = 2
-posicao_coluna_quantidade_excel = 3
+indice_coluna_codigo_excel = 1
+indice_coluna_descricao_excel = 2
+indice_coluna_quantidade_excel = 3
+indice_coluna_peso_excel = 6
 
 def validar_formato_codigo_pai(codigo_pai):
     
@@ -31,7 +32,7 @@ def validar_formato_codigo_pai(codigo_pai):
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
     
     if not codigo_pai_validado:
-        ctypes.windll.user32.MessageBoxW(0, f"Código Pai {codigo_pai} fora do formato padrão", "Corrija e tente novamente", 0) 
+        ctypes.windll.user32.MessageBoxW(0, f"Este desenho está com o código fora do formato padrão ENAPLIC.\n\nCÓDIGO {codigo_pai}\n\nCorrija e tente novamente!\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
     
     return codigo_pai_validado
     
@@ -64,12 +65,12 @@ def excluir_arquivo_excel_bom(excel_file_path):
 
 def verificar_codigo_repetido(df_excel):
     
-    codigos_repetidos = df_excel.iloc[:, posicao_coluna_codigo_excel][df_excel.iloc[:, posicao_coluna_codigo_excel].duplicated()]
+    codigos_repetidos = df_excel.iloc[:, indice_coluna_codigo_excel][df_excel.iloc[:, indice_coluna_codigo_excel].duplicated()]
     
     # Exibe uma mensagem se houver códigos repetidos
     if not codigos_repetidos.empty:
         ctypes.windll.user32.MessageBoxW(
-            0, f"Códigos repetidos encontrados: {codigos_repetidos.tolist()}", "Aviso", 0)
+            0, f"Produtos repetidos na BOM.\nOs códigos são iguais com descrições diferentes: {codigos_repetidos.tolist()}\n\nCorrija-os ou exclue da tabela e tente novamente!\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         return True
     else:
         return False
@@ -94,16 +95,15 @@ def verificar_cadastro_codigo_filho(codigos_filho):
                 codigos_sem_cadastro.append(codigo_produto)
 
         if codigos_sem_cadastro:
-            mensagem = f"Os seguintes itens não possuem cadastro:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente."
-            ctypes.windll.user32.MessageBoxW(0, mensagem, "Códigos sem Cadastro", 0)
+            mensagem = f"Identifiquei produtos sem cadastro no TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!\n\n=)"
+            ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
             return False
         else:
             return True
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-        ctypes.windll.user32.MessageBoxW(
-            0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Verificar Cadastro", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar o cadastro de produtos", 16 | 0)
         
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
@@ -113,20 +113,22 @@ def verificar_cadastro_codigo_filho(codigos_filho):
 
 def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     # Agrupa o DataFrame pela combinação única de código e descrição
-    grouped = df_excel.groupby([posicao_coluna_codigo_excel, posicao_coluna_descricao_excel])
+    grouped = df_excel.groupby([indice_coluna_codigo_excel, indice_coluna_descricao_excel])
 
     # Inicializa um novo DataFrame para armazenar o resultado
     df_sem_duplicatas = pd.DataFrame(columns=df_excel.columns)
 
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
-        codigo = group[posicao_coluna_codigo_excel].iloc[0]
-        descricao = group[posicao_coluna_descricao_excel].iloc[0]
-        quantidade_consolidada = group[posicao_coluna_quantidade_excel].sum()
+        codigo = group[indice_coluna_codigo_excel].iloc[0]
+        descricao = group[indice_coluna_descricao_excel].iloc[0]
+        quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
+        peso_consolidado = group[indice_coluna_peso_excel].sum()
 
         # Adiciona uma linha ao DataFrame sem duplicatas
         df_sem_duplicatas = pd.concat([df_sem_duplicatas, group.head(1)])
-        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], posicao_coluna_quantidade_excel] = quantidade_consolidada
+        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_quantidade_excel] = quantidade_consolidada
+        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_peso_excel] = peso_consolidado
 
     return df_sem_duplicatas
 
@@ -143,32 +145,32 @@ def validacao_de_dados_bom(excel_file_path):
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])
 
-    validar_codigos = validar_formato_codigos_filho(df_excel, posicao_coluna_codigo_excel)
+    validar_codigos = validar_formato_codigos_filho(df_excel, indice_coluna_codigo_excel)
 
-    validar_quantidades = df_excel.iloc[:, posicao_coluna_quantidade_excel].notna() & (df_excel.iloc[:, posicao_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, posicao_coluna_quantidade_excel], errors='coerce') > 0)
+    validar_quantidades = df_excel.iloc[:, indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_quantidade_excel], errors='coerce') > 0)
     
-    validar_descricoes = validar_descricao(df_excel.iloc[:, posicao_coluna_descricao_excel])
+    validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
 
     # Exibe uma mensagem de erro se os códigos ou quantidades não estiverem no formato esperado
     if not validar_codigos.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Códigos inválidos encontrados. Corrija os códigos no formato correto.", "Erro", 0)
+            0, "Códigos da BOM fora do formato padrão ENAPLIC!\n\nCorrija-os e tente novamente!\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         
     if not validar_descricoes.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Descrições inválidas encontradas. As descrições não podem ser nulas, vazias ou conter apenas espaços em branco.", "Erro", 0)
+            0, "Descrição inválida encontrada!\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nCorrija e tente novamente.\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if not validar_quantidades.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Quantidades inválidas encontradas. As quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.", "Erro", 0)
+            0, "Quantidade inválida encontrada!\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nCorrija e tente novamente.\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all():
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
-        bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].str.strip()
+        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
         
         existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
-        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].tolist())    
+        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())    
         
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro:
             return bom_excel_sem_duplicatas
@@ -187,7 +189,7 @@ def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
             return True
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Atualizar Campo Revisão", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar o campo revisão do código pai", 16 | 0)
         return False
     
 
@@ -208,13 +210,12 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
         if resultado_query_consulta_estrutura_totvs.empty:
             return True
         else:
-            ctypes.windll.user32.MessageBoxW(0, f"Já existe estrutura cadastrada para o código {codigo_pai}", "Verificar se já existe estrutura TOTVS", 0) 
+            ctypes.windll.user32.MessageBoxW(0, f"Estrutura já cadastrada no TOTVS para este produto!\n\n{codigo_pai}", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
             return False
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-        ctypes.windll.user32.MessageBoxW(
-            0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Verificar Existe Estrutura", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao verificar se existe estrutura no TOTVS", 16 | 0)
 
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
@@ -224,7 +225,6 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
             
 def obter_ultima_pk_tabela_estrutura():
     query_ultima_pk_tabela_estrutura = f"""SELECT TOP 1 R_E_C_N_O_ FROM {database}.dbo.SG1010 ORDER BY R_E_C_N_O_ DESC;"""
-    
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
@@ -236,13 +236,12 @@ def obter_ultima_pk_tabela_estrutura():
             return valor_ultima_pk
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ultima pk", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao obter última PK da tabela estrutura", 16 | 0)
         return None
     
     
 def obter_revisao_inicial_codigo_pai(codigo_pai):
-    query_revisao_inicial = f"""SELECT B1_REVATU FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""
-    
+    query_revisao_inicial = f"""SELECT B1_REVATU FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""   
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
@@ -257,13 +256,12 @@ def obter_revisao_inicial_codigo_pai(codigo_pai):
             return valor_revisao_inicial
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}{revisao_inicial[0]}", "Erro Revisão", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar revisão do código pai na tabela de produtos", 16 | 0)
         return None
     
     
 def obter_unidade_medida_codigo_filho(codigo_filho):
     query_unidade_medida_codigo_filho = f"""SELECT B1_UM FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_filho}'"""
-    
     try:
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
             cursor = conn.cursor()
@@ -275,7 +273,7 @@ def obter_unidade_medida_codigo_filho(codigo_filho):
             return valor_unidade_medida
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Unidade", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar Unidade de Medida de código-filho", 16 | 0)
         return None
     
             
@@ -284,9 +282,9 @@ def formatar_data_atual():
     data_atual_formatada = date.today().strftime("%Y%m%d")
     return data_atual_formatada
 
+
 def verificar_cadastro_codigo_pai(codigo_pai):
-    query_consulta_produto_codigo_pai = f"""SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""
-    
+    query_consulta_produto_codigo_pai = f"""SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""  
     try:
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
             cursor = conn.cursor()
@@ -297,12 +295,13 @@ def verificar_cadastro_codigo_pai(codigo_pai):
             if resultado:
                 return True
             else:
-                ctypes.windll.user32.MessageBoxW(0, f"Código PAI não encontrado", "Código PAI", 0) 
+                ctypes.windll.user32.MessageBoxW(0, f"O cadastro do código PAI {codigo_pai} não foi encontrado.\n\nPor favor, efetue o cadastro e tente novamente! =)", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
                 return False
         
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro Consulta Código Pai", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar cadastro do código-pai", 16 | 0)
         return None
+    
             
 def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas): 
     
@@ -319,9 +318,12 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         for index, row in bom_excel_sem_duplicatas.iterrows():
             ultima_pk_tabela_estrutura += 1
-            codigo_filho = row.iloc[posicao_coluna_codigo_excel]
-            quantidade = row.iloc[posicao_coluna_quantidade_excel]
+            codigo_filho = row.iloc[indice_coluna_codigo_excel]
+            quantidade = row.iloc[indice_coluna_quantidade_excel]
             unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+            
+            if unidade_medida == 'KG':
+                quantidade = round(row.iloc[indice_coluna_peso_excel])
             
             query_criar_nova_estrutura_totvs = f"""
                 INSERT INTO {database}.dbo.SG1010 
@@ -337,11 +339,11 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"Estrutura criada com sucesso no ERP TOTVS!", "Criar Nova Estrutura", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"ESTRUTURA CADASTRADA COM SUCESSO!\n\n{codigo_pai}", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
         return revisao_final
         
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro Criar Nova Estrutura", 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro ao Criar Nova Estrutura", 16 | 0)
         return None
         
     finally:
@@ -355,11 +357,11 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
 
     # Encontra códigos que são iguais entre SQL e Excel
     codigos_em_comum = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-        bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
-    codigos_adicionados_bom = bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].loc[~bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel].isin(
+        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
+    codigos_adicionados_bom = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].loc[~bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].isin(
         resultado_query_consulta_estrutura_totvs['G1_COMP'])].tolist()
     codigos_removidos_bom = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-        bom_excel_sem_duplicatas.iloc[:, posicao_coluna_codigo_excel])].tolist()
+        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
 
     # Exibe uma caixa de diálogo com base nos resultados
     if codigos_em_comum:
