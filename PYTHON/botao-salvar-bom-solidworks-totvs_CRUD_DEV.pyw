@@ -32,7 +32,7 @@ def validar_formato_codigo_pai(codigo_pai):
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
     
     if not codigo_pai_validado:
-        ctypes.windll.user32.MessageBoxW(0, f"Este desenho está com o código fora do formato padrão ENAPLIC.\n\nCÓDIGO {codigo_pai}\n\nCorrija e tente novamente!\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
+        ctypes.windll.user32.MessageBoxW(0, f"Este desenho está com o código fora do formato padrão ENAPLIC.\n\nCÓDIGO {codigo_pai}\n\nCorrija e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
     
     return codigo_pai_validado
     
@@ -70,7 +70,7 @@ def verificar_codigo_repetido(df_excel):
     # Exibe uma mensagem se houver códigos repetidos
     if not codigos_repetidos.empty:
         ctypes.windll.user32.MessageBoxW(
-            0, f"Produtos repetidos na BOM.\nOs códigos são iguais com descrições diferentes: {codigos_repetidos.tolist()}\n\nCorrija-os ou exclue da tabela e tente novamente!\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, f"Produtos repetidos na BOM.\n\nOs códigos são iguais com descrições diferentes:\n\n{codigos_repetidos.tolist()}\n\nCorrija-os ou exclue da tabela e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         return True
     else:
         return False
@@ -95,7 +95,7 @@ def verificar_cadastro_codigo_filho(codigos_filho):
                 codigos_sem_cadastro.append(codigo_produto)
 
         if codigos_sem_cadastro:
-            mensagem = f"Identifiquei produtos sem cadastro no TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!\n\n=)"
+            mensagem = f"Códigos-filho sem cadastro no TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!"
             ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
             return False
         else:
@@ -154,15 +154,15 @@ def validacao_de_dados_bom(excel_file_path):
     # Exibe uma mensagem de erro se os códigos ou quantidades não estiverem no formato esperado
     if not validar_codigos.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Códigos da BOM fora do formato padrão ENAPLIC!\n\nCorrija-os e tente novamente!\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "Códigos da BOM fora do formato padrão ENAPLIC!\n\nCorrija-os e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         
     if not validar_descricoes.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Descrição inválida encontrada!\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nCorrija e tente novamente.\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "Descrição inválida encontrada!\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nCorrija e tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if not validar_quantidades.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Quantidade inválida encontrada!\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nCorrija e tente novamente.\n\n=)", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "Quantidade inválida encontrada!\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nCorrija e tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all():
 
@@ -210,7 +210,7 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
         if resultado_query_consulta_estrutura_totvs.empty:
             return True
         else:
-            ctypes.windll.user32.MessageBoxW(0, f"Estrutura já cadastrada no TOTVS para este produto!\n\n{codigo_pai}", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
+            ctypes.windll.user32.MessageBoxW(0, f"já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0) 
             return False
 
     except Exception as ex:
@@ -295,7 +295,7 @@ def verificar_cadastro_codigo_pai(codigo_pai):
             if resultado:
                 return True
             else:
-                ctypes.windll.user32.MessageBoxW(0, f"O cadastro do código PAI {codigo_pai} não foi encontrado.\n\nPor favor, efetue o cadastro e tente novamente! =)", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
+                ctypes.windll.user32.MessageBoxW(0, f"A consulta pelo cadastro do item PAI não obteve resultados.\n\nSolicitamos gentilmente que proceda com o registro do produto {codigo_pai} e, em seguida, tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0) 
                 return False
         
     except Exception as ex:
@@ -339,7 +339,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"ESTRUTURA CADASTRADA COM SUCESSO!\n\n{codigo_pai}", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        ctypes.windll.user32.MessageBoxW(0, f"A ESTRUTURA FOI CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n:)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
         return revisao_final
         
     except Exception as ex:
