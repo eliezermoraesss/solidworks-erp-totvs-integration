@@ -1,0 +1,13 @@
+import tkinter as tk
+from tkinter import messagebox
+
+def show_custom_message_box():
+    root = tk.Tk()
+    root.withdraw()  # Esconde a janela principal
+
+    # Ícone de sucesso padrão
+    messagebox.showinfo("CADASTRO DE ESTRUTURA - TOTVS®", f"ESTRUTURA CADASTRADA COM SUCESSO!\n\nEngenharia ENAPLIC®", icon="info")
+
+# Chame a função para exibir a caixa de mensagem personalizada
+show_custom_message_box()
+

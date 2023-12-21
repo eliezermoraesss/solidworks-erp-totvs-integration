@@ -210,7 +210,8 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
         if resultado_query_consulta_estrutura_totvs.empty:
             return True
         else:
-            ctypes.windll.user32.MessageBoxW(0, f"já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0) 
+            ctypes.windll.user32.MessageBoxW(0, f"Já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nSe você deseja realizar a alteração da estrutura, clique no botão ALTERAR ESTRUTURA ou se deseja cancelar a operação clique em CANCELAR.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)  
+
             return False
 
     except Exception as ex:
@@ -295,7 +296,7 @@ def verificar_cadastro_codigo_pai(codigo_pai):
             if resultado:
                 return True
             else:
-                ctypes.windll.user32.MessageBoxW(0, f"A consulta pelo cadastro do item PAI não obteve resultados.\n\nSolicitamos gentilmente que proceda com o registro do produto {codigo_pai} e, em seguida, tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0) 
+                ctypes.windll.user32.MessageBoxW(0, f"A consulta pelo cadastro do item PAI não obteve resultados.\n\nSolicito gentilmente que proceda com o registro do produto {codigo_pai} e, em seguida, tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0) 
                 return False
         
     except Exception as ex:
@@ -375,6 +376,8 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
     if codigos_removidos_bom:
         ctypes.windll.user32.MessageBoxW(
             0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
+
+
 
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
