@@ -1,6 +1,3 @@
-' ******************************************************************************
-' C:\Users\caio\AppData\Local\Temp\swx7220\Macro1.swb - macro recorded on 06/18/19 by caio
-' ******************************************************************************
 Dim swApp As Object
 
 Dim Part As Object

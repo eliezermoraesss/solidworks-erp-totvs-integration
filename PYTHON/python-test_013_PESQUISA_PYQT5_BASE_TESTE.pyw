@@ -1,18 +1,19 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
-    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox
+    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices, QColor
 from PyQt5.QtCore import Qt, QUrl, QCoreApplication
 import pyodbc
 import pyperclip
 import os
 import time
+import pandas as pd
 
 class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS - BASE DE TESTES")
+        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS® - v2.0.2")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -26,6 +27,7 @@ class ConsultaApp(QWidget):
             
         # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
         self.nova_janela = None  # Adicione esta linha
+        self.nova_janela_estrutura = None
         
         # Aplicar folha de estilo ao aplicativo
         self.setStyleSheet("""                                                                         
@@ -39,7 +41,7 @@ class ConsultaApp(QWidget):
                 background-color: #fff;
                 border: 1px solid #5ab3ee;
                 padding: 5px;
-                border: none;
+                border-color: #c0d1f7;
                 border-radius: 5px;
             }
 
@@ -50,18 +52,18 @@ class ConsultaApp(QWidget):
                 border: 2px;
                 border-radius: 5px;
                 font-size: 11px;
-                height: 20px;
+                height: 18px;
                 font-weight: bold;
                 margin-top: 3px;
                 margin-bottom: 3px;
             }
 
             QPushButton:hover {
-                background-color: #2416e0;  /* Nova cor ao passar o mouse sobre o botão */
+                background-color: #2416e0;
             }
 
             QPushButton:pressed {
-                background-color: #ef08f7;  /* Nova cor ao clicar no botão */
+                background-color: #6703c5;
             }
 
             QTableWidget {
@@ -72,6 +74,7 @@ class ConsultaApp(QWidget):
                 background-color: #7d85f0;
                 color: #fff;
                 padding: 5px;
+                height: 18px;
             }
 
             QTableWidget QHeaderView::section:horizontal {
@@ -79,10 +82,10 @@ class ConsultaApp(QWidget):
             }
             
             QTableWidget::item:selected {
-                background-color: #8EC4FF; /* Altere para a cor desejada */
-                color: #000; /* Cor do texto no item selecionado */
-            }
-            
+                background-color: #0066ff;
+                color: #fff;
+                font-weight: bold;
+            }        
         """)
             
         self.codigo_var = QLineEdit(self)
@@ -93,12 +96,28 @@ class ConsultaApp(QWidget):
         self.armazem_var = QLineEdit(self)
         self.grupo_var = QLineEdit(self)
         self.grupo_desc_var = QLineEdit(self)
+        
+        fonte = "Segoe UI"
+        tamanho_fonte = 11
+
+        self.codigo_var.setFont(QFont(fonte, tamanho_fonte))  # Substitua "Arial" pela fonte desejada e 12 pelo tamanho desejado
+        self.descricao_var.setFont(QFont(fonte, tamanho_fonte))
+        self.descricao2_var.setFont(QFont(fonte, tamanho_fonte))
+        self.tipo_var.setFont(QFont(fonte, tamanho_fonte))
+        self.um_var.setFont(QFont(fonte, tamanho_fonte))
+        self.armazem_var.setFont(QFont(fonte, tamanho_fonte))
+        self.grupo_var.setFont(QFont(fonte, tamanho_fonte))
+        self.grupo_desc_var.setFont(QFont(fonte, tamanho_fonte))
 
         self.configurar_campos()
 
         self.btn_consultar = QPushButton("Pesquisar", self)
         self.btn_consultar.clicked.connect(self.executar_consulta)
         self.btn_consultar.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        
+        self.btn_consultar_estrutura = QPushButton("Consultar Estrutura", self)
+        self.btn_consultar_estrutura.clicked.connect(self.executar_consulta_estrutura)
+        self.btn_consultar_estrutura.setMinimumWidth(150)  # Definindo o comprimento mínimo
         
         self.btn_limpar = QPushButton("Limpar", self)
         self.btn_limpar.clicked.connect(self.limpar_campos)
@@ -112,11 +131,19 @@ class ConsultaApp(QWidget):
         self.btn_abrir_desenho.clicked.connect(self.abrir_desenho)
         self.btn_abrir_desenho.setMinimumWidth(100)  # Definindo o comprimento mínimo
         
+        self.btn_exportar_excel = QPushButton("Exportar Excel", self)
+        self.btn_exportar_excel.clicked.connect(self.exportar_excel)
+        self.btn_exportar_excel.setMinimumWidth(100)
+        self.btn_exportar_excel.setEnabled(False)  # Desativar inicialmente
+        
         self.btn_fechar = QPushButton("Fechar", self)
         self.btn_fechar.clicked.connect(self.fechar_janela)
         self.btn_fechar.setMinimumWidth(100)  # Definindo o comprimento mínimo
 
         self.configurar_tabela()
+        
+        # Configurar a tabela
+        self.configurar_tabela_tooltips()
 
         # Conectar o evento returnPressed dos campos de entrada ao método executar_consulta
         self.codigo_var.returnPressed.connect(self.executar_consulta)
@@ -135,32 +162,44 @@ class ConsultaApp(QWidget):
 
         layout_linha_01.addWidget(QLabel("Código:"))
         layout_linha_01.addWidget(self.codigo_var)
+        layout_linha_01.addWidget(self.criar_botao_limpar(self.codigo_var))
 
         layout_linha_01.addWidget(QLabel("Descrição:"))
         layout_linha_01.addWidget(self.descricao_var)
+        layout_linha_01.addWidget(self.criar_botao_limpar(self.descricao_var))
 
         layout_linha_01.addWidget(QLabel("Contém na Descrição:"))
         layout_linha_01.addWidget(self.descricao2_var)
+        layout_linha_01.addWidget(self.criar_botao_limpar(self.descricao2_var))
 
         layout_linha_02.addWidget(QLabel("Tipo:"))
         layout_linha_02.addWidget(self.tipo_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.tipo_var))
 
-        layout_linha_02.addWidget(QLabel("Unidade de Medida:"))
+        layout_linha_02.addWidget(QLabel("Unid. Medida:"))
         layout_linha_02.addWidget(self.um_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.um_var))
 
         layout_linha_02.addWidget(QLabel("Armazém:"))
         layout_linha_02.addWidget(self.armazem_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.armazem_var))
 
         layout_linha_02.addWidget(QLabel("Grupo:"))
         layout_linha_02.addWidget(self.grupo_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.grupo_var))
         
         layout_linha_02.addWidget(QLabel("Desc. Grupo:"))
         layout_linha_02.addWidget(self.grupo_desc_var)
+        layout_linha_02.addWidget(self.criar_botao_limpar(self.grupo_desc_var))
+        
+        layout_linha_03.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
         
         layout_linha_03.addWidget(self.btn_consultar)
+        layout_linha_03.addWidget(self.btn_consultar_estrutura)
         layout_linha_03.addWidget(self.btn_limpar)
         layout_linha_03.addWidget(self.btn_nova_janela)
         layout_linha_03.addWidget(self.btn_abrir_desenho)
+        layout_linha_03.addWidget(self.btn_exportar_excel)
         layout_linha_03.addWidget(self.btn_fechar)
         
         # Adicione um espaçador esticável para centralizar os botões
@@ -173,6 +212,44 @@ class ConsultaApp(QWidget):
         layout.addWidget(self.tree)
 
         self.setLayout(layout)
+    
+    
+    def criar_botao_limpar(self, campo):
+        botao_limpar = QToolButton(self)
+        botao_limpar.setIcon(QIcon('clear_icon.png'))  # Substitua 'icone_limpar.png' pelo caminho do ícone desejado
+        botao_limpar.setCursor(Qt.PointingHandCursor)
+        botao_limpar.clicked.connect(lambda: campo.clear())
+        return botao_limpar
+
+    
+    def exportar_excel(self):
+        # Obter o caminho do arquivo para salvar
+        file_path, _ = QFileDialog.getSaveFileName(self, 'Salvar como', '', 'Arquivos Excel (*.xlsx);;Todos os arquivos (*)')
+
+        if file_path:
+            # Obter os dados da tabela
+            data = self.obter_dados_tabela()
+
+            # Criar um DataFrame pandas
+            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM",
+                                             "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."])
+
+            # Salvar o DataFrame como um arquivo Excel
+            df.to_excel(file_path, index=False)
+            
+    def obter_dados_tabela(self):
+        # Obter os dados da tabela
+        data = []
+        for i in range(self.tree.rowCount()):
+            row_data = []
+            for j in range(self.tree.columnCount()):
+                item = self.tree.item(i, j)
+                if item is not None:
+                    row_data.append(item.text())
+                else:
+                    row_data.append("")
+            data.append(row_data)
+        return data
 
     def configurar_campos(self):
         self.codigo_var
@@ -194,10 +271,12 @@ class ConsultaApp(QWidget):
         self.tree.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tree.setSelectionBehavior(QTableWidget.SelectRows)
         self.tree.setSelectionMode(QTableWidget.SingleSelection)
-        self.tree.setSortingEnabled(True)  # Permitir ordenação
+        
+        # Conectar o evento itemDoubleClicked ao método copiar_linha
+        self.tree.itemDoubleClicked.connect(self.copiar_linha)
         
         # Configurar a fonte da tabela
-        fonte_tabela = QFont("Roboto", 8)  # Substitua por sua fonte desejada e tamanho
+        fonte_tabela = QFont("Segoe UI", 10)  # Substitua por sua fonte desejada e tamanho
         self.tree.setFont(fonte_tabela)
 
         # Ajustar a altura das linhas
@@ -206,6 +285,32 @@ class ConsultaApp(QWidget):
         
         # Conectar o evento sectionClicked ao método ordenar_tabela
         self.tree.horizontalHeader().sectionClicked.connect(self.ordenar_tabela)
+        
+    def configurar_tabela_tooltips(self):
+        headers = ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."]
+        tooltips = [
+            "Código do produto",
+            "Descrição do produto",
+            "Descrição completa do produto",
+            "Tipo de produto\n\nMC - Material de consumo\nMP - Matéria-prima\nPA - Produto Acabado\nPI - Produto Intermediário\nSV - Serviço",
+            "Unidade de medida",
+            "Armazém padrão\n\n01 - Matéria-prima\n02 - Produto Intermediário\n03 - Produto Comercial\n04 - Produto Acabado",
+            "Grupo do produto",
+            "Descrição do grupo do produto",
+            "Centro de custo",
+            "Indica se o produto está bloqueado",
+            "Revisão atual do produto"
+        ]
+
+        for i, header in enumerate(headers):
+            self.tree.setHorizontalHeaderItem(i, QTableWidgetItem(header))
+            self.tree.horizontalHeaderItem(i).setToolTip(tooltips[i])
+        
+    def copiar_linha(self, item):
+        # Verificar se um item foi clicado
+        if item is not None:
+            valor_campo = item.text()
+            pyperclip.copy(str(valor_campo))
         
     def ordenar_tabela(self, logicalIndex):
         # Obter o índice real da coluna (considerando a ordem de classificação)
@@ -238,11 +343,11 @@ class ConsultaApp(QWidget):
         armazem = self.armazem_var.text().upper()
         grupo = self.grupo_var.text().upper()
         desc_grupo = self.grupo_desc_var.text().upper()
-
+        
         # Construir a query de consulta
         select_query = f"""
         SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU
-        FROM PROTHEUS1233_HML.dbo.SB1010
+        FROM PROTHEUS12_R27.dbo.SB1010
         WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
         AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' AND B1_ZZNOGRP LIKE '%{desc_grupo}%'
         """
@@ -268,6 +373,7 @@ class ConsultaApp(QWidget):
 
             # Preencher a tabela com os resultados
             for i, row in enumerate(cursor.fetchall()):
+                self.tree.setSortingEnabled(False)  # Permitir ordenação
                 # Inserir os valores formatados na tabela
                 self.tree.insertRow(i)
                 for j, value in enumerate(row):
@@ -279,7 +385,9 @@ class ConsultaApp(QWidget):
                     
                 # Permitir que a interface gráfica seja atualizada
                 QCoreApplication.processEvents()
-                
+            
+            self.tree.setSortingEnabled(True)  # Permitir ordenação
+            
             # Calcular a largura total das colunas
             largura_total_colunas = self.tree.horizontalHeader().length()
 
@@ -289,6 +397,9 @@ class ConsultaApp(QWidget):
             # Ajustar a largura da janela
             nova_largura_janela = max(largura_minima_janela, largura_total_colunas + 100)  # Adicione uma folga de 20 pixels
             self.setFixedWidth(nova_largura_janela)
+            
+            # Ativar o botão Exportar Excel após o carregamento da tabela
+            self.btn_exportar_excel.setEnabled(True)
 
         except pyodbc.Error as ex:
             print(f"Falha na consulta. Erro: {str(ex)}")
@@ -326,6 +437,63 @@ class ConsultaApp(QWidget):
             
     def fechar_janela(self):
         self.close()
+        
+    def executar_consulta_estrutura(self):
+        item_selecionado = self.tree.currentItem()
+
+        if item_selecionado:
+            codigo = self.tree.item(item_selecionado.row(), 0).text()
+
+            # Construir a query de consulta para a estrutura
+            select_query_estrutura = f"""
+            SELECT * FROM PROTHEUS12_R27.dbo.SG1010
+            WHERE G1_COD = '{codigo}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+            AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010
+                            WHERE G1_COD = '{codigo}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
+            """
+
+            try:
+                # Estabelecer a conexão com o banco de dados
+                conn_estrutura = pyodbc.connect(
+                    f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+
+                # Criar um cursor para executar comandos SQL
+                cursor_estrutura = conn_estrutura.cursor()
+
+                # Executar a consulta
+                cursor_estrutura.execute(select_query_estrutura)
+
+                # Criar uma nova janela para exibir os resultados da estrutura
+                self.nova_janela_estrutura = QWidget()
+                self.nova_janela_estrutura.setWindowTitle(f"Estrutura do Item: {codigo}")
+
+                layout_nova_janela_estrutura = QVBoxLayout()
+
+                # Criar a tabela para exibir os resultados da estrutura
+                tree_estrutura = QTableWidget(self.nova_janela_estrutura)
+                tree_estrutura.setColumnCount(len(cursor_estrutura.description))
+                tree_estrutura.setHorizontalHeaderLabels([desc[0] for desc in cursor_estrutura.description])
+
+                # Preencher a tabela com os resultados da estrutura
+                for i, row in enumerate(cursor_estrutura.fetchall()):
+                    tree_estrutura.insertRow(i)
+                    for j, value in enumerate(row):
+                        item = QTableWidgetItem(str(value).strip())
+                        tree_estrutura.setItem(i, j, item)
+
+                # Adicionar a tabela da estrutura ao layout
+                layout_nova_janela_estrutura.addWidget(tree_estrutura)
+
+                self.nova_janela_estrutura.setLayout(layout_nova_janela_estrutura)
+                self.nova_janela_estrutura.show()
+
+            except pyodbc.Error as ex:
+                print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
+
+            finally:
+                # Fechar a conexão com o banco de dados da estrutura
+                conn_estrutura.close()
+
 
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
@@ -339,7 +507,7 @@ if __name__ == "__main__":
     window = ConsultaApp()
 
     largura_janela = 1024  # Substitua pelo valor desejado
-    altura_janela = 600 # Substitua pelo valor desejado
+    altura_janela = 800 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
     altura_tela = app.primaryScreen().size().height()

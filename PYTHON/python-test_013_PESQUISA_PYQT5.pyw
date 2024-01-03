@@ -431,6 +431,7 @@ class ConsultaApp(QWidget):
             
     def fechar_janela(self):
         self.close()
+        
 
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
