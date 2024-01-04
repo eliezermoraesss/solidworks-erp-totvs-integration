@@ -13,7 +13,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS® - v2.0.2")
+        self.setWindowTitle("BASE DE TESTE - CONSULTA DE PRODUTOS - TOTVS® - v2.0.2")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -446,10 +446,14 @@ class ConsultaApp(QWidget):
 
             # Construir a query de consulta para a estrutura
             select_query_estrutura = f"""
-            SELECT * FROM PROTHEUS12_R27.dbo.SG1010
-            WHERE G1_COD = '{codigo}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-            AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010
-                            WHERE G1_COD = '{codigo}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
+                SELECT struct.G1_COMP, prod.B1_DESC, struct.G1_QUANT, struct.G1_XUM 
+                FROM PROTHEUS12_R27.dbo.SG1010 struct
+                INNER JOIN PROTHEUS12_R27.dbo.SB1010 prod
+                ON struct.G1_COMP = prod.B1_COD
+                WHERE G1_COD = '{codigo}' 
+                AND G1_REVFIM <> 'ZZZ' AND struct.D_E_L_E_T_ <> '*' 
+                AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{codigo}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
+                ORDER BY G1_COMP ASC;
             """
 
             try:
