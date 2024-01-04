@@ -295,7 +295,7 @@ def verificar_cadastro_codigo_pai(codigo_pai):
             if resultado:
                 return True
             else:
-                ctypes.windll.user32.MessageBoxW(0, f"A consulta pelo cadastro do item PAI não obteve resultados.\n\nSolicito gentilmente que proceda com o registro do produto {codigo_pai} e, em seguida, tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0) 
+                ctypes.windll.user32.MessageBoxW(0, f"O cadastro do item pai não foi encontrado!\n\nEfetue o cadastro do código {codigo_pai} e, em seguida, tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0) 
                 return False
         
     except Exception as ex:
