@@ -51,7 +51,7 @@ class ConsultaApp(QWidget):
                 border: 2px;
                 border-radius: 5px;
                 font-size: 11px;
-                height: 18px;
+                height: 20px;
                 font-weight: bold;
                 margin-top: 3px;
                 margin-bottom: 3px;
@@ -97,7 +97,7 @@ class ConsultaApp(QWidget):
         self.grupo_desc_var = QLineEdit(self)
         
         fonte = "Segoe UI"
-        tamanho_fonte = 11
+        tamanho_fonte = 10
 
         self.codigo_var.setFont(QFont(fonte, tamanho_fonte))  # Substitua "Arial" pela fonte desejada e 12 pelo tamanho desejado
         self.descricao_var.setFont(QFont(fonte, tamanho_fonte))
@@ -444,7 +444,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
-    largura_janela = 1024  # Substitua pelo valor desejado
+    largura_janela = 1280  # Substitua pelo valor desejado
     altura_janela = 800 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()

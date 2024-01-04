@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
-    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton
+    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton, QTabWidget
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices, QColor
 from PyQt5.QtCore import Qt, QUrl, QCoreApplication
 import pyodbc
@@ -29,6 +29,10 @@ class ConsultaApp(QWidget):
         self.nova_janela = None  # Adicione esta linha
         self.nova_janela_estrutura = None
         
+        self.tabWidget = QTabWidget(self)  # Adicione um QTabWidget ao layout principal
+        self.tabWidget.setTabsClosable(True)  # Adicione essa linha para permitir o fechamento de guias
+        self.tabWidget.tabCloseRequested.connect(self.fechar_guia)  # Conecte o sinal para fechar guias
+
         # Aplicar folha de estilo ao aplicativo
         self.setStyleSheet("""                                                                         
             QLabel {
@@ -210,6 +214,8 @@ class ConsultaApp(QWidget):
         layout.addLayout(layout_linha_03)
                 
         layout.addWidget(self.tree)
+        
+        layout.addWidget(self.tabWidget)  # Adicione o QTabWidget ao layout principal
 
         self.setLayout(layout)
     
@@ -438,15 +444,18 @@ class ConsultaApp(QWidget):
     def fechar_janela(self):
         self.close()
         
+    def fechar_guia(self, index):
+        self.tabWidget.removeTab(index)
+
     def executar_consulta_estrutura(self):
         item_selecionado = self.tree.currentItem()
 
         if item_selecionado:
             codigo = self.tree.item(item_selecionado.row(), 0).text()
+            descricao = self.tree.item(item_selecionado.row(), 1).text()
 
-            # Construir a query de consulta para a estrutura
             select_query_estrutura = f"""
-                SELECT struct.G1_COMP, prod.B1_DESC, struct.G1_QUANT, struct.G1_XUM 
+                SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QUANTIDADE, struct.G1_XUM AS UM
                 FROM PROTHEUS12_R27.dbo.SG1010 struct
                 INNER JOIN PROTHEUS12_R27.dbo.SB1010 prod
                 ON struct.G1_COMP = prod.B1_COD
@@ -457,45 +466,35 @@ class ConsultaApp(QWidget):
             """
 
             try:
-                # Estabelecer a conexão com o banco de dados
                 conn_estrutura = pyodbc.connect(
                     f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
 
-                # Criar um cursor para executar comandos SQL
                 cursor_estrutura = conn_estrutura.cursor()
-
-                # Executar a consulta
                 cursor_estrutura.execute(select_query_estrutura)
 
-                # Criar uma nova janela para exibir os resultados da estrutura
-                self.nova_janela_estrutura = QWidget()
-                self.nova_janela_estrutura.setWindowTitle(f"Estrutura do Item: {codigo}")
+                nova_guia_estrutura = QWidget()
 
-                layout_nova_janela_estrutura = QVBoxLayout()
+                layout_nova_guia_estrutura = QVBoxLayout()
 
-                # Criar a tabela para exibir os resultados da estrutura
-                tree_estrutura = QTableWidget(self.nova_janela_estrutura)
+                tree_estrutura = QTableWidget(nova_guia_estrutura)
                 tree_estrutura.setColumnCount(len(cursor_estrutura.description))
                 tree_estrutura.setHorizontalHeaderLabels([desc[0] for desc in cursor_estrutura.description])
 
-                # Preencher a tabela com os resultados da estrutura
                 for i, row in enumerate(cursor_estrutura.fetchall()):
                     tree_estrutura.insertRow(i)
                     for j, value in enumerate(row):
                         item = QTableWidgetItem(str(value).strip())
                         tree_estrutura.setItem(i, j, item)
 
-                # Adicionar a tabela da estrutura ao layout
-                layout_nova_janela_estrutura.addWidget(tree_estrutura)
+                layout_nova_guia_estrutura.addWidget(tree_estrutura)
+                nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
 
-                self.nova_janela_estrutura.setLayout(layout_nova_janela_estrutura)
-                self.nova_janela_estrutura.show()
+                self.tabWidget.addTab(nova_guia_estrutura, f"{codigo} - {descricao}")
 
             except pyodbc.Error as ex:
                 print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
 
             finally:
-                # Fechar a conexão com o banco de dados da estrutura
                 conn_estrutura.close()
 
 
