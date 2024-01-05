@@ -225,7 +225,7 @@ class ConsultaApp(QWidget):
             data = self.obter_dados_tabela()
 
             # Criar um DataFrame pandas
-            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM",
+            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UNID.", "ARMAZÉM",
                                              "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."])
 
             # Salvar o DataFrame como um arquivo Excel
@@ -259,7 +259,7 @@ class ConsultaApp(QWidget):
         self.tree = QTableWidget(self)
         self.tree.setColumnCount(11)
         self.tree.setHorizontalHeaderLabels(
-            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?",
+            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UNID.", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?",
              "REV."])
         self.tree.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.tree.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -281,7 +281,7 @@ class ConsultaApp(QWidget):
         self.tree.horizontalHeader().sectionClicked.connect(self.ordenar_tabela)
         
     def configurar_tabela_tooltips(self):
-        headers = ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."]
+        headers = ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UNID.", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."]
         tooltips = [
             "Código do produto",
             "Descrição do produto",

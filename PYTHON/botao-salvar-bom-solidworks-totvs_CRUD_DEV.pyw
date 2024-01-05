@@ -207,10 +207,11 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
         # Executa a query SELECT e obtém os resultados em um DataFrame
         resultado_query_consulta_estrutura_totvs = pd.read_sql(query_consulta_estrutura_totvs, conn)
         
-        if not resultado_query_consulta_estrutura_totvs.empty:
+        if resultado_query_consulta_estrutura_totvs.empty:
+            return True
+        else:
             ctypes.windll.user32.MessageBoxW(0, f"Já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nSe você deseja realizar a alteração da estrutura, clique no botão ALTERAR ESTRUTURA ou se deseja cancelar a operação clique em CANCELAR.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)  
-        
-    return resultado_query_consulta_estrutura_totvs
+            return False
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
@@ -385,14 +386,14 @@ if formato_codigo_pai_correto:
 
 if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
     bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
-    existe_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
+    nao_existe_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
     excluir_arquivo_excel_bom(excel_file_path)
 
-    if not bom_excel_sem_duplicatas.empty and not existe_estrutura_totvs:
+    if not bom_excel_sem_duplicatas.empty and nao_existe_estrutura_totvs:
         revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
         if revisao_atualizada != None:
             atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
-    #elif not bom_excel_sem_duplicatas.empty and existe_estrutura_totvs:
-        #alterar_estrutura_existente(bom_excel_sem_duplicatas, existe_estrutura_totvs)
+    #else:
+        #alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
 else:
     excluir_arquivo_excel_bom(excel_file_path)

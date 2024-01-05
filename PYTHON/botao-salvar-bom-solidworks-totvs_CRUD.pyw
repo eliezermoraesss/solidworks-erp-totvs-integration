@@ -112,6 +112,10 @@ def verificar_cadastro_codigo_filho(codigos_filho):
         
 
 def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
+    
+    # Remover espaços extras nas coluna descrição
+    df_excel[indice_coluna_descricao_excel] = df_excel[indice_coluna_descricao_excel].str.strip()
+
     # Agrupa o DataFrame pela combinação única de código e descrição
     grouped = df_excel.groupby([indice_coluna_codigo_excel, indice_coluna_descricao_excel])
 
@@ -375,6 +379,7 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
     if codigos_removidos_bom:
         ctypes.windll.user32.MessageBoxW(
             0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
+
 
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)

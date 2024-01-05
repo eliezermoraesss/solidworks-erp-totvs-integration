@@ -10,6 +10,10 @@ import time
 import pandas as pd
 
 class ConsultaApp(QWidget):
+    
+    # Adicione este sinal à classe
+    guia_fechada = pyqtSignal()
+        
     def __init__(self):
         super().__init__()
         
@@ -32,9 +36,6 @@ class ConsultaApp(QWidget):
         self.tabWidget.setTabsClosable(True)  # Adicione essa linha para permitir o fechamento de guias
         self.tabWidget.tabCloseRequested.connect(self.fechar_guia)  # Conecte o sinal para fechar guias
         self.tabWidget.setVisible(False)  # Inicialmente, a guia está invisível
-        
-        # Adicione este sinal à classe
-        guia_fechada = pyqtSignal()
 
         # Aplicar folha de estilo ao aplicativo
         self.setStyleSheet("""                                                                         
@@ -379,7 +380,7 @@ class ConsultaApp(QWidget):
             self.tree.setRowCount(0)
             
             # Definir cores alternadas
-            cores = [QColor("#FFFFFF"), QColor("#d7ecfd")]
+            cores = [QColor("#FFFFFF"), QColor("#FFFFFF")]
             
             time.sleep(0.1)
 
@@ -464,6 +465,16 @@ class ConsultaApp(QWidget):
     
     def existe_guias_abertas(self):
         return self.tabWidget.count() > 0
+    
+    def ajustar_largura_coluna_descricao(self, tree_widget):
+        header = tree_widget.horizontalHeader()
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+
+    def centralizar_colunas_quantidade_unidade(self, tree_widget):
+        header = tree_widget.horizontalHeader()
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        header.setDefaultAlignment(Qt.AlignCenter)
 
     def executar_consulta_estrutura(self):
         item_selecionado = self.tree.currentItem()
@@ -473,7 +484,7 @@ class ConsultaApp(QWidget):
             descricao = self.tree.item(item_selecionado.row(), 1).text()
 
             select_query_estrutura = f"""
-                SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QUANTIDADE, struct.G1_XUM AS UM
+                SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QTD, struct.G1_XUM AS UNID
                 FROM PROTHEUS12_R27.dbo.SG1010 struct
                 INNER JOIN PROTHEUS12_R27.dbo.SB1010 prod
                 ON struct.G1_COMP = prod.B1_COD
@@ -484,19 +495,20 @@ class ConsultaApp(QWidget):
             """
 
             try:
-                conn_estrutura = pyodbc.connect(
-                    f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+                conn_estrutura = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
 
                 cursor_estrutura = conn_estrutura.cursor()
                 cursor_estrutura.execute(select_query_estrutura)
-
+                
                 nova_guia_estrutura = QWidget()
-
                 layout_nova_guia_estrutura = QVBoxLayout()
 
                 tree_estrutura = QTableWidget(nova_guia_estrutura)
                 tree_estrutura.setColumnCount(len(cursor_estrutura.description))
                 tree_estrutura.setHorizontalHeaderLabels([desc[0] for desc in cursor_estrutura.description])
+
+                # Tornar a tabela somente leitura
+                tree_estrutura.setEditTriggers(QTableWidget.NoEditTriggers)
 
                 for i, row in enumerate(cursor_estrutura.fetchall()):
                     tree_estrutura.insertRow(i)
@@ -504,6 +516,11 @@ class ConsultaApp(QWidget):
                         item = QTableWidgetItem(str(value).strip())
                         tree_estrutura.setItem(i, j, item)
 
+                # Ajustar automaticamente a largura da coluna "Descrição"
+                self.ajustar_largura_coluna_descricao(tree_estrutura)
+                    
+                # Centralizar as colunas "Quantidade" e "Unidade"
+                self.centralizar_colunas_quantidade_unidade(tree_estrutura)
                 layout_nova_guia_estrutura.addWidget(tree_estrutura)
                 nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
 
@@ -513,6 +530,9 @@ class ConsultaApp(QWidget):
                     self.tabWidget.setVisible(True)
 
                 self.tabWidget.addTab(nova_guia_estrutura, f"{codigo} - {descricao}")
+                
+                #mensagem = f"Produto sem estrutura!"
+                #QMessageBox.information(self, f"{codigo}", mensagem)   
 
             except pyodbc.Error as ex:
                 print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
