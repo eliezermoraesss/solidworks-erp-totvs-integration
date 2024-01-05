@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
     QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton, QTabWidget
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices, QColor
-from PyQt5.QtCore import Qt, QUrl, QCoreApplication
+from PyQt5.QtCore import Qt, QUrl, QCoreApplication, pyqtSignal
 import pyodbc
 import pyperclip
 import os
@@ -27,11 +27,14 @@ class ConsultaApp(QWidget):
             
         # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
         self.nova_janela = None  # Adicione esta linha
-        self.nova_janela_estrutura = None
         
         self.tabWidget = QTabWidget(self)  # Adicione um QTabWidget ao layout principal
         self.tabWidget.setTabsClosable(True)  # Adicione essa linha para permitir o fechamento de guias
         self.tabWidget.tabCloseRequested.connect(self.fechar_guia)  # Conecte o sinal para fechar guias
+        self.tabWidget.setVisible(False)  # Inicialmente, a guia está invisível
+        
+        # Adicione este sinal à classe
+        guia_fechada = pyqtSignal()
 
         # Aplicar folha de estilo ao aplicativo
         self.setStyleSheet("""                                                                         
@@ -375,10 +378,17 @@ class ConsultaApp(QWidget):
             # Limpar a tabela
             self.tree.setRowCount(0)
             
+            # Definir cores alternadas
+            cores = [QColor("#FFFFFF"), QColor("#d7ecfd")]
+            
             time.sleep(0.1)
 
             # Preencher a tabela com os resultados
             for i, row in enumerate(cursor.fetchall()):
+                # Calcular índice da cor alternada
+                indice_cor = i % 2
+                cor_fundo = cores[indice_cor]
+
                 self.tree.setSortingEnabled(False)  # Permitir ordenação
                 # Inserir os valores formatados na tabela
                 self.tree.insertRow(i)
@@ -387,11 +397,12 @@ class ConsultaApp(QWidget):
                         # Converte o valor 1 para 'Sim' e 2 para 'Não'
                         value = 'Sim' if value == 1 else 'Não'
                     item = QTableWidgetItem(str(value).strip())
+                    item.setBackground(cor_fundo)  # Definir cor de fundo
                     self.tree.setItem(i, j, item)
-                    
+
                 # Permitir que a interface gráfica seja atualizada
                 QCoreApplication.processEvents()
-            
+
             self.tree.setSortingEnabled(True)  # Permitir ordenação
             
             # Calcular a largura total das colunas
@@ -446,6 +457,13 @@ class ConsultaApp(QWidget):
         
     def fechar_guia(self, index):
         self.tabWidget.removeTab(index)
+        if not self.existe_guias_abertas():
+            # Se não houver mais guias abertas, remova a guia do layout principal
+            self.tabWidget.setVisible(False)
+            self.guia_fechada.emit()
+    
+    def existe_guias_abertas(self):
+        return self.tabWidget.count() > 0
 
     def executar_consulta_estrutura(self):
         item_selecionado = self.tree.currentItem()
@@ -488,6 +506,11 @@ class ConsultaApp(QWidget):
 
                 layout_nova_guia_estrutura.addWidget(tree_estrutura)
                 nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
+
+                if not self.existe_guias_abertas():
+                    # Se não houver guias abertas, adicione a guia ao layout principal
+                    self.layout().addWidget(self.tabWidget)
+                    self.tabWidget.setVisible(True)
 
                 self.tabWidget.addTab(nova_guia_estrutura, f"{codigo} - {descricao}")
 
