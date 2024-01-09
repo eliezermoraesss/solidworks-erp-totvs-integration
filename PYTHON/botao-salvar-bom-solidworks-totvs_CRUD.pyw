@@ -32,7 +32,7 @@ def validar_formato_codigo_pai(codigo_pai):
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
     
     if not codigo_pai_validado:
-        ctypes.windll.user32.MessageBoxW(0, f"Este desenho está com o código fora do formato padrão ENAPLIC.\n\nCÓDIGO {codigo_pai}\n\nCorrija e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
+        ctypes.windll.user32.MessageBoxW(0, f"Este desenho está nomeado com o CÓDIGO PAI {codigo_pai} fora do formato padrão ENAPLIC.\n\nFORMATOS PADRÃO:\n\nC-XXX-XXX-XXX, M-XXX-XXX-XXX ou EXXXX-XXX-XXX onde X é um número de 0 à 9.\n\nCorrija e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
     
     return codigo_pai_validado
     

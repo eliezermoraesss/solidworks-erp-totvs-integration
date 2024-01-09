@@ -4,6 +4,8 @@ import ctypes
 import os
 import re
 from datetime import date
+import tkinter as tk
+from tkinter import simpledialog
 
 # Parâmetros de conexão com o banco de dados SQL Server
 server = 'SVRERP,1433'
@@ -204,13 +206,13 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
         conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
         cursor = conn.cursor()
 
-        # Executa a query SELECT e obtém os resultados em um DataFrame
-        resultado_query_consulta_estrutura_totvs = pd.read_sql(query_consulta_estrutura_totvs, conn)
+        cursor.execute(query_consulta_estrutura_totvs)
+        estrutura_totvs = cursor.fetchall()
         
-        if resultado_query_consulta_estrutura_totvs.empty:
+        if not estrutura_totvs:
             return True
         else:
-            ctypes.windll.user32.MessageBoxW(0, f"Já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nSe você deseja realizar a alteração da estrutura, clique no botão ALTERAR ESTRUTURA ou se deseja cancelar a operação clique em CANCELAR.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)  
+            #ctypes.windll.user32.MessageBoxW(0, f"Já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nSe você deseja realizar a alteração da estrutura, clique no botão ALTERAR ESTRUTURA ou se deseja cancelar a operação clique em CANCELAR.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)  
             return False
 
     except Exception as ex:
@@ -219,8 +221,8 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
 
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
-        if 'conn' in locals():
-            conn.close()
+        cursor.close()
+        conn.close()
 
             
 def obter_ultima_pk_tabela_estrutura():
@@ -351,6 +353,23 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
         conn.close()
 
 
+def ask_user_for_action(codigo_pai, estrutura_totvs):
+    root = tk.Tk()
+    root.withdraw()
+
+    user_choice = simpledialog.askstring(
+        "Estrutura Existente",
+        f"Já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?",
+        prompt_button=["Alterar Estrutura", "Cancelar"]
+    )
+
+    root.destroy()
+
+    if user_choice == "Alterar Estrutura":
+        return True
+    else:
+        return False
+
 def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
     # Remove espaços em branco da coluna 'G1_COD'
     resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs['G1_COMP'].str.strip()
@@ -380,6 +399,7 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
+estrutura_totvs = None
 
 if formato_codigo_pai_correto:
     existe_cadastro_codigo_pai = verificar_cadastro_codigo_pai(nome_desenho)
@@ -391,9 +411,18 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
 
     if not bom_excel_sem_duplicatas.empty and nao_existe_estrutura_totvs:
         revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
+
         if revisao_atualizada != None:
             atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
-    #else:
-        #alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
+            
+    if not bom_excel_sem_duplicatas.empty and not nao_existe_estrutura_totvs:
+        if estrutura_totvs is not None:
+            user_wants_to_alter = ask_user_for_action(nome_desenho, estrutura_totvs)
+
+            if user_wants_to_alter:
+                alterar_estrutura_existente(bom_excel_sem_duplicatas, estrutura_totvs)
+            else:
+                # Handle cancellation if needed
+                pass
 else:
     excluir_arquivo_excel_bom(excel_file_path)
