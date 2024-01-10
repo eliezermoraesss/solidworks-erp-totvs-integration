@@ -5,7 +5,7 @@ import os
 import re
 from datetime import date
 import tkinter as tk
-from tkinter import simpledialog
+from tkinter import messagebox
 
 # Parâmetros de conexão com o banco de dados SQL Server
 server = 'SVRERP,1433'
@@ -139,6 +139,10 @@ def validar_descricao(descricoes):
     return descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
 
 
+def verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel):
+    codigo_filho_diferente_codigo_pai = df_excel.iloc[:, indice_coluna_codigo_excel] != f"{nome_desenho}"
+    return codigo_filho_diferente_codigo_pai
+
 def validacao_de_dados_bom(excel_file_path):
 
     # Carrega a planilha do Excel em um DataFrame
@@ -146,6 +150,8 @@ def validacao_de_dados_bom(excel_file_path):
 
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])
+    
+    codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
 
     validar_codigos = validar_formato_codigos_filho(df_excel, indice_coluna_codigo_excel)
 
@@ -153,7 +159,11 @@ def validacao_de_dados_bom(excel_file_path):
     
     validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
 
-    # Exibe uma mensagem de erro se os códigos ou quantidades não estiverem no formato esperado
+
+    if not codigo_filho_diferente_codigo_pai.all():
+        ctypes.windll.user32.MessageBoxW(
+            0, "Existe código-filho igual ao código pai!\n\nCorrija e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+        
     if not validar_codigos.all():
         ctypes.windll.user32.MessageBoxW(
             0, "Códigos da BOM fora do formato padrão ENAPLIC!\n\nCorrija-os e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
@@ -166,7 +176,7 @@ def validacao_de_dados_bom(excel_file_path):
         ctypes.windll.user32.MessageBoxW(
             0, "Quantidade inválida encontrada!\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nCorrija e tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
-    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all():
+    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all():
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
@@ -206,14 +216,10 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
         conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
         cursor = conn.cursor()
 
-        cursor.execute(query_consulta_estrutura_totvs)
-        estrutura_totvs = cursor.fetchall()
+        # Executa a query SELECT e obtém os resultados em um DataFrame
+        resultado_query_consulta_estrutura_totvs = pd.read_sql(query_consulta_estrutura_totvs, conn)
         
-        if not estrutura_totvs:
-            return True
-        else:
-            #ctypes.windll.user32.MessageBoxW(0, f"Já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nSe você deseja realizar a alteração da estrutura, clique no botão ALTERAR ESTRUTURA ou se deseja cancelar a operação clique em CANCELAR.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)  
-            return False
+        return resultado_query_consulta_estrutura_totvs
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
@@ -221,8 +227,8 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
 
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
-        cursor.close()
-        conn.close()
+        if 'conn' in locals():
+            conn.close()
 
             
 def obter_ultima_pk_tabela_estrutura():
@@ -353,19 +359,13 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
         conn.close()
 
 
-def ask_user_for_action(codigo_pai, estrutura_totvs):
-    root = tk.Tk()
-    root.withdraw()
-
-    user_choice = simpledialog.askstring(
-        "Estrutura Existente",
-        f"Já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?",
-        prompt_button=["Alterar Estrutura", "Cancelar"]
+def ask_user_for_action(codigo_pai):
+    user_choice = messagebox.askquestion(
+        "CADASTRO DE ESTRUTURA - TOTVS®",
+        f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?"
     )
 
-    root.destroy()
-
-    if user_choice == "Alterar Estrutura":
+    if user_choice == "yes":
         return True
     else:
         return False
@@ -399,30 +399,26 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
-estrutura_totvs = None
+nao_existe_estrutura_totvs = False
 
 if formato_codigo_pai_correto:
     existe_cadastro_codigo_pai = verificar_cadastro_codigo_pai(nome_desenho)
 
 if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
     bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
-    nao_existe_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
+    resultado_query_consulta_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
     excluir_arquivo_excel_bom(excel_file_path)
 
-    if not bom_excel_sem_duplicatas.empty and nao_existe_estrutura_totvs:
+    if not bom_excel_sem_duplicatas.empty and resultado_query_consulta_estrutura_totvs.empty:
         revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
 
         if revisao_atualizada != None:
             atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
             
-    if not bom_excel_sem_duplicatas.empty and not nao_existe_estrutura_totvs:
-        if estrutura_totvs is not None:
-            user_wants_to_alter = ask_user_for_action(nome_desenho, estrutura_totvs)
+    if not bom_excel_sem_duplicatas.empty and not resultado_query_consulta_estrutura_totvs.empty:
+        user_wants_to_alter = ask_user_for_action(nome_desenho)
 
-            if user_wants_to_alter:
-                alterar_estrutura_existente(bom_excel_sem_duplicatas, estrutura_totvs)
-            else:
-                # Handle cancellation if needed
-                pass
+        if user_wants_to_alter:
+            alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
 else:
     excluir_arquivo_excel_bom(excel_file_path)

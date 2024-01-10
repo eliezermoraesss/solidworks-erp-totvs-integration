@@ -157,9 +157,9 @@ def validacao_de_dados_bom(excel_file_path):
 
 def verificar_se_existe_estrutura_totvs(nome_desenho):
 
-    query_consulta_estrutura_totvs = f"""SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
+    query_consulta_estrutura_totvs = f"""SELECT * FROM {database}.dbo.SG1010 WHERE G1_COD = '{nome_desenho}'
         AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
+        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ');
     """
     # Tente estabelecer a conexão com o banco de dados
     try:
