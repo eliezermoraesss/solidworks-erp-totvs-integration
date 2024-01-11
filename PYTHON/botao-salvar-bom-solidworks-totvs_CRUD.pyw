@@ -140,6 +140,9 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 def validar_descricao(descricoes):
     return descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
 
+def verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel):
+    codigo_filho_diferente_codigo_pai = df_excel.iloc[:, indice_coluna_codigo_excel] != f"{nome_desenho}"
+    return codigo_filho_diferente_codigo_pai
 
 def validacao_de_dados_bom(excel_file_path):
 
@@ -148,6 +151,8 @@ def validacao_de_dados_bom(excel_file_path):
 
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])
+    
+    codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
 
     validar_codigos = validar_formato_codigos_filho(df_excel, indice_coluna_codigo_excel)
 
@@ -155,20 +160,23 @@ def validacao_de_dados_bom(excel_file_path):
     
     validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
 
-    # Exibe uma mensagem de erro se os códigos ou quantidades não estiverem no formato esperado
+    if not codigo_filho_diferente_codigo_pai.all():
+        ctypes.windll.user32.MessageBoxW(
+            0, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+        
     if not validar_codigos.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Códigos da BOM fora do formato padrão ENAPLIC!\n\nCorrija-os e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "CÓDIGO-FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         
     if not validar_descricoes.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Descrição inválida encontrada!\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nCorrija e tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija o código e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if not validar_quantidades.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "Quantidade inválida encontrada!\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nCorrija e tente novamente.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija o código e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
-    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all():
+    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all():
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
