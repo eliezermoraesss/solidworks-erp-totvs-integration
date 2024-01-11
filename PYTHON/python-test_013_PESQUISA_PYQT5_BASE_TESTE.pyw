@@ -496,7 +496,7 @@ class ConsultaApp(QWidget):
                 
                 nova_guia_estrutura = QWidget()
                 layout_nova_guia_estrutura = QVBoxLayout()
-                layout_horizontal_01 = QHBoxLayout()
+                layout_cabecalho = QHBoxLayout()
 
                 tree_estrutura = QTableWidget(nova_guia_estrutura)
                 tree_estrutura.setColumnCount(len(cursor_estrutura.description))
@@ -514,15 +514,25 @@ class ConsultaApp(QWidget):
                 # Ajustar automaticamente a largura da coluna "Descrição"
                 self.ajustar_largura_coluna_descricao(tree_estrutura)
                     
-                layout_nova_guia_estrutura.addWidget(tree_estrutura)
+                layout_cabecalho.addWidget(QLabel("ESTRUTURA DO PRODUTO"))
+                layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
+                layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                 nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
+                
+                nova_guia_estrutura.setStyleSheet("""                                                                         
+                    QLabel {
+                        color: #000;
+                        font-size: 18px;
+                        font-weight: bold;
+                    }
+                """)
 
                 if not self.existe_guias_abertas():
                     # Se não houver guias abertas, adicione a guia ao layout principal
                     self.layout().addWidget(self.tabWidget)
                     self.tabWidget.setVisible(True)
 
-                self.tabWidget.addTab(nova_guia_estrutura, f"{codigo} - {descricao}")
+                self.tabWidget.addTab(nova_guia_estrutura, f"{codigo}")
                 
                 #mensagem = f"Produto sem estrutura!"
                 #QMessageBox.information(self, f"{codigo}", mensagem)   
