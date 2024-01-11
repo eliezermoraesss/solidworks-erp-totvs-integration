@@ -247,7 +247,7 @@ def obter_ultima_pk_tabela_estrutura():
         return None
     
     
-def obter_revisao_inicial_codigo_pai(codigo_pai):
+def obter_revisao_codigo_pai(codigo_pai):
     query_revisao_inicial = f"""SELECT B1_REVATU FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""   
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
@@ -259,6 +259,8 @@ def obter_revisao_inicial_codigo_pai(codigo_pai):
             
             if valor_revisao_inicial in ('000', '   '):
                 valor_revisao_inicial = '001'
+            else:
+                valor_revisao_inicial += 1
 
             return valor_revisao_inicial
 
@@ -313,7 +315,7 @@ def verificar_cadastro_codigo_pai(codigo_pai):
 def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas): 
     
     ultima_pk_tabela_estrutura = obter_ultima_pk_tabela_estrutura()
-    revisao_inicial = obter_revisao_inicial_codigo_pai(codigo_pai)
+    revisao_inicial = obter_revisao_codigo_pai(codigo_pai)
     revisao_final = revisao_inicial
     data_atual_formatada = formatar_data_atual()
     
@@ -358,7 +360,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
         conn.close()
 
 
-def ask_user_for_action(codigo_pai):
+def janela_mensagem_alterar_estrutura(codigo_pai):
     user_choice = messagebox.askquestion(
         "CADASTRO DE ESTRUTURA - TOTVS®",
         f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?"
@@ -368,29 +370,57 @@ def ask_user_for_action(codigo_pai):
         return True
     else:
         return False
+    
+    
+def atualizar_itens_estrutura_totvs(codigos_em_comum):
+    return None
 
-def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
+
+def inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_atualizada_estrutura):
+    return None
+
+
+def remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_atualizada_estrutura):
+    return None
+
+
+def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
+    
+    revisao_atualizada_estrutura = None
+    
     # Remove espaços em branco da coluna 'G1_COD'
     resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs['G1_COMP'].str.strip()
 
-    # Encontra códigos que são iguais entre SQL e Excel
     codigos_em_comum = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
+    
     codigos_adicionados_bom = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].loc[~bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].isin(
         resultado_query_consulta_estrutura_totvs['G1_COMP'])].tolist()
+    
     codigos_removidos_bom = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
-
-    # Exibe uma caixa de diálogo com base nos resultados
+    
+    if codigos_adicionados_bom or codigos_removidos_bom:
+        revisao_atualizada_estrutura = obter_revisao_codigo_pai(nome_desenho) 
+    
     if codigos_em_comum:
+        
+        atualizar_itens_estrutura_totvs(codigos_em_comum)
+        
         ctypes.windll.user32.MessageBoxW(
             0, f"Códigos em comuns: {codigos_em_comum}", "ITENS EM COMUM", 1)
-
+        
     if codigos_adicionados_bom:
+        
+        inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_atualizada_estrutura)
+        
         ctypes.windll.user32.MessageBoxW(
             0, f"Itens adicionados: {codigos_adicionados_bom}", "ITENS ADICIONADOS", 1)
 
     if codigos_removidos_bom:
+        
+        remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_atualizada_estrutura)
+        
         ctypes.windll.user32.MessageBoxW(
             0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
 
@@ -398,7 +428,6 @@ def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consul
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
-nao_existe_estrutura_totvs = False
 
 if formato_codigo_pai_correto:
     existe_cadastro_codigo_pai = verificar_cadastro_codigo_pai(nome_desenho)
@@ -415,9 +444,9 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
             atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
             
     if not bom_excel_sem_duplicatas.empty and not resultado_query_consulta_estrutura_totvs.empty:
-        user_wants_to_alter = ask_user_for_action(nome_desenho)
+        usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
 
-        if user_wants_to_alter:
-            alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
+        if usuario_quer_alterar:
+            comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
 else:
     excluir_arquivo_excel_bom(excel_file_path)
