@@ -444,6 +444,7 @@ class ConsultaApp(QWidget):
                 mensagem = f"Desenho não encontrado!\n\n:-("
                 QMessageBox.information(self, f"{codigo}", mensagem)            
 
+
     def copiar_linha(self):
         item_clicado = self.tree.currentItem()
         if item_clicado:
@@ -461,8 +462,9 @@ class ConsultaApp(QWidget):
         
     def fechar_guia(self, index):
         codigo_guia_fechada = self.tabWidget.tabText(index)
+        self.guias_abertas.remove(codigo_guia_fechada)
         self.tabWidget.removeTab(index)
-        self.guias_abertas.remove(codigo_guia_fechada)  # Remova o código da lista
+        
         if not self.existe_guias_abertas():
             # Se não houver mais guias abertas, remova a guia do layout principal
             self.tabWidget.setVisible(False)
@@ -568,9 +570,7 @@ class ConsultaApp(QWidget):
                         self.tabWidget.setVisible(True)
                         
                     self.tabWidget.addTab(nova_guia_estrutura, f"{codigo}")
-                    
-                    
-                    
+                     
                     #mensagem = f"Produto sem estrutura!"
                     #QMessageBox.information(self, f"{codigo}", mensagem)
 

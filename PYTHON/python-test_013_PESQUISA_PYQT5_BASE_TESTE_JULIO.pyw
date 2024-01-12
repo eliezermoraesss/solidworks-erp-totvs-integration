@@ -32,6 +32,7 @@ class ConsultaApp(QWidget):
             
         # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
         self.nova_janela = None  # Adicione esta linha
+        self.guia_fechada.connect(self.fechar_guia)
         
         self.tabWidget = QTabWidget(self)  # Adicione um QTabWidget ao layout principal
         self.tabWidget.setTabsClosable(True)  # Adicione essa linha para permitir o fechamento de guias
@@ -61,7 +62,7 @@ class ConsultaApp(QWidget):
                 border: 2px;
                 border-radius: 5px;
                 font-size: 11px;
-                height: 18px;
+                height: 20px;
                 font-weight: bold;
                 margin-top: 3px;
                 margin-bottom: 3px;
@@ -107,7 +108,7 @@ class ConsultaApp(QWidget):
         self.grupo_desc_var = QLineEdit(self)
         
         fonte = "Segoe UI"
-        tamanho_fonte = 11
+        tamanho_fonte = 10
 
         self.codigo_var.setFont(QFont(fonte, tamanho_fonte))  # Substitua "Arial" pela fonte desejada e 12 pelo tamanho desejado
         self.descricao_var.setFont(QFont(fonte, tamanho_fonte))
@@ -223,7 +224,8 @@ class ConsultaApp(QWidget):
         layout.addWidget(self.tabWidget)  # Adicione o QTabWidget ao layout principal
 
         self.setLayout(layout)
-    
+        
+        self.guias_abertas = []
     
     def criar_botao_limpar(self, campo):
         botao_limpar = QToolButton(self)
@@ -442,6 +444,7 @@ class ConsultaApp(QWidget):
                 mensagem = f"Desenho não encontrado!\n\n:-("
                 QMessageBox.information(self, f"{codigo}", mensagem)            
 
+
     def copiar_linha(self):
         item_clicado = self.tree.currentItem()
         if item_clicado:
@@ -458,7 +461,10 @@ class ConsultaApp(QWidget):
         self.close()
         
     def fechar_guia(self, index):
+        codigo_guia_fechada = self.tabWidget.tabText(index)
+        self.guias_abertas.remove(codigo_guia_fechada)
         self.tabWidget.removeTab(index)
+        
         if not self.existe_guias_abertas():
             # Se não houver mais guias abertas, remova a guia do layout principal
             self.tabWidget.setVisible(False)
@@ -478,77 +484,104 @@ class ConsultaApp(QWidget):
 
         if item_selecionado:
             
-            select_query_estrutura = f"""
-                SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QTD, struct.G1_XUM AS UNID
-                FROM PROTHEUS12_R27.dbo.SG1010 struct
-                INNER JOIN PROTHEUS12_R27.dbo.SB1010 prod
-                ON struct.G1_COMP = prod.B1_COD
-                WHERE G1_COD = '{codigo}' 
-                AND G1_REVFIM <> 'ZZZ' AND struct.D_E_L_E_T_ <> '*' 
-                AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{codigo}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
-                ORDER BY G1_COMP ASC;
-            """
+            if codigo in self.guias_abertas:
+                # Se estiver aberta, traga a guia existente para frente
+                index = self.guias_abertas.index(codigo)
+                self.tabWidget.setCurrentIndex(index)
+            else:
+                select_query_estrutura = f"""
+                    SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QTD, struct.G1_XUM AS UNID
+                    FROM PROTHEUS12_R27.dbo.SG1010 struct
+                    INNER JOIN PROTHEUS12_R27.dbo.SB1010 prod
+                    ON struct.G1_COMP = prod.B1_COD
+                    WHERE G1_COD = '{codigo}' 
+                    AND G1_REVFIM <> 'ZZZ' AND struct.D_E_L_E_T_ <> '*' 
+                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{codigo}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
+                    ORDER BY G1_COMP ASC;
+                """
 
-            try:
-                conn_estrutura = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+                try:
+                    conn_estrutura = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
 
-                cursor_estrutura = conn_estrutura.cursor()
-                cursor_estrutura.execute(select_query_estrutura)
-                
-                nova_guia_estrutura = QWidget()
-                layout_nova_guia_estrutura = QVBoxLayout()
-                layout_cabecalho = QHBoxLayout()
-
-                tree_estrutura = QTableWidget(nova_guia_estrutura)
-                tree_estrutura.setColumnCount(len(cursor_estrutura.description))
-                tree_estrutura.setHorizontalHeaderLabels([desc[0] for desc in cursor_estrutura.description])
-                
-                # Tornar a tabela somente leitura
-                tree_estrutura.setEditTriggers(QTableWidget.NoEditTriggers)
-
-                # Permitir edição apenas na coluna "Quantidade" (assumindo que "Quantidade" é a terceira coluna, índice 2)
-                tree_estrutura.setEditTriggers(QAbstractItemView.DoubleClicked)
-                tree_estrutura.setItemDelegateForColumn(2, QItemDelegate(tree_estrutura))
-
-                for i, row in enumerate(cursor_estrutura.fetchall()):
-                    tree_estrutura.insertRow(i)
-                    for j, value in enumerate(row):
-                        item = QTableWidgetItem(str(value).strip())
-                        tree_estrutura.setItem(i, j, item)
-
-                # Ajustar automaticamente a largura da coluna "Descrição"
-                self.ajustar_largura_coluna_descricao(tree_estrutura)
+                    cursor_estrutura = conn_estrutura.cursor()
+                    cursor_estrutura.execute(select_query_estrutura)
                     
-                layout_cabecalho.addWidget(QLabel("ESTRUTURA DO PRODUTO"))
-                layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
-                layout_nova_guia_estrutura.addWidget(tree_estrutura)              
-                nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
-                
-                nova_guia_estrutura.setStyleSheet("""                                                                         
-                    QLabel {
-                        color: #000;
-                        font-size: 18px;
-                        font-weight: bold;
-                    }
-                """)
+                    nova_guia_estrutura = QWidget()
+                    layout_nova_guia_estrutura = QVBoxLayout()
+                    layout_cabecalho = QHBoxLayout()
 
-                if not self.existe_guias_abertas():
-                    # Se não houver guias abertas, adicione a guia ao layout principal
-                    self.layout().addWidget(self.tabWidget)
-                    self.tabWidget.setVisible(True)
+                    tree_estrutura = QTableWidget(nova_guia_estrutura)
+                    tree_estrutura.setColumnCount(len(cursor_estrutura.description))
+                    tree_estrutura.setHorizontalHeaderLabels([desc[0] for desc in cursor_estrutura.description])
+                    
+                    # Tornar a tabela somente leitura
+                    tree_estrutura.setEditTriggers(QTableWidget.NoEditTriggers)
 
-                self.tabWidget.addTab(nova_guia_estrutura, f"{codigo}")
-                
-                #mensagem = f"Produto sem estrutura!"
-                #QMessageBox.information(self, f"{codigo}", mensagem)
+                    # Permitir edição apenas na coluna "Quantidade" (assumindo que "Quantidade" é a terceira coluna, índice 2)
+                    tree_estrutura.setEditTriggers(QAbstractItemView.DoubleClicked)
+                    tree_estrutura.setItemDelegateForColumn(2, QItemDelegate(tree_estrutura))
 
-            except pyodbc.Error as ex:
-                print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
+                    for i, row in enumerate(cursor_estrutura.fetchall()):
+                        tree_estrutura.insertRow(i)
+                        for j, value in enumerate(row):
+                            item = QTableWidgetItem(str(value).strip())
+                            tree_estrutura.setItem(i, j, item)
 
-            finally:
-                conn_estrutura.close()
+                    # Ajustar automaticamente a largura da coluna "Descrição"
+                    self.ajustar_largura_coluna_descricao(tree_estrutura)
+                        
+                    layout_cabecalho.addWidget(QLabel("ESTRUTURA DO PRODUTO"))
+                    layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
+                    layout_nova_guia_estrutura.addWidget(tree_estrutura)              
+                    nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
+                    
+                    nova_guia_estrutura.setStyleSheet("""                                                                         
+                        QLabel {
+                            color: #000;
+                            font-size: 18px;
+                            font-weight: bold;
+                        }
+                        
+                        QTableWidget {
+                            border: 1px solid #85aaf0;
+                        }
 
-        tree_estrutura.itemChanged.connect(lambda item: self.handle_item_change(item, tree_estrutura, codigo))
+                        QTableWidget QHeaderView::section {
+                            background-color: #575a5f;
+                            color: #fff;
+                            padding: 5px;
+                            height: 18px;
+                        }
+
+                        QTableWidget QHeaderView::section:horizontal {
+                            border-top: 1px solid #333;
+                        }
+                        
+                        QTableWidget::item:selected {
+                            background-color: #0066ff;
+                            color: #fff;
+                            font-weight: bold;
+                        }        
+                    """)
+
+                    if not self.existe_guias_abertas():
+                        # Se não houver guias abertas, adicione a guia ao layout principal
+                        self.layout().addWidget(self.tabWidget)
+                        self.tabWidget.setVisible(True)
+                        
+                    self.tabWidget.addTab(nova_guia_estrutura, f"{codigo}")
+                     
+                    #mensagem = f"Produto sem estrutura!"
+                    #QMessageBox.information(self, f"{codigo}", mensagem)
+
+                except pyodbc.Error as ex:
+                    print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
+
+                finally:
+                    conn_estrutura.close()
+
+                tree_estrutura.itemChanged.connect(lambda item: self.handle_item_change(item, tree_estrutura, codigo))
+                self.guias_abertas.append(codigo)     
     
     
     def alterar_quantidade_estrutura(self, codigo_pai, codigo_filho, quantidade):

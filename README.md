@@ -1,7 +1,155 @@
-# Cadastrar no TOTVS
+# Gerenciador de Listas de Materiais (BOM) - Python Script
 
-## Após o correto preenchimento dos dados do produto ativo, efetua o cadastro no ERP TOTVS
+## Visão Geral
 
-# Cadastrar Estrutura de Produto no TOTVS
+Este script em Python foi desenvolvido para realizar a validação e gerenciamento de Listas de Materiais (BOM) em um banco de dados Microsoft SQL Server. Ele oferece funcionalidades para verificar a consistência dos dados da BOM, criar ou atualizar estruturas no banco de dados TOTVS® Protheus, e interagir com o usuário por meio de mensagens.
 
-## Cadastra a estrutura do produto conforme a BOM (lista de materiais) no desenho de detalhamento
+## Requisitos
+Certifique-se de que você tenha os seguintes requisitos instalados:
+
+### Importações
+
+- **pyodbc**: Conexão ao SQL Server.
+- **pandas**: Manipulação de dados.
+- **ctypes**: Interação com bibliotecas compartilhadas.
+- **os**: Interação com o sistema operacional.
+- **re**: Expressões regulares.
+- **datetime**: Manipulação de datas e horários.
+- **tkinter**: Ferramentas gráficas para interfaces de usuário.
+
+## Configuração - Parâmetros de Conexão
+
+Configurações para conectar-se ao SQL Server, incluindo servidor, banco de dados, usuário, senha e driver.
+
+python
+Copy code
+server = 'SERVIDOR,PORTA'
+database = 'NOME_DO_BANCO'  # Substitua pelo nome do banco de dados
+username = 'NOME_DO_USUARIO'
+password = 'SENHA'
+driver = '{ODBC Driver 17 for SQL Server}'
+
+Certifique-se de ter permissões adequadas para acessar o banco de dados especificado.
+
+## Utilização
+### Ambiente de Execução:
+Certifique-se de que o Python esteja instalado no ambiente.
+Execute o script utilizando um ambiente Python compatível.
+
+### Código do Desenho:
+O código do desenho deve ser definido como uma variável de ambiente chamada CODIGO_DESENHO.
+
+### Arquivo Excel:
+O script espera um arquivo Excel com os dados da BOM no formato adequado.
+
+### Formato do Código Pai:
+O código do desenho deve seguir um dos formatos padrão ENAPLIC:
+C-M-###-###-###
+M-M-###-###-###
+E####-###-###
+
+### Execução:
+Execute o script para validar e cadastrar os dados da BOM no ERP TOTVS.
+
+## Funções Principais
+
+### validação_formato_codigo_pai
+
+Valida o formato de um código pai usando expressões regulares.
+
+### validacao_formato_codigos_filho
+
+Valida o formato de códigos filhos em um arquivo Excel.
+
+### ler_variavel_ambiente_codigo_desenho
+
+Lê uma variável de ambiente chamada CODIGO_DESENHO.
+
+### obter_caminho_arquivo_excel
+
+Constrói o caminho para um arquivo Excel com base no código do desenho.
+
+### excluir_arquivo_excel_bom
+
+Exclui o arquivo Excel especificado, se existir.
+
+### verificar_codigo_repetido
+
+Verifica códigos duplicados na BOM.
+
+### verificar_cadastro_codigo_filho
+
+Verifica o cadastro dos códigos filhos no banco de dados SQL Server.
+
+### remover_linhas_duplicadas_e_consolidar_quantidade
+
+Consolida quantidades para linhas duplicadas na BOM.
+
+### validar_descricao
+
+Valida descrições na BOM.
+
+### validacao_de_dados_bom
+
+Valida vários aspectos dos dados da BOM e retorna um DataFrame limpo.
+
+### atualizar_campo_revisao_do_codigo_pai
+
+Atualiza o campo de revisão para um código pai no SQL Server.
+
+### verificar_se_existe_estrutura_totvs
+
+Verifica se existe uma estrutura existente no SQL Server para um código pai.
+
+### obter_ultima_pk_tabela_estrutura
+
+Recupera a última chave primária da tabela de estrutura.
+
+### obter_revisao_inicial_codigo_pai
+
+Recupera a revisão inicial para um código pai.
+
+### obter_unidade_medida_codigo_filho
+
+Recupera a unidade de medida para um código filho.
+
+### formatar_data_atual
+
+Formata a data atual.
+
+### verificar_cadastro_codigo_pai
+
+Verifica se um código pai está registrado no SQL Server.
+
+### criar_nova_estrutura_totvs
+
+Cria uma nova estrutura no SQL Server com base nos dados da BOM.
+
+### ask_user_for_action
+
+Pergunta ao usuário se deseja alterar uma estrutura existente.
+
+### alterar_estrutura_existente
+
+Compara os dados da BOM com a estrutura existente e exibe as diferenças.
+
+## Execução Principal
+
+- Lê o código do desenho da variável de ambiente.
+- Constrói o caminho para o arquivo Excel.
+- Valida o formato do código pai.
+- Verifica o cadastro do código pai no SQL Server.
+- Valida os dados da BOM, verifica a existência de uma estrutura e trata a criação ou alteração conforme necessário.
+
+## Conclusão
+
+O script oferece uma solução modular para gerenciamento de BOM em um ambiente SQL Server, com foco na validação de dados e interação eficiente com o usuário por meio de mensagens.
+
+## Contribuições
+Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou pull requests para melhorias ou correções.
+
+## Autor
+Eliezer Moraes Silva
+
+## Licença
+Este projeto é licenciado sob a Licença MIT.
