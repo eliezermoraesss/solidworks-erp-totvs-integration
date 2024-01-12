@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
-    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton, QTabWidget
+    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton, QTabWidget, QItemDelegate, QAbstractItemView
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices, QColor
 from PyQt5.QtCore import Qt, QUrl, QCoreApplication, pyqtSignal
 import pyodbc
@@ -8,6 +8,7 @@ import pyperclip
 import os
 import time
 import pandas as pd
+import ctypes
 
 class ConsultaApp(QWidget):
     
@@ -54,7 +55,7 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton {
-                background-color: #0c9af8;
+                background-color: #2416e0;
                 color: #fff;
                 padding: 5px 15px;
                 border: 2px;
@@ -67,7 +68,7 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #2416e0;
+                background-color: #0c9af8;
             }
 
             QPushButton:pressed {
@@ -360,7 +361,7 @@ class ConsultaApp(QWidget):
         FROM PROTHEUS12_R27.dbo.SB1010
         WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
         AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' AND B1_ZZNOGRP LIKE '%{desc_grupo}%'
-        """
+        ORDER BY B1_COD ASC"""
 
         try:
             # Estabelecer a conexão com o banco de dados
@@ -472,11 +473,11 @@ class ConsultaApp(QWidget):
 
     def executar_consulta_estrutura(self):
         item_selecionado = self.tree.currentItem()
+        codigo = self.tree.item(item_selecionado.row(), 0).text()
+        descricao = self.tree.item(item_selecionado.row(), 1).text()
 
         if item_selecionado:
-            codigo = self.tree.item(item_selecionado.row(), 0).text()
-            descricao = self.tree.item(item_selecionado.row(), 1).text()
-
+            
             select_query_estrutura = f"""
                 SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QTD, struct.G1_XUM AS UNID
                 FROM PROTHEUS12_R27.dbo.SG1010 struct
@@ -501,9 +502,13 @@ class ConsultaApp(QWidget):
                 tree_estrutura = QTableWidget(nova_guia_estrutura)
                 tree_estrutura.setColumnCount(len(cursor_estrutura.description))
                 tree_estrutura.setHorizontalHeaderLabels([desc[0] for desc in cursor_estrutura.description])
-
+                
                 # Tornar a tabela somente leitura
                 tree_estrutura.setEditTriggers(QTableWidget.NoEditTriggers)
+
+                # Permitir edição apenas na coluna "Quantidade" (assumindo que "Quantidade" é a terceira coluna, índice 2)
+                tree_estrutura.setEditTriggers(QAbstractItemView.DoubleClicked)
+                tree_estrutura.setItemDelegateForColumn(2, QItemDelegate(tree_estrutura))
 
                 for i, row in enumerate(cursor_estrutura.fetchall()):
                     tree_estrutura.insertRow(i)
@@ -535,13 +540,41 @@ class ConsultaApp(QWidget):
                 self.tabWidget.addTab(nova_guia_estrutura, f"{codigo}")
                 
                 #mensagem = f"Produto sem estrutura!"
-                #QMessageBox.information(self, f"{codigo}", mensagem)   
+                #QMessageBox.information(self, f"{codigo}", mensagem)
 
             except pyodbc.Error as ex:
                 print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
 
             finally:
                 conn_estrutura.close()
+
+        tree_estrutura.itemChanged.connect(lambda item: self.handle_item_change(item, tree_estrutura, codigo))
+    
+    
+    def alterar_quantidade_estrutura(self, codigo_pai, codigo_filho, quantidade):
+        query_alterar_quantidade_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_QUANT = {quantidade} WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
+            AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+            AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+            """  
+        try:
+            with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+                cursor = conn.cursor()
+                cursor.execute(query_alterar_quantidade_estrutura)
+                    
+                conn.commit()
+            
+        except Exception as ex:
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "ERRO", 16 | 0)
+        
+        
+    def handle_item_change(self, item, tree_estrutura, codigo_pai):
+        if item.column() == 2:    
+            linha_selecionada = tree_estrutura.currentItem()
+            
+            codigo_filho = tree_estrutura.item(linha_selecionada.row(), 0).text()
+            nova_quantidade = item.text()
+            
+            self.alterar_quantidade_estrutura(codigo_pai, codigo_filho, nova_quantidade)
 
 
 if __name__ == "__main__":

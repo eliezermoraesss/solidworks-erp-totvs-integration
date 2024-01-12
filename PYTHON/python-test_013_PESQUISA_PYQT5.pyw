@@ -344,6 +344,7 @@ class ConsultaApp(QWidget):
         FROM PROTHEUS12_R27.dbo.SB1010
         WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
         AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' AND B1_ZZNOGRP LIKE '%{desc_grupo}%'
+        ORDER BY B1_COD ASC
         """
 
         try:
