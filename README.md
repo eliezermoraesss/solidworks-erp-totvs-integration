@@ -1,8 +1,9 @@
-# Gerenciador de Listas de Materiais (BOM) - Python Script
+# Cadastro Automático de Produtos e Estrutura (BOM) no ERP TOTVS direto pelo ambiente do SolidWorks
 
 ## Visão Geral
 
-Este script em Python foi desenvolvido para realizar a validação e gerenciamento de Listas de Materiais (BOM) em um banco de dados Microsoft SQL Server. Ele oferece funcionalidades para verificar a consistência dos dados da BOM, criar ou atualizar estruturas no banco de dados TOTVS® Protheus, e interagir com o usuário por meio de mensagens.
+Este script em Python foi desenvolvido para economizar horas de trabalho manual pelo simples clicar de um botão.
+Realiza a validação e cadastro de produtos e estruturas (BOM) em um banco de dados Microsoft SQL Server. Ele oferece funcionalidades para verificar a consistência dos dados da BOM, criar ou atualizar estruturas no banco de dados TOTVS® Protheus, e interagir com o usuário por meio de mensagens.
 
 ## Requisitos
 Certifique-se de que você tenha os seguintes requisitos instalados:
@@ -21,14 +22,13 @@ Certifique-se de que você tenha os seguintes requisitos instalados:
 
 Configurações para conectar-se ao SQL Server, incluindo servidor, banco de dados, usuário, senha e driver.
 
-python
-Copy code
+```python
 server = 'SERVIDOR,PORTA'
 database = 'NOME_DO_BANCO'  # Substitua pelo nome do banco de dados
 username = 'NOME_DO_USUARIO'
 password = 'SENHA'
 driver = '{ODBC Driver 17 for SQL Server}'
-
+```
 Certifique-se de ter permissões adequadas para acessar o banco de dados especificado.
 
 ## Utilização
@@ -44,10 +44,14 @@ O script espera um arquivo Excel com os dados da BOM no formato adequado.
 
 ### Formato do Código Pai:
 O código do desenho deve seguir um dos formatos padrão ENAPLIC:
-C-M-###-###-###
-M-M-###-###-###
-E####-###-###
 
+```
+C-###-###-###
+
+M-###-###-###
+
+E####-###-###
+```
 ### Execução:
 Execute o script para validar e cadastrar os dados da BOM no ERP TOTVS.
 
