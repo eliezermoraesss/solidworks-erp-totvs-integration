@@ -18,7 +18,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("BASE DE TESTE - CONSULTA DE PRODUTOS - TOTVS® - v2.0.2")
+        self.setWindowTitle("SMARTPLIC® v2.1.0")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -30,13 +30,11 @@ class ConsultaApp(QWidget):
         palette.setColor(self.backgroundRole(), QColor('#eeeeee'))  # Substitua pela cor desejada
         self.setPalette(palette)
             
-        # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
         self.nova_janela = None  # Adicione esta linha
-        self.guia_fechada.connect(self.fechar_guia)
         
         self.tabWidget = QTabWidget(self)  # Adicione um QTabWidget ao layout principal
         self.tabWidget.setTabsClosable(True)  # Adicione essa linha para permitir o fechamento de guias
-        self.tabWidget.tabCloseRequested.connect(self.fechar_guia)  # Conecte o sinal para fechar guias
+        self.tabWidget.tabCloseRequested.connect(self.fechar_guia)
         self.tabWidget.setVisible(False)  # Inicialmente, a guia está invisível
 
         # Aplicar folha de estilo ao aplicativo
@@ -64,8 +62,8 @@ class ConsultaApp(QWidget):
                 font-size: 11px;
                 height: 20px;
                 font-weight: bold;
-                margin-top: 3px;
-                margin-bottom: 3px;
+                margin-top: 6px;
+                margin-bottom: 6px;
             }
 
             QPushButton:hover {
@@ -429,6 +427,7 @@ class ConsultaApp(QWidget):
             # Fechar a conexão com o banco de dados
             conn.close()
             
+            
     def abrir_desenho(self):
         item_selecionado = self.tree.currentItem()
 
@@ -461,14 +460,15 @@ class ConsultaApp(QWidget):
         self.close()
         
     def fechar_guia(self, index):
-        codigo_guia_fechada = self.tabWidget.tabText(index)
-        self.guias_abertas.remove(codigo_guia_fechada)
-        self.tabWidget.removeTab(index)
-        
-        if not self.existe_guias_abertas():
-            # Se não houver mais guias abertas, remova a guia do layout principal
-            self.tabWidget.setVisible(False)
-            self.guia_fechada.emit()
+        if index >= 0:
+            codigo_guia_fechada = self.tabWidget.tabText(index)
+            self.guias_abertas.remove(codigo_guia_fechada)
+            self.tabWidget.removeTab(index)
+
+            if not self.existe_guias_abertas():
+                # Se não houver mais guias abertas, remova a guia do layout principal
+                self.tabWidget.setVisible(False)
+                self.guia_fechada.emit()
     
     def existe_guias_abertas(self):
         return self.tabWidget.count() > 0
@@ -597,8 +597,7 @@ class ConsultaApp(QWidget):
                 conn.commit()
             
         except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "ERRO", 16 | 0)
-        
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro de execução", 16 | 0)
         
     def handle_item_change(self, item, tree_estrutura, codigo_pai):
         if item.column() == 2:    
@@ -606,14 +605,19 @@ class ConsultaApp(QWidget):
             
             codigo_filho = tree_estrutura.item(linha_selecionada.row(), 0).text()
             nova_quantidade = item.text()
+            nova_quantidade = nova_quantidade.replace(',', '.')
             
-            self.alterar_quantidade_estrutura(codigo_pai, codigo_filho, nova_quantidade)
+            if nova_quantidade.replace('.', '', 1).isdigit():
+                self.alterar_quantidade_estrutura(codigo_pai, codigo_filho, float(nova_quantidade))
+            else:
+                ctypes.windll.user32.MessageBoxW(
+            0, "QUANTIDADE INVÁLIDA\n\nOs valores devem ser números, não nulos, sem espaços em branco e maiores que zero.\nPor favor, corrija tente novamente!", "SMARTPLIC®", 48 | 0)
 
 
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
     server = 'SVRERP,1433'
-    database = 'PROTHEUS12_R27' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
+    database = 'PROTHEUS1233_HML' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
     username = 'coognicao'
     password = '0705@Abc'
     driver = '{ODBC Driver 17 for SQL Server}'

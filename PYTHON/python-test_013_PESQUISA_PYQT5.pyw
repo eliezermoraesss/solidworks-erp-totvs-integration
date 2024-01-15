@@ -1,19 +1,24 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
-    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton
+    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton, QTabWidget, QItemDelegate, QAbstractItemView
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices, QColor
-from PyQt5.QtCore import Qt, QUrl, QCoreApplication
+from PyQt5.QtCore import Qt, QUrl, QCoreApplication, pyqtSignal
 import pyodbc
 import pyperclip
 import os
 import time
 import pandas as pd
+import ctypes
 
 class ConsultaApp(QWidget):
+    
+    # Adicione este sinal à classe
+    guia_fechada = pyqtSignal()
+        
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("CONSULTA DE PRODUTOS - TOTVS® - v2.0.2")
+        self.setWindowTitle("SMARTPLIC® v2.1.0")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -25,9 +30,13 @@ class ConsultaApp(QWidget):
         palette.setColor(self.backgroundRole(), QColor('#eeeeee'))  # Substitua pela cor desejada
         self.setPalette(palette)
             
-        # self.setWindowFlags(Qt.WindowStaysOnTopHint) # Exibir a janela sempre sobrepondo as demais janelas
         self.nova_janela = None  # Adicione esta linha
         
+        self.tabWidget = QTabWidget(self)  # Adicione um QTabWidget ao layout principal
+        self.tabWidget.setTabsClosable(True)  # Adicione essa linha para permitir o fechamento de guias
+        self.tabWidget.tabCloseRequested.connect(self.fechar_guia)
+        self.tabWidget.setVisible(False)  # Inicialmente, a guia está invisível
+
         # Aplicar folha de estilo ao aplicativo
         self.setStyleSheet("""                                                                         
             QLabel {
@@ -53,8 +62,8 @@ class ConsultaApp(QWidget):
                 font-size: 11px;
                 height: 20px;
                 font-weight: bold;
-                margin-top: 3px;
-                margin-bottom: 3px;
+                margin-top: 6px;
+                margin-bottom: 6px;
             }
 
             QPushButton:hover {
@@ -113,6 +122,10 @@ class ConsultaApp(QWidget):
         self.btn_consultar = QPushButton("Pesquisar", self)
         self.btn_consultar.clicked.connect(self.executar_consulta)
         self.btn_consultar.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        
+        self.btn_consultar_estrutura = QPushButton("Consultar Estrutura", self)
+        self.btn_consultar_estrutura.clicked.connect(self.executar_consulta_estrutura)
+        self.btn_consultar_estrutura.setMinimumWidth(150)  # Definindo o comprimento mínimo
         
         self.btn_limpar = QPushButton("Limpar", self)
         self.btn_limpar.clicked.connect(self.limpar_campos)
@@ -190,6 +203,7 @@ class ConsultaApp(QWidget):
         layout_linha_03.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
         
         layout_linha_03.addWidget(self.btn_consultar)
+        layout_linha_03.addWidget(self.btn_consultar_estrutura)
         layout_linha_03.addWidget(self.btn_limpar)
         layout_linha_03.addWidget(self.btn_nova_janela)
         layout_linha_03.addWidget(self.btn_abrir_desenho)
@@ -204,9 +218,12 @@ class ConsultaApp(QWidget):
         layout.addLayout(layout_linha_03)
                 
         layout.addWidget(self.tree)
+        
+        layout.addWidget(self.tabWidget)  # Adicione o QTabWidget ao layout principal
 
         self.setLayout(layout)
-    
+        
+        self.guias_abertas = []
     
     def criar_botao_limpar(self, campo):
         botao_limpar = QToolButton(self)
@@ -225,7 +242,7 @@ class ConsultaApp(QWidget):
             data = self.obter_dados_tabela()
 
             # Criar um DataFrame pandas
-            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UNID.", "ARMAZÉM",
+            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM",
                                              "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."])
 
             # Salvar o DataFrame como um arquivo Excel
@@ -259,7 +276,7 @@ class ConsultaApp(QWidget):
         self.tree = QTableWidget(self)
         self.tree.setColumnCount(11)
         self.tree.setHorizontalHeaderLabels(
-            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UNID.", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?",
+            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?",
              "REV."])
         self.tree.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.tree.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -281,7 +298,7 @@ class ConsultaApp(QWidget):
         self.tree.horizontalHeader().sectionClicked.connect(self.ordenar_tabela)
         
     def configurar_tabela_tooltips(self):
-        headers = ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UNID.", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."]
+        headers = ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."]
         tooltips = [
             "Código do produto",
             "Descrição do produto",
@@ -344,8 +361,7 @@ class ConsultaApp(QWidget):
         FROM PROTHEUS12_R27.dbo.SB1010
         WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
         AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' AND B1_ZZNOGRP LIKE '%{desc_grupo}%'
-        ORDER BY B1_COD ASC
-        """
+        ORDER BY B1_COD ASC"""
 
         try:
             # Estabelecer a conexão com o banco de dados
@@ -364,10 +380,17 @@ class ConsultaApp(QWidget):
             # Limpar a tabela
             self.tree.setRowCount(0)
             
+            # Definir cores alternadas
+            cores = [QColor("#FFFFFF"), QColor("#FFFFFF")]
+            
             time.sleep(0.1)
 
             # Preencher a tabela com os resultados
             for i, row in enumerate(cursor.fetchall()):
+                # Calcular índice da cor alternada
+                indice_cor = i % 2
+                cor_fundo = cores[indice_cor]
+
                 self.tree.setSortingEnabled(False)  # Permitir ordenação
                 # Inserir os valores formatados na tabela
                 self.tree.insertRow(i)
@@ -376,11 +399,12 @@ class ConsultaApp(QWidget):
                         # Converte o valor 1 para 'Sim' e 2 para 'Não'
                         value = 'Sim' if value == 1 else 'Não'
                     item = QTableWidgetItem(str(value).strip())
+                    item.setBackground(cor_fundo)  # Definir cor de fundo
                     self.tree.setItem(i, j, item)
-                    
+
                 # Permitir que a interface gráfica seja atualizada
                 QCoreApplication.processEvents()
-            
+
             self.tree.setSortingEnabled(True)  # Permitir ordenação
             
             # Calcular a largura total das colunas
@@ -403,6 +427,7 @@ class ConsultaApp(QWidget):
             # Fechar a conexão com o banco de dados
             conn.close()
             
+            
     def abrir_desenho(self):
         item_selecionado = self.tree.currentItem()
 
@@ -417,6 +442,7 @@ class ConsultaApp(QWidget):
             else:
                 mensagem = f"Desenho não encontrado!\n\n:-("
                 QMessageBox.information(self, f"{codigo}", mensagem)            
+
 
     def copiar_linha(self):
         item_clicado = self.tree.currentItem()
@@ -433,11 +459,165 @@ class ConsultaApp(QWidget):
     def fechar_janela(self):
         self.close()
         
+    def fechar_guia(self, index):
+        if index >= 0:
+            codigo_guia_fechada = self.tabWidget.tabText(index)
+            self.guias_abertas.remove(codigo_guia_fechada)
+            self.tabWidget.removeTab(index)
+
+            if not self.existe_guias_abertas():
+                # Se não houver mais guias abertas, remova a guia do layout principal
+                self.tabWidget.setVisible(False)
+                self.guia_fechada.emit()
+    
+    def existe_guias_abertas(self):
+        return self.tabWidget.count() > 0
+    
+    def ajustar_largura_coluna_descricao(self, tree_widget):
+        header = tree_widget.horizontalHeader()
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+
+    def executar_consulta_estrutura(self):
+        item_selecionado = self.tree.currentItem()
+        codigo = self.tree.item(item_selecionado.row(), 0).text()
+        descricao = self.tree.item(item_selecionado.row(), 1).text()
+
+        if item_selecionado:
+            
+            if codigo in self.guias_abertas:
+                # Se estiver aberta, traga a guia existente para frente
+                index = self.guias_abertas.index(codigo)
+                self.tabWidget.setCurrentIndex(index)
+            else:
+                select_query_estrutura = f"""
+                    SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QTD, struct.G1_XUM AS UNID
+                    FROM PROTHEUS12_R27.dbo.SG1010 struct
+                    INNER JOIN PROTHEUS12_R27.dbo.SB1010 prod
+                    ON struct.G1_COMP = prod.B1_COD
+                    WHERE G1_COD = '{codigo}' 
+                    AND G1_REVFIM <> 'ZZZ' AND struct.D_E_L_E_T_ <> '*' 
+                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{codigo}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
+                    ORDER BY G1_COMP ASC;
+                """
+
+                try:
+                    conn_estrutura = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+
+                    cursor_estrutura = conn_estrutura.cursor()
+                    cursor_estrutura.execute(select_query_estrutura)
+                    
+                    nova_guia_estrutura = QWidget()
+                    layout_nova_guia_estrutura = QVBoxLayout()
+                    layout_cabecalho = QHBoxLayout()
+
+                    tree_estrutura = QTableWidget(nova_guia_estrutura)
+                    tree_estrutura.setColumnCount(len(cursor_estrutura.description))
+                    tree_estrutura.setHorizontalHeaderLabels([desc[0] for desc in cursor_estrutura.description])
+                    
+                    # Tornar a tabela somente leitura
+                    tree_estrutura.setEditTriggers(QTableWidget.NoEditTriggers)
+
+                    # Permitir edição apenas na coluna "Quantidade" (assumindo que "Quantidade" é a terceira coluna, índice 2)
+                    tree_estrutura.setEditTriggers(QAbstractItemView.DoubleClicked)
+                    tree_estrutura.setItemDelegateForColumn(2, QItemDelegate(tree_estrutura))
+
+                    for i, row in enumerate(cursor_estrutura.fetchall()):
+                        tree_estrutura.insertRow(i)
+                        for j, value in enumerate(row):
+                            item = QTableWidgetItem(str(value).strip())
+                            tree_estrutura.setItem(i, j, item)
+
+                    # Ajustar automaticamente a largura da coluna "Descrição"
+                    self.ajustar_largura_coluna_descricao(tree_estrutura)
+                        
+                    layout_cabecalho.addWidget(QLabel("ESTRUTURA DO PRODUTO"))
+                    layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
+                    layout_nova_guia_estrutura.addWidget(tree_estrutura)              
+                    nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
+                    
+                    nova_guia_estrutura.setStyleSheet("""                                                                         
+                        QLabel {
+                            color: #000;
+                            font-size: 18px;
+                            font-weight: bold;
+                        }
+                        
+                        QTableWidget {
+                            border: 1px solid #85aaf0;
+                        }
+
+                        QTableWidget QHeaderView::section {
+                            background-color: #575a5f;
+                            color: #fff;
+                            padding: 5px;
+                            height: 18px;
+                        }
+
+                        QTableWidget QHeaderView::section:horizontal {
+                            border-top: 1px solid #333;
+                        }
+                        
+                        QTableWidget::item:selected {
+                            background-color: #0066ff;
+                            color: #fff;
+                            font-weight: bold;
+                        }        
+                    """)
+
+                    if not self.existe_guias_abertas():
+                        # Se não houver guias abertas, adicione a guia ao layout principal
+                        self.layout().addWidget(self.tabWidget)
+                        self.tabWidget.setVisible(True)
+                        
+                    self.tabWidget.addTab(nova_guia_estrutura, f"{codigo}")
+                     
+                    #mensagem = f"Produto sem estrutura!"
+                    #QMessageBox.information(self, f"{codigo}", mensagem)
+
+                except pyodbc.Error as ex:
+                    print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
+
+                finally:
+                    conn_estrutura.close()
+
+                tree_estrutura.itemChanged.connect(lambda item: self.handle_item_change(item, tree_estrutura, codigo))
+                self.guias_abertas.append(codigo)     
+    
+    
+    def alterar_quantidade_estrutura(self, codigo_pai, codigo_filho, quantidade):
+        query_alterar_quantidade_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_QUANT = {quantidade} WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
+            AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+            AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+            """  
+        try:
+            with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+                cursor = conn.cursor()
+                cursor.execute(query_alterar_quantidade_estrutura)
+                    
+                conn.commit()
+            
+        except Exception as ex:
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro de execução", 16 | 0)
+        
+    def handle_item_change(self, item, tree_estrutura, codigo_pai):
+        if item.column() == 2:    
+            linha_selecionada = tree_estrutura.currentItem()
+            
+            codigo_filho = tree_estrutura.item(linha_selecionada.row(), 0).text()
+            nova_quantidade = item.text()
+            nova_quantidade = nova_quantidade.replace(',', '.')
+            
+            if nova_quantidade.replace('.', '', 1).isdigit():
+                self.alterar_quantidade_estrutura(codigo_pai, codigo_filho, float(nova_quantidade))
+            else:
+                ctypes.windll.user32.MessageBoxW(
+            0, "QUANTIDADE INVÁLIDA\n\nOs valores devem ser números, não nulos, sem espaços em branco e maiores que zero.\nPor favor, corrija tente novamente!", "SMARTPLIC®", 48 | 0)
+
 
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
     server = 'SVRERP,1433'
-    database = 'PROTHEUS12_R27'
+    database = 'PROTHEUS12_R27' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
     username = 'coognicao'
     password = '0705@Abc'
     driver = '{ODBC Driver 17 for SQL Server}'
@@ -445,7 +625,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
-    largura_janela = 1280  # Substitua pelo valor desejado
+    largura_janela = 1024  # Substitua pelo valor desejado
     altura_janela = 800 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
