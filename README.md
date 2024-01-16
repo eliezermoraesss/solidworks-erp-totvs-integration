@@ -147,13 +147,14 @@ Compara os dados da BOM com a estrutura existente e exibe as diferenças.
 
 ## Conclusão
 
-O script oferece uma solução modular para gerenciamento de BOM em um ambiente SQL Server, com foco na validação de dados e interação eficiente com o usuário por meio de mensagens.
+O script oferece uma solução que integra o SolidWorks e o ERP TOTVS, reduzindo em 80% o tempo de cadastro de produtos e estruturas (BOM), economizando horas e horas de trabalho manual do usuário pelo simples clicar de um botão.
 
 ## Contribuições
 Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou pull requests para melhorias ou correções.
 
-## Autor
+## Desenvolvido por:
 Eliezer Moraes Silva
+eliezer.moraes@outlook.com
 
 ## Licença
 Este projeto é licenciado sob a Licença MIT.

@@ -93,7 +93,7 @@ class ConsultaApp(QWidget):
                 background-color: #0066ff;
                 color: #fff;
                 font-weight: bold;
-            }        
+            }
         """)
             
         self.codigo_var = QLineEdit(self)
@@ -126,6 +126,7 @@ class ConsultaApp(QWidget):
         self.btn_consultar_estrutura = QPushButton("Consultar Estrutura", self)
         self.btn_consultar_estrutura.clicked.connect(self.executar_consulta_estrutura)
         self.btn_consultar_estrutura.setMinimumWidth(150)  # Definindo o comprimento mínimo
+        self.btn_consultar_estrutura.setEnabled(False)
         
         self.btn_limpar = QPushButton("Limpar", self)
         self.btn_limpar.clicked.connect(self.limpar_campos)
@@ -287,11 +288,11 @@ class ConsultaApp(QWidget):
         self.tree.itemDoubleClicked.connect(self.copiar_linha)
         
         # Configurar a fonte da tabela
-        fonte_tabela = QFont("Segoe UI", 10)  # Substitua por sua fonte desejada e tamanho
+        fonte_tabela = QFont("Segoe UI", 8)  # Substitua por sua fonte desejada e tamanho
         self.tree.setFont(fonte_tabela)
 
         # Ajustar a altura das linhas
-        altura_linha = 25  # Substitua pelo valor desejado
+        altura_linha = 22  # Substitua pelo valor desejado
         self.tree.verticalHeader().setDefaultSectionSize(altura_linha)
         
         # Conectar o evento sectionClicked ao método ordenar_tabela
@@ -361,6 +362,7 @@ class ConsultaApp(QWidget):
         FROM PROTHEUS12_R27.dbo.SB1010
         WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
         AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' AND B1_ZZNOGRP LIKE '%{desc_grupo}%'
+        AND D_E_L_E_T_ <> '*'
         ORDER BY B1_COD ASC"""
 
         try:
@@ -407,18 +409,9 @@ class ConsultaApp(QWidget):
 
             self.tree.setSortingEnabled(True)  # Permitir ordenação
             
-            # Calcular a largura total das colunas
-            largura_total_colunas = self.tree.horizontalHeader().length()
-
-            # Definir a largura mínima da janela (opcional)
-            largura_minima_janela = 800
-
-            # Ajustar a largura da janela
-            nova_largura_janela = max(largura_minima_janela, largura_total_colunas + 100)  # Adicione uma folga de 20 pixels
-            self.setFixedWidth(nova_largura_janela)
-            
             # Ativar o botão Exportar Excel após o carregamento da tabela
             self.btn_exportar_excel.setEnabled(True)
+            self.btn_consultar_estrutura.setEnabled(True)
 
         except pyodbc.Error as ex:
             print(f"Falha na consulta. Erro: {str(ex)}")
@@ -520,6 +513,14 @@ class ConsultaApp(QWidget):
                     # Permitir edição apenas na coluna "Quantidade" (assumindo que "Quantidade" é a terceira coluna, índice 2)
                     tree_estrutura.setEditTriggers(QAbstractItemView.DoubleClicked)
                     tree_estrutura.setItemDelegateForColumn(2, QItemDelegate(tree_estrutura))
+                    
+                    # Configurar a fonte da tabela
+                    fonte_tabela = QFont("Segoe UI", 8)  # Substitua por sua fonte desejada e tamanho
+                    tree_estrutura.setFont(fonte_tabela)
+
+                    # Ajustar a altura das linhas
+                    altura_linha = 22  # Substitua pelo valor desejado
+                    tree_estrutura.verticalHeader().setDefaultSectionSize(altura_linha)
 
                     for i, row in enumerate(cursor_estrutura.fetchall()):
                         tree_estrutura.insertRow(i)
@@ -570,7 +571,7 @@ class ConsultaApp(QWidget):
                         self.tabWidget.setVisible(True)
                         
                     self.tabWidget.addTab(nova_guia_estrutura, f"{codigo}")
-                     
+
                     #mensagem = f"Produto sem estrutura!"
                     #QMessageBox.information(self, f"{codigo}", mensagem)
 
