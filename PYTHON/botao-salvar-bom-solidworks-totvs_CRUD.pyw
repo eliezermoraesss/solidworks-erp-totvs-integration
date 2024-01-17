@@ -4,6 +4,8 @@ import ctypes
 import os
 import re
 from datetime import date
+import tkinter as tk
+from tkinter import messagebox
 
 # Parâmetros de conexão com o banco de dados SQL Server
 server = 'SVRERP,1433'
@@ -32,7 +34,7 @@ def validar_formato_codigo_pai(codigo_pai):
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
     
     if not codigo_pai_validado:
-        ctypes.windll.user32.MessageBoxW(0, f"Este desenho está nomeado com o CÓDIGO PAI {codigo_pai} fora do formato padrão ENAPLIC.\n\nFORMATOS PADRÃO:\n\nC-XXX-XXX-XXX, M-XXX-XXX-XXX ou EXXXX-XXX-XXX onde X é um número de 0 à 9.\n\nCorrija e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
+        ctypes.windll.user32.MessageBoxW(0, f"Este desenho está com o código fora do formato padrão ENAPLIC.\n\nCÓDIGO {codigo_pai}\n\nCorrija e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
     
     return codigo_pai_validado
     
@@ -70,7 +72,7 @@ def verificar_codigo_repetido(df_excel):
     # Exibe uma mensagem se houver códigos repetidos
     if not codigos_repetidos.empty:
         ctypes.windll.user32.MessageBoxW(
-            0, f"Produtos repetidos na BOM.\n\nOs códigos são iguais com descrições diferentes:\n\n{codigos_repetidos.tolist()}\n\nCorrija-os ou exclua-os da tabela e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, f"Produtos repetidos na BOM.\n\nOs códigos são iguais com descrições diferentes:\n\n{codigos_repetidos.tolist()}\n\nCorrija-os ou exclue da tabela e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         return True
     else:
         return False
@@ -95,7 +97,7 @@ def verificar_cadastro_codigo_filho(codigos_filho):
                 codigos_sem_cadastro.append(codigo_produto)
 
         if codigos_sem_cadastro:
-            mensagem = f"Códigos-filho sem cadastro no TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!\n\n¯\_(ツ)_/¯"
+            mensagem = f"Códigos-filho sem cadastro no TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!"
             ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
             return False
         else:
@@ -109,13 +111,55 @@ def verificar_cadastro_codigo_filho(codigos_filho):
         # Fecha a conexão com o banco de dados se estiver aberta
         if 'conn' in locals():
             conn.close()
+
+
+def verificar_se_existe_estrutura_codigos_filho(codigos_filho):            
+    try:
+        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+        cursor = conn.cursor()
+
+        codigos_sem_estrutura = []
         
+        for codigo_produto in codigos_filho:
+            
+            query_consulta_tipo_produto = f"""SELECT B1_TIPO FROM PROTHEUS12_R27.dbo.SB1010 WHERE B1_COD = '{codigo_produto}' AND B1_TIPO IN ('PI','PA');"""
+            
+            cursor.execute(query_consulta_tipo_produto)
+            resultado_tipo_produto = cursor.fetchone()
+            
+            if resultado_tipo_produto:
+            
+                query_consulta_estrutura_totvs = f"""SELECT *
+                    FROM {database}.dbo.SG1010
+                    WHERE G1_COD = '{codigo_produto}' 
+                    AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_produto}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+                """
+                
+                cursor.execute(query_consulta_estrutura_totvs)
+                resultado = cursor.fetchone()
+
+                if not resultado:
+                    codigos_sem_estrutura.append(codigo_produto)
+
+        if codigos_sem_estrutura:
+            mensagem = f"CÓDIGOS-FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!"
+            ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
+            return False
+        else:
+            return True
+
+    except Exception as ex:
+        # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar o cadastro de estrutura dos itens filho", 16 | 0)
+        
+    finally:
+        # Fecha a conexão com o banco de dados se estiver aberta
+        if 'conn' in locals():
+            conn.close()  
+
 
 def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
-    
-    # Remover espaços extras nas coluna descrição
-    df_excel[indice_coluna_descricao_excel] = df_excel[indice_coluna_descricao_excel].str.strip()
-
     # Agrupa o DataFrame pela combinação única de código e descrição
     grouped = df_excel.groupby([indice_coluna_codigo_excel, indice_coluna_descricao_excel])
 
@@ -140,6 +184,7 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 def validar_descricao(descricoes):
     return descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
 
+
 def verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel):
     codigo_filho_diferente_codigo_pai = df_excel.iloc[:, indice_coluna_codigo_excel] != f"{nome_desenho}"
     return codigo_filho_diferente_codigo_pai
@@ -162,19 +207,19 @@ def validacao_de_dados_bom(excel_file_path):
 
     if not codigo_filho_diferente_codigo_pai.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         
     if not validar_codigos.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "CÓDIGO-FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "CÓDIGO-FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
         
     if not validar_descricoes.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija o código e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija o código e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if not validar_quantidades.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija o código e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija o código e tente novamente!", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all():
 
@@ -182,13 +227,13 @@ def validacao_de_dados_bom(excel_file_path):
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
         
         existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
-        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())    
+        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
+        codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         
-        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro:
+        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura:
             return bom_excel_sem_duplicatas
         else:
-            bom_excel_sem_duplicatas = None
-            return bom_excel_sem_duplicatas
+            return None
 
 
 def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
@@ -205,11 +250,11 @@ def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
         return False
     
 
-def verificar_se_existe_estrutura_totvs(codigo_pai):
+def verificar_se_existe_estrutura_codigo_pai(codigo_pai):
 
     query_consulta_estrutura_totvs = f"""SELECT * FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}'
         AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ');
     """
     # Tente estabelecer a conexão com o banco de dados
     try:
@@ -219,11 +264,7 @@ def verificar_se_existe_estrutura_totvs(codigo_pai):
         # Executa a query SELECT e obtém os resultados em um DataFrame
         resultado_query_consulta_estrutura_totvs = pd.read_sql(query_consulta_estrutura_totvs, conn)
         
-        if resultado_query_consulta_estrutura_totvs.empty:
-            return True
-        else:
-            ctypes.windll.user32.MessageBoxW(0, f"Já existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nSe você deseja realizar a alteração da estrutura, clique no botão ALTERAR ESTRUTURA ou se deseja cancelar a operação clique em CANCELAR.", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)  
-            return False
+        return resultado_query_consulta_estrutura_totvs
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
@@ -252,7 +293,7 @@ def obter_ultima_pk_tabela_estrutura():
         return None
     
     
-def obter_revisao_inicial_codigo_pai(codigo_pai):
+def obter_revisao_codigo_pai(codigo_pai):
     query_revisao_inicial = f"""SELECT B1_REVATU FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""   
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
@@ -264,6 +305,8 @@ def obter_revisao_inicial_codigo_pai(codigo_pai):
             
             if valor_revisao_inicial in ('000', '   '):
                 valor_revisao_inicial = '001'
+            else:
+                int(valor_revisao_inicial) += 1
 
             return valor_revisao_inicial
 
@@ -318,7 +361,7 @@ def verificar_cadastro_codigo_pai(codigo_pai):
 def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas): 
     
     ultima_pk_tabela_estrutura = obter_ultima_pk_tabela_estrutura()
-    revisao_inicial = obter_revisao_inicial_codigo_pai(codigo_pai)
+    revisao_inicial = obter_revisao_codigo_pai(codigo_pai)
     revisao_final = revisao_inicial
     data_atual_formatada = formatar_data_atual()
     
@@ -351,7 +394,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"ESTRUTURA CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        ctypes.windll.user32.MessageBoxW(0, f"A ESTRUTURA FOI CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n:)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
         return revisao_final
         
     except Exception as ex:
@@ -363,28 +406,67 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
         conn.close()
 
 
-def alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
+def janela_mensagem_alterar_estrutura(codigo_pai):
+    user_choice = messagebox.askquestion(
+        "CADASTRO DE ESTRUTURA - TOTVS®",
+        f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?"
+    )
+
+    if user_choice == "yes":
+        return True
+    else:
+        return False
+    
+    
+def atualizar_itens_estrutura_totvs(codigos_em_comum):
+    return None
+
+
+def inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_atualizada_estrutura):
+    return None
+
+
+def remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_atualizada_estrutura):
+    return None
+
+
+def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
+    
+    revisao_atualizada_estrutura = None
+    
     # Remove espaços em branco da coluna 'G1_COD'
     resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs['G1_COMP'].str.strip()
 
-    # Encontra códigos que são iguais entre SQL e Excel
     codigos_em_comum = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
+    
     codigos_adicionados_bom = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].loc[~bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].isin(
         resultado_query_consulta_estrutura_totvs['G1_COMP'])].tolist()
+    
     codigos_removidos_bom = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
-
-    # Exibe uma caixa de diálogo com base nos resultados
+    
+    if codigos_adicionados_bom or codigos_removidos_bom:
+        revisao_atualizada_estrutura = obter_revisao_codigo_pai(nome_desenho) 
+    
     if codigos_em_comum:
+        
+        atualizar_itens_estrutura_totvs(codigos_em_comum)
+        
         ctypes.windll.user32.MessageBoxW(
             0, f"Códigos em comuns: {codigos_em_comum}", "ITENS EM COMUM", 1)
-
+        
     if codigos_adicionados_bom:
+        
+        inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_atualizada_estrutura)
+        
         ctypes.windll.user32.MessageBoxW(
             0, f"Itens adicionados: {codigos_adicionados_bom}", "ITENS ADICIONADOS", 1)
 
     if codigos_removidos_bom:
+        
+        remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_atualizada_estrutura)
+        
         ctypes.windll.user32.MessageBoxW(
             0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
 
@@ -398,14 +480,20 @@ if formato_codigo_pai_correto:
 
 if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
     bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
-    nao_existe_estrutura_totvs = verificar_se_existe_estrutura_totvs(nome_desenho)
+    resultado_estrutura_codigo_pai = verificar_se_existe_estrutura_codigo_pai(nome_desenho)
+    
     excluir_arquivo_excel_bom(excel_file_path)
 
-    if not bom_excel_sem_duplicatas.empty and nao_existe_estrutura_totvs:
+    if not bom_excel_sem_duplicatas.empty and resultado_estrutura_codigo_pai.empty:
         revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
+
         if revisao_atualizada != None:
             atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
-    #else:
-        #alterar_estrutura_existente(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs)
+            
+    if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
+        usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
+
+        if usuario_quer_alterar:
+            comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_estrutura_codigo_pai)
 else:
     excluir_arquivo_excel_bom(excel_file_path)

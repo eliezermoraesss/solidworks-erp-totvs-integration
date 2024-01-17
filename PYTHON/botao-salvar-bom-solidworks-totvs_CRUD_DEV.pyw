@@ -121,23 +121,29 @@ def verificar_se_existe_estrutura_codigos_filho(codigos_filho):
         codigos_sem_estrutura = []
         
         for codigo_produto in codigos_filho:
-            query_consulta_estrutura_totvs = f"""SELECT prod.B1_TIPO, struct.*
-                FROM {database}.dbo.SG1010 struct
-                RIGHT JOIN {database}.dbo.SB1010 prod
-                ON struct.G1_COMP = prod.B1_COD 
-                WHERE G1_COD = '{codigo_produto}' 
-                AND G1_REVFIM <> 'ZZZ' AND struct.D_E_L_E_T_ <> '*'
-                AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_produto}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
-            """
             
-            cursor.execute(query_consulta_estrutura_totvs)
-            resultado = cursor.fetchone()
+            query_consulta_tipo_produto = f"""SELECT B1_TIPO FROM PROTHEUS12_R27.dbo.SB1010 WHERE B1_COD = '{codigo_produto}' AND B1_TIPO IN ('PI','PA');"""
+            
+            cursor.execute(query_consulta_tipo_produto)
+            resultado_tipo_produto = cursor.fetchone()
+            
+            if resultado_tipo_produto:
+            
+                query_consulta_estrutura_totvs = f"""SELECT *
+                    FROM {database}.dbo.SG1010
+                    WHERE G1_COD = '{codigo_produto}' 
+                    AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_produto}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+                """
+                
+                cursor.execute(query_consulta_estrutura_totvs)
+                resultado = cursor.fetchone()
 
-            if not resultado or resultado.B1_TIPO not in ('PI','PA'):
-                codigos_sem_estrutura.append(codigo_produto)
+                if not resultado:
+                    codigos_sem_estrutura.append(codigo_produto)
 
         if codigos_sem_estrutura:
-            mensagem = f"CÓDIGOS-FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles tente novamente!"
+            mensagem = f"CÓDIGOS-FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!"
             ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
             return False
         else:
@@ -145,12 +151,13 @@ def verificar_se_existe_estrutura_codigos_filho(codigos_filho):
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar o cadastro de estrutura", 16 | 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar o cadastro de estrutura dos itens filho", 16 | 0)
         
     finally:
         # Fecha a conexão com o banco de dados se estiver aberta
         if 'conn' in locals():
             conn.close()  
+
 
 def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     # Agrupa o DataFrame pela combinação única de código e descrição
@@ -223,11 +230,10 @@ def validacao_de_dados_bom(excel_file_path):
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         
-        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro:
+        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura:
             return bom_excel_sem_duplicatas
         else:
-            bom_excel_sem_duplicatas = None
-            return bom_excel_sem_duplicatas
+            return None
 
 
 def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
@@ -300,7 +306,7 @@ def obter_revisao_codigo_pai(codigo_pai):
             if valor_revisao_inicial in ('000', '   '):
                 valor_revisao_inicial = '001'
             else:
-                valor_revisao_inicial += 1
+                int(valor_revisao_inicial) += 1
 
             return valor_revisao_inicial
 

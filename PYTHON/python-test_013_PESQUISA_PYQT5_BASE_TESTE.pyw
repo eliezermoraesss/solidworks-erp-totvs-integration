@@ -82,7 +82,7 @@ class ConsultaApp(QWidget):
                 background-color: #7d85f0;
                 color: #fff;
                 padding: 5px;
-                height: 18px;
+                height: 12px;
             }
 
             QTableWidget QHeaderView::section:horizontal {
@@ -490,7 +490,7 @@ class ConsultaApp(QWidget):
                     WHERE G1_COD = '{codigo}' 
                     AND G1_REVFIM <> 'ZZZ' AND struct.D_E_L_E_T_ <> '*' 
                     AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{codigo}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
-                    ORDER BY G1_COMP ASC;
+                    ORDER BY B1_DESC ASC;
                 """
 
                 try:
@@ -531,7 +531,7 @@ class ConsultaApp(QWidget):
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
-                    layout_cabecalho.addWidget(QLabel("ESTRUTURA DO PRODUTO"))
+                    layout_cabecalho.addWidget(QLabel("ESTRUTURA DO PRODUTO"), alignment=Qt.AlignCenter)
                     layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
