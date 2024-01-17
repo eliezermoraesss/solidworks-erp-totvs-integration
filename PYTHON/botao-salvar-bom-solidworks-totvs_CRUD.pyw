@@ -305,8 +305,6 @@ def obter_revisao_codigo_pai(codigo_pai):
             
             if valor_revisao_inicial in ('000', '   '):
                 valor_revisao_inicial = '001'
-            else:
-                int(valor_revisao_inicial) += 1
 
             return valor_revisao_inicial
 
