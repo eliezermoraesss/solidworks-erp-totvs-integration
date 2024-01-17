@@ -525,7 +525,12 @@ class ConsultaApp(QWidget):
                     for i, row in enumerate(cursor_estrutura.fetchall()):
                         tree_estrutura.insertRow(i)
                         for j, value in enumerate(row):
-                            item = QTableWidgetItem(str(value).strip())
+                            if j == 2:
+                                valor_formatado = "{:.2f}".format(float(value))
+                            else:
+                                valor_formatado = str(value).strip()
+                                
+                            item = QTableWidgetItem(valor_formatado)
                             tree_estrutura.setItem(i, j, item)
 
                     # Ajustar automaticamente a largura da coluna "Descrição"

@@ -392,7 +392,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"A ESTRUTURA FOI CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n:)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        ctypes.windll.user32.MessageBoxW(0, f"A ESTRUTURA FOI CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
         return revisao_final
         
     except Exception as ex:
@@ -416,7 +416,7 @@ def janela_mensagem_alterar_estrutura(codigo_pai):
         return False
     
     
-def atualizar_itens_estrutura_totvs(codigos_em_comum):
+def atualizar_itens_existentes_estrutura_totvs(codigos_em_comum):
     return None
 
 
@@ -449,7 +449,7 @@ def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_es
     
     if codigos_em_comum:
         
-        atualizar_itens_estrutura_totvs(codigos_em_comum)
+        atualizar_itens_existentes_estrutura_totvs(codigos_em_comum)
         
         ctypes.windll.user32.MessageBoxW(
             0, f"Códigos em comuns: {codigos_em_comum}", "ITENS EM COMUM", 1)
