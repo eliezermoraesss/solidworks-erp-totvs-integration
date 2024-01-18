@@ -215,11 +215,11 @@ def validacao_de_dados_bom(excel_file_path):
         
     if not validar_descricoes.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija o código e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if not validar_quantidades.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija o código e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
 
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all():
 
@@ -377,12 +377,14 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
             if unidade_medida == 'KG':
                 quantidade = row.iloc[indice_coluna_peso_excel]
+                
+            quantidade_formatada = "{:.2f}".format(float(quantidade))
             
             query_criar_nova_estrutura_totvs = f"""
                 INSERT INTO {database}.dbo.SG1010 
                 (G1_FILIAL, G1_COD, G1_COMP, G1_TRT, G1_XUM, G1_QUANT, G1_PERDA, G1_INI, G1_FIM, G1_OBSERV, G1_FIXVAR, G1_GROPC, G1_OPC, G1_REVINI, G1_NIV, G1_NIVINV, G1_REVFIM, 
                 G1_OK, G1_POTENCI, G1_TIPVEC, G1_VECTOR, G1_VLCOMPE, G1_LOCCONS, G1_USAALT, G1_FANTASM, G1_LISTA, D_E_L_E_T_, R_E_C_N_O_, R_E_C_D_E_L_) 
-                VALUES (N'0101', N'{codigo_pai}  ', N'{codigo_filho}  ', N'   ', N'{unidade_medida}', {quantidade}, 0.0, N'{data_atual_formatada}', N'20491231', 
+                VALUES (N'0101', N'{codigo_pai}  ', N'{codigo_filho}  ', N'   ', N'{unidade_medida}', {quantidade_formatada}, 0.0, N'{data_atual_formatada}', N'20491231', 
                 N'                                             ', N'V', N'   ', N'    ', N'{revisao_inicial}', N'01', N'99', N'{revisao_final}', N'    ', 0.0, N'      ', N'      ', 
                 N'N', N'  ', N'1', N' ', N'          ', 
                 N' ', {ultima_pk_tabela_estrutura}, 0);
