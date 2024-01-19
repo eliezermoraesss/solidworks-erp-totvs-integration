@@ -9,7 +9,7 @@ from tkinter import messagebox
 
 # Parâmetros de conexão com o banco de dados SQL Server
 server = 'SVRERP,1433'
-database = 'PROTHEUS12_R27' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
+database = 'PROTHEUS1233_HML' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
 username = 'coognicao'
 password = '0705@Abc'
 driver = '{ODBC Driver 17 for SQL Server}'
@@ -237,7 +237,7 @@ def validacao_de_dados_bom(excel_file_path):
 
 
 def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
-    query_atualizar_campo_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_REVATU = '{numero_revisao}' WHERE B1_COD = '{codigo_pai}';"""
+    query_atualizar_campo_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' WHERE B1_COD = N'{codigo_pai}';"""
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
@@ -293,7 +293,7 @@ def obter_ultima_pk_tabela_estrutura():
         return None
     
     
-def obter_revisao_codigo_pai(codigo_pai):
+def obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro):
     query_revisao_inicial = f"""SELECT B1_REVATU FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""   
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
@@ -303,8 +303,14 @@ def obter_revisao_codigo_pai(codigo_pai):
             revisao_inicial = cursor.fetchone()
             valor_revisao_inicial = revisao_inicial[0]
             
-            if valor_revisao_inicial in ('000', '   '):
+            if primeiro_cadastro and valor_revisao_inicial in ('000', '   '):
                 valor_revisao_inicial = '001'
+            elif not primeiro_cadastro and valor_revisao_inicial not in ('000', '   '):
+                valor_revisao_inicial = int(valor_revisao_inicial) + 1
+                if valor_revisao_inicial <= 9:
+                    valor_revisao_inicial = "00" + str(valor_revisao_inicial)  
+                else:
+                    valor_revisao_inicial = "0" + str(valor_revisao_inicial)            
 
             return valor_revisao_inicial
 
@@ -357,9 +363,9 @@ def verificar_cadastro_codigo_pai(codigo_pai):
     
             
 def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas): 
-    
+    primeiro_cadastro = True
     ultima_pk_tabela_estrutura = obter_ultima_pk_tabela_estrutura()
-    revisao_inicial = obter_revisao_codigo_pai(codigo_pai)
+    revisao_inicial = obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
     revisao_final = revisao_inicial
     data_atual_formatada = formatar_data_atual()
     
@@ -430,11 +436,21 @@ def remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_atualizada_estr
     return None
 
 
-def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
-    
-    revisao_atualizada_estrutura = None
-    
-    # Remove espaços em branco da coluna 'G1_COD'
+def resultado_comparacao():
+    if codigos_em_comum:  
+        ctypes.windll.user32.MessageBoxW(
+            0, f"Códigos em comuns: {codigos_em_comum}", "ITENS EM COMUM", 1)
+        
+    if codigos_adicionados_bom:         
+        ctypes.windll.user32.MessageBoxW(
+            0, f"Itens adicionados: {codigos_adicionados_bom}", "ITENS ADICIONADOS", 1)
+
+    if codigos_removidos_bom:  
+        ctypes.windll.user32.MessageBoxW(
+            0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
+
+
+def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):   
     resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs['G1_COMP'].str.strip()
 
     codigos_em_comum = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
@@ -446,29 +462,7 @@ def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_es
     codigos_removidos_bom = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
     
-    if codigos_adicionados_bom or codigos_removidos_bom:
-        revisao_atualizada_estrutura = obter_revisao_codigo_pai(nome_desenho) 
-    
-    if codigos_em_comum:
-        
-        atualizar_itens_estrutura_totvs(codigos_em_comum)
-        
-        ctypes.windll.user32.MessageBoxW(
-            0, f"Códigos em comuns: {codigos_em_comum}", "ITENS EM COMUM", 1)
-        
-    if codigos_adicionados_bom:
-        
-        inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_atualizada_estrutura)
-        
-        ctypes.windll.user32.MessageBoxW(
-            0, f"Itens adicionados: {codigos_adicionados_bom}", "ITENS ADICIONADOS", 1)
-
-    if codigos_removidos_bom:
-        
-        remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_atualizada_estrutura)
-        
-        ctypes.windll.user32.MessageBoxW(
-            0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
+    #resultado_comparacao()  
 
 
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
@@ -495,5 +489,18 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
 
         if usuario_quer_alterar:
             comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_estrutura_codigo_pai)
+            primeiro_cadastro = False
+            revisao_incrementada = obter_revisao_codigo_pai(nome_desenho, primeiro_cadastro)
+            revisao_pai_atualizada = atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_incrementada)
+            
+            if revisao_pai_atualizada:
+                if codigos_em_comum:  
+                    atualizar_itens_estrutura_totvs(codigos_em_comum)
+                    
+                if codigos_adicionados_bom:         
+                    inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_incrementada)
+
+                if codigos_removidos_bom:  
+                    remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_incrementada)      
 else:
     excluir_arquivo_excel_bom(excel_file_path)

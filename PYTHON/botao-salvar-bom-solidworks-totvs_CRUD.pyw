@@ -408,8 +408,8 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
 
 def janela_mensagem_alterar_estrutura(codigo_pai):
     user_choice = messagebox.askquestion(
-        "-------> EM DESENVOLVIMENTO <------- CADASTRO DE ESTRUTURA - TOTVS®",
-        f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?\n\n------->A ESTRUTURA NÃO SERÁ ALTERADA!"
+        "CADASTRO DE ESTRUTURA - TOTVS®",
+        f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?"
     )
 
     if user_choice == "yes":
