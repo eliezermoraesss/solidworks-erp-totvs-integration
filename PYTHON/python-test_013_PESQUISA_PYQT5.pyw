@@ -472,10 +472,10 @@ class ConsultaApp(QWidget):
 
     def executar_consulta_estrutura(self):
         item_selecionado = self.tree.currentItem()
-        codigo = self.tree.item(item_selecionado.row(), 0).text()
-        descricao = self.tree.item(item_selecionado.row(), 1).text()
 
         if item_selecionado:
+            codigo = self.tree.item(item_selecionado.row(), 0).text()
+            descricao = self.tree.item(item_selecionado.row(), 1).text()
             
             if codigo in self.guias_abertas:
                 # Se estiver aberta, traga a guia existente para frente
