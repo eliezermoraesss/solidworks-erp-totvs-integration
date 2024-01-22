@@ -366,7 +366,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
     primeiro_cadastro = True
     ultima_pk_tabela_estrutura = obter_ultima_pk_tabela_estrutura()
     revisao_inicial = obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
-    revisao_final = revisao_inicial
+    revisao_atualizada = revisao_inicial
     data_atual_formatada = formatar_data_atual()
     
     conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
@@ -401,11 +401,10 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
         conn.commit()
         
         ctypes.windll.user32.MessageBoxW(0, f"A ESTRUTURA FOI CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
-        return revisao_final
         
     except Exception as ex:
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro ao Criar Nova Estrutura", 16 | 0)
-        return None
+        revisao_atualizada = None
         
     finally:
         cursor.close()
@@ -425,7 +424,36 @@ def janela_mensagem_alterar_estrutura(codigo_pai):
     
     
 def atualizar_itens_estrutura_totvs(codigos_em_comum):
-    return None
+    try:
+        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+        cursor = conn.cursor()
+        
+        for codigo_produto in codigos_em_comum:
+            
+                query_consulta_estrutura_totvs = f"""SELECT *
+                    FROM {database}.dbo.SG1010
+                    WHERE G1_COD = '{codigo_produto}' 
+                    AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_produto}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+                """
+                
+                cursor.execute(query_consulta_estrutura_totvs)
+                resultado = cursor.fetchone()
+
+        if codigos_sem_estrutura:
+            mensagem = f"CÓDIGOS-FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!\n\n¯\_(ツ)_/¯"
+            ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
+            return False
+        else:
+            return True
+
+    except Exception as ex:
+        # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar o cadastro de estrutura dos itens filho", 16 | 0)
+        
+    finally:
+        # Fecha a conexão com o banco de dados se estiver aberta
+        if 'conn' in loc
 
 
 def inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_atualizada_estrutura):
@@ -468,6 +496,7 @@ def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_es
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
+revisao_atualizada = None
 
 if formato_codigo_pai_correto:
     existe_cadastro_codigo_pai = verificar_cadastro_codigo_pai(nome_desenho)
@@ -479,7 +508,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
     excluir_arquivo_excel_bom(excel_file_path)
 
     if not bom_excel_sem_duplicatas.empty and resultado_estrutura_codigo_pai.empty:
-        revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
+        criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
 
         if revisao_atualizada != None:
             atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
@@ -490,8 +519,8 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
         if usuario_quer_alterar:
             comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_estrutura_codigo_pai)
             primeiro_cadastro = False
-            revisao_incrementada = obter_revisao_codigo_pai(nome_desenho, primeiro_cadastro)
-            revisao_pai_atualizada = atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_incrementada)
+            revisao_atualizada = obter_revisao_codigo_pai(nome_desenho, primeiro_cadastro)
+            revisao_pai_atualizada = atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
             
             if revisao_pai_atualizada:
                 if codigos_em_comum:  
