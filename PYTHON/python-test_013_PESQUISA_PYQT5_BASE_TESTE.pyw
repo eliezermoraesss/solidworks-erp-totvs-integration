@@ -599,7 +599,6 @@ class ConsultaApp(QWidget):
             with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
                 cursor = conn.cursor()
                 cursor.execute(query_alterar_quantidade_estrutura)
-                    
                 conn.commit()
             
         except Exception as ex:

@@ -29,6 +29,7 @@ def validar_formato_codigo_pai(codigo_pai):
     formatos_codigo = [
         r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
         r'^(E\d{4}\-\d{3}\-\d{3})$',
+        r'^(E\d{4}\-\d{3}\-A\d{2})$',
     ]
     
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
@@ -43,6 +44,7 @@ def validar_formato_codigos_filho(df_excel, posicao_coluna_codigo):
     formatos_codigo = [
         r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
         r'^(E\d{4}\-\d{3}\-\d{3})$',
+        r'^(E\d{4}\-\d{3}\-A\d{2})$',
     ]
 
     validacao_codigos = df_excel.iloc[:, posicao_coluna_codigo].apply(
@@ -425,35 +427,22 @@ def janela_mensagem_alterar_estrutura(codigo_pai):
     
 def atualizar_itens_estrutura_totvs(codigos_em_comum):
     try:
-        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
-        cursor = conn.cursor()
-        
-        for codigo_produto in codigos_em_comum:
+        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            cursor = conn.cursor()
             
-                query_consulta_estrutura_totvs = f"""SELECT *
-                    FROM {database}.dbo.SG1010
-                    WHERE G1_COD = '{codigo_produto}' 
-                    AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_produto}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
-                """
+            for codigo_filho in codigos_em_comum:
                 
-                cursor.execute(query_consulta_estrutura_totvs)
-                resultado = cursor.fetchone()
-
-        if codigos_sem_estrutura:
-            mensagem = f"CÓDIGOS-FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!\n\n¯\_(ツ)_/¯"
-            ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
-            return False
-        else:
-            return True
+                    query_atualizar_itens_estrutura_totvs = f"""UPDATE {database}.dbo.SG1010 SET G1_QUANT = {quantidade} WHERE G1_COD = '{nome_desenho}' AND G1_COMP = '{codigo_filho}'
+                        AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+                    """  
+                    
+                    cursor.execute(query_atualizar_itens_estrutura_totvs)
+                    conn.commit()
 
     except Exception as ex:
         # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar o cadastro de estrutura dos itens filho", 16 | 0)
-        
-    finally:
-        # Fecha a conexão com o banco de dados se estiver aberta
-        if 'conn' in loc
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar os itens filhos já existentes da BOM", 16 | 0)
 
 
 def inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_atualizada_estrutura):
@@ -493,7 +482,7 @@ def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_es
     #resultado_comparacao()  
 
 
-nome_desenho = ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None
