@@ -402,7 +402,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"A ESTRUTURA FOI CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        ctypes.windll.user32.MessageBoxW(0, f"CADASTRO DE ESTRUTURA REALIZADO COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
         
     except Exception as ex:
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro ao Criar Nova Estrutura", 16 | 0)
@@ -451,7 +451,7 @@ def atualizar_itens_estrutura_totvs(codigo_pai, dataframe_codigos_em_comum):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"A ESTRUTURA FOI ATUALIZADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        ctypes.windll.user32.MessageBoxW(0, f"ATUALIZAÇÃO DE ESTRUTURA REALIZADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
         
     except Exception as ex:
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao Criar Nova Estrutura", 16 | 0)
@@ -461,8 +461,50 @@ def atualizar_itens_estrutura_totvs(codigo_pai, dataframe_codigos_em_comum):
         conn.close()
 
 
-def inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_atualizada_estrutura):
-    return None
+def inserir_itens_estrutura_totvs(codigo_pai, dataframe_codigos_adicionados_bom, revisao_atualizada_estrutura):
+    ultima_pk_tabela_estrutura = obter_ultima_pk_tabela_estrutura()
+    data_atual_formatada = formatar_data_atual()
+    revisao_inicial = revisao_atualizada_estrutura
+    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+    
+    try:
+        
+        cursor = conn.cursor()
+            
+        for index, row in dataframe_codigos_adicionados_bom.iterrows():
+            ultima_pk_tabela_estrutura += 1
+            codigo_filho = row.iloc[indice_coluna_codigo_excel]
+            quantidade = row.iloc[indice_coluna_quantidade_excel]
+            unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+            
+            if unidade_medida == 'KG':
+                quantidade = row.iloc[indice_coluna_peso_excel]
+                
+            quantidade_formatada = "{:.2f}".format(float(quantidade))
+            
+            query_criar_nova_estrutura_totvs = f"""
+                INSERT INTO {database}.dbo.SG1010 
+                (G1_FILIAL, G1_COD, G1_COMP, G1_TRT, G1_XUM, G1_QUANT, G1_PERDA, G1_INI, G1_FIM, G1_OBSERV, G1_FIXVAR, G1_GROPC, G1_OPC, G1_REVINI, G1_NIV, G1_NIVINV, G1_REVFIM, 
+                G1_OK, G1_POTENCI, G1_TIPVEC, G1_VECTOR, G1_VLCOMPE, G1_LOCCONS, G1_USAALT, G1_FANTASM, G1_LISTA, D_E_L_E_T_, R_E_C_N_O_, R_E_C_D_E_L_) 
+                VALUES (N'0101', N'{codigo_pai}  ', N'{codigo_filho}  ', N'   ', N'{unidade_medida}', {quantidade_formatada}, 0.0, N'{data_atual_formatada}', N'20491231', 
+                N'                                             ', N'V', N'   ', N'    ', N'{revisao_inicial}', N'01', N'99', N'{revisao_atualizada_estrutura}', N'    ', 0.0, N'      ', N'      ', 
+                N'N', N'  ', N'1', N' ', N'          ', 
+                N' ', {ultima_pk_tabela_estrutura}, 0);
+            """
+            
+            cursor.execute(query_criar_nova_estrutura_totvs)
+            
+        conn.commit()
+        
+        ctypes.windll.user32.MessageBoxW(0, f"ATUALIZAÇÃO DE ESTRUTURA REALIZADO COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro ao Criar Nova Estrutura", 16 | 0)
+        revisao_atualizada = None
+        
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_atualizada_estrutura):
@@ -538,10 +580,10 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                 revisao_atualizada = obter_revisao_codigo_pai(nome_desenho, primeiro_cadastro)
                 
                 if not codigos_adicionados_bom_df.empty:         
-                    itens_adicionados_sucesso = inserir_itens_estrutura_totvs(codigos_adicionados_bom_df, revisao_atualizada)
+                    itens_adicionados_sucesso = inserir_itens_estrutura_totvs(nome_desenho, codigos_adicionados_bom_df, revisao_atualizada)
 
                 if not codigos_removidos_bom_df.empty:  
-                    itens_removidos_sucesso = remover_itens_estrutura_totvs(codigos_removidos_bom_df, revisao_atualizada)   
+                    itens_removidos_sucesso = remover_itens_estrutura_totvs(nome_desenho, codigos_removidos_bom_df, revisao_atualizada)   
                     
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
