@@ -11,7 +11,7 @@ SELECT * FROM PROTHEUS1233_HML.dbo.SBM010 WHERE BM_GRUPO = '2808';
 
 ----------------------------------------------------------------------------------------------------------------------------------------
 
-SELECT * FROM PROTHEUS12_R27.dbo.SG1010; 
+SELECT * FROM PROTHEUS12_R27.dbo.SG1010;
 
 SELECT * FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = 'M-048-020-284' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*';
 

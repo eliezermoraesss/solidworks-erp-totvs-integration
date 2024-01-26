@@ -425,24 +425,40 @@ def janela_mensagem_alterar_estrutura(codigo_pai):
         return False
     
     
-def atualizar_itens_estrutura_totvs(codigos_em_comum):
+def atualizar_itens_estrutura_totvs(codigo_pai, dataframe_codigos_em_comum):
+    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+    
     try:
-        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
-            cursor = conn.cursor()
+        
+        cursor = conn.cursor()
             
-            for codigo_filho in codigos_em_comum:
+        for index, row in dataframe_codigos_em_comum.iterrows():
+            codigo_filho = row.iloc[indice_coluna_codigo_excel]
+            quantidade = row.iloc[indice_coluna_quantidade_excel]
+            unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+            
+            if unidade_medida == 'KG':
+                quantidade = row.iloc[indice_coluna_peso_excel]
                 
-                    query_atualizar_itens_estrutura_totvs = f"""UPDATE {database}.dbo.SG1010 SET G1_QUANT = {quantidade} WHERE G1_COD = '{nome_desenho}' AND G1_COMP = '{codigo_filho}'
-                        AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-                        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{nome_desenho}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
-                    """  
-                    
-                    cursor.execute(query_atualizar_itens_estrutura_totvs)
-                    conn.commit()
-
+            quantidade_formatada = "{:.2f}".format(float(quantidade))
+            
+            query_alterar_quantidade_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_QUANT = {quantidade_formatada} WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
+                AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+            """  
+            
+            cursor.execute(query_alterar_quantidade_estrutura)
+            
+        conn.commit()
+        
+        ctypes.windll.user32.MessageBoxW(0, f"A ESTRUTURA FOI ATUALIZADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        
     except Exception as ex:
-        # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar os itens filhos já existentes da BOM", 16 | 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao Criar Nova Estrutura", 16 | 0)
+        
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_atualizada_estrutura):
@@ -470,14 +486,19 @@ def resultado_comparacao():
 def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):   
     resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs['G1_COMP'].str.strip()
 
-    codigos_em_comum = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
-    
-    codigos_adicionados_bom = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].loc[~bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].isin(
-        resultado_query_consulta_estrutura_totvs['G1_COMP'])].tolist()
-    
-    codigos_removidos_bom = resultado_query_consulta_estrutura_totvs['G1_COMP'].loc[~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].tolist()
+    # Códigos em comum
+    codigos_em_comum_df = bom_excel_sem_duplicatas[bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].isin(
+        resultado_query_consulta_estrutura_totvs['G1_COMP'])].copy()
+
+    # Códigos adicionados no BOM
+    codigos_adicionados_bom_df = bom_excel_sem_duplicatas[~bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].isin(
+        resultado_query_consulta_estrutura_totvs['G1_COMP'])].copy()
+
+    # Códigos removidos no BOM
+    codigos_removidos_bom_df = resultado_query_consulta_estrutura_totvs[~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
+        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].copy()
+
+    return codigos_em_comum_df, codigos_adicionados_bom_df, codigos_removidos_bom_df
     
     #resultado_comparacao()  
 
@@ -494,7 +515,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
     bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
     resultado_estrutura_codigo_pai = verificar_se_existe_estrutura_codigo_pai(nome_desenho)
     
-    excluir_arquivo_excel_bom(excel_file_path)
+    #excluir_arquivo_excel_bom(excel_file_path)
 
     if not bom_excel_sem_duplicatas.empty and resultado_estrutura_codigo_pai.empty:
         criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
@@ -506,19 +527,23 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
         usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
 
         if usuario_quer_alterar:
-            comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_estrutura_codigo_pai)
-            primeiro_cadastro = False
-            revisao_atualizada = obter_revisao_codigo_pai(nome_desenho, primeiro_cadastro)
-            revisao_pai_atualizada = atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
+            resultado = comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_estrutura_codigo_pai)
+            codigos_em_comum_df, codigos_adicionados_bom_df, codigos_removidos_bom_df = resultado
             
-            if revisao_pai_atualizada:
-                if codigos_em_comum:  
-                    atualizar_itens_estrutura_totvs(codigos_em_comum)
-                    
-                if codigos_adicionados_bom:         
-                    inserir_itens_estrutura_totvs(codigos_adicionados_bom, revisao_incrementada)
+            if not codigos_em_comum_df.empty:
+                atualizar_itens_estrutura_totvs(nome_desenho, codigos_em_comum_df)
+                
+            if not codigos_adicionados_bom_df.empty or not codigos_removidos_bom_df.empty:
+                primeiro_cadastro = False
+                revisao_atualizada = obter_revisao_codigo_pai(nome_desenho, primeiro_cadastro)
+                
+                if not codigos_adicionados_bom_df.empty:         
+                    itens_adicionados_sucesso = inserir_itens_estrutura_totvs(codigos_adicionados_bom_df, revisao_atualizada)
 
-                if codigos_removidos_bom:  
-                    remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_incrementada)      
-else:
-    excluir_arquivo_excel_bom(excel_file_path)
+                if not codigos_removidos_bom_df.empty:  
+                    itens_removidos_sucesso = remover_itens_estrutura_totvs(codigos_removidos_bom_df, revisao_atualizada)   
+                    
+                if itens_adicionados_sucesso or itens_removidos_sucesso:
+                    atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
+#else:
+    #excluir_arquivo_excel_bom(excel_file_path)

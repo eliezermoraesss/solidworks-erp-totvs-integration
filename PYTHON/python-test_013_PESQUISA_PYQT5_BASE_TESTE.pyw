@@ -18,7 +18,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.0")
+        self.setWindowTitle("SMARTPLIC® v2.1.0 - BASE DE TESTE")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -359,7 +359,7 @@ class ConsultaApp(QWidget):
         # Construir a query de consulta
         select_query = f"""
         SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU
-        FROM PROTHEUS12_R27.dbo.SB1010
+        FROM {database}.dbo.SB1010
         WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
         AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' AND B1_ZZNOGRP LIKE '%{desc_grupo}%'
         AND D_E_L_E_T_ <> '*'
@@ -484,12 +484,12 @@ class ConsultaApp(QWidget):
             else:
                 select_query_estrutura = f"""
                     SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QTD, struct.G1_XUM AS UNID
-                    FROM PROTHEUS12_R27.dbo.SG1010 struct
-                    INNER JOIN PROTHEUS12_R27.dbo.SB1010 prod
+                    FROM {database}.dbo.SG1010 struct
+                    INNER JOIN {database}.dbo.SB1010 prod
                     ON struct.G1_COMP = prod.B1_COD
                     WHERE G1_COD = '{codigo}' 
                     AND G1_REVFIM <> 'ZZZ' AND struct.D_E_L_E_T_ <> '*' 
-                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{codigo}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
+                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
                     ORDER BY B1_DESC ASC;
                 """
 
@@ -592,8 +592,8 @@ class ConsultaApp(QWidget):
     
     def alterar_quantidade_estrutura(self, codigo_pai, codigo_filho, quantidade):
         query_alterar_quantidade_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_QUANT = {quantidade} WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
-            AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-            AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+                AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
             """  
         try:
             with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
