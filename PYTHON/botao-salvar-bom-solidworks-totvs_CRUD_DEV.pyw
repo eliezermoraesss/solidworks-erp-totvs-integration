@@ -124,7 +124,7 @@ def verificar_se_existe_estrutura_codigos_filho(codigos_filho):
         
         for codigo_produto in codigos_filho:
             
-            query_consulta_tipo_produto = f"""SELECT B1_TIPO FROM PROTHEUS12_R27.dbo.SB1010 WHERE B1_COD = '{codigo_produto}' AND B1_TIPO IN ('PI','PA');"""
+            query_consulta_tipo_produto = f"""SELECT B1_TIPO FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto}' AND B1_TIPO IN ('PI','PA');"""
             
             cursor.execute(query_consulta_tipo_produto)
             resultado_tipo_produto = cursor.fetchone()
@@ -451,10 +451,8 @@ def atualizar_itens_estrutura_totvs(codigo_pai, dataframe_codigos_em_comum):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"ATUALIZAÇÃO DE ESTRUTURA REALIZADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
-        
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao Criar Nova Estrutura", 16 | 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao atualizar itens já existentes da estrutura", 16 | 0)
         
     finally:
         cursor.close()
@@ -495,20 +493,67 @@ def inserir_itens_estrutura_totvs(codigo_pai, dataframe_codigos_adicionados_bom,
             cursor.execute(query_criar_nova_estrutura_totvs)
             
         conn.commit()
-        
-        ctypes.windll.user32.MessageBoxW(0, f"ATUALIZAÇÃO DE ESTRUTURA REALIZADO COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
-        
+
+        return True
+    
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)} - PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - {quantidade} - {unidade_medida}", "Erro ao Criar Nova Estrutura", 16 | 0)
-        revisao_atualizada = None
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao inserir novos itens na estrutura", 16 | 0)
+        return False
         
     finally:
         cursor.close()
         conn.close()
 
 
-def remover_itens_estrutura_totvs(codigos_removidos_bom, revisao_atualizada_estrutura):
-    return None
+def remover_itens_estrutura_totvs(codigo_pai, codigos_removidos_bom_df, revisao_atualizada_estrutura):
+    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+    
+    try:
+        
+        cursor = conn.cursor()
+            
+        for index, row in codigos_removidos_bom_df.iterrows():
+            codigo_filho = row.iloc[2]
+            valor_chave_primaria = obter_valor_chave_primaria(codigo_pai, codigo_filho)
+            
+            query_remover_itens_estrutura_totvs = f"""UPDATE {database}.dbo.SG1010 SET D_E_L_E_T_ = '*', R_E_C_D_E_L_ = N'{valor_chave_primaria}' WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
+                AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+            """  
+            
+            cursor.execute(query_remover_itens_estrutura_totvs)
+            
+        conn.commit()
+        
+        return True
+        
+    except Exception as ex:
+        return False
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao remover item da estrutura", 16 | 0)
+        
+    finally:
+        cursor.close()
+        conn.close()
+        
+
+def obter_valor_chave_primaria(codigo_pai, codigo_filho):
+    query_chave_primaria_estrutura = f"""SELECT R_E_C_N_O_ FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
+        AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+        """
+    try:
+        # Uso do Context Manager para garantir o fechamento adequado da conexão
+        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            cursor = conn.cursor()
+            cursor.execute(query_chave_primaria_estrutura)
+            resultado = cursor.fetchone()
+            valor_chave_primaria = resultado[0]
+ 
+            return valor_chave_primaria
+
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar valor da chave primária na tabela de estrutura", 16 | 0)
+        return None
 
 
 def resultado_comparacao():
@@ -542,7 +587,11 @@ def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_es
 
     return codigos_em_comum_df, codigos_adicionados_bom_df, codigos_removidos_bom_df
     
-    #resultado_comparacao()  
+    #resultado_comparacao()
+    
+
+def atualizar_campo_revfim_codigos_existentes(codigo_pai, dataframe_codigos_em_comum, revisao_atualizada_estrutura):
+    return None
 
 
 nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
@@ -578,14 +627,18 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
             if not codigos_adicionados_bom_df.empty or not codigos_removidos_bom_df.empty:
                 primeiro_cadastro = False
                 revisao_atualizada = obter_revisao_codigo_pai(nome_desenho, primeiro_cadastro)
+                itens_adicionados_sucesso = False
+                itens_removidos_sucesso = False
                 
                 if not codigos_adicionados_bom_df.empty:         
                     itens_adicionados_sucesso = inserir_itens_estrutura_totvs(nome_desenho, codigos_adicionados_bom_df, revisao_atualizada)
 
                 if not codigos_removidos_bom_df.empty:  
-                    itens_removidos_sucesso = remover_itens_estrutura_totvs(nome_desenho, codigos_removidos_bom_df, revisao_atualizada)   
+                    itens_removidos_sucesso = remover_itens_estrutura_totvs(nome_desenho, codigos_removidos_bom_df, revisao_atualizada)
                     
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
-                    atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
+                    atualizar_campo_revfim_codigos_existentes(nome_desenho, codigos_em_comum_df, revisao_atualizada)
+                    atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
+                    ctypes.windll.user32.MessageBoxW(0, f"ATUALIZAÇÃO DE ESTRUTURA REALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
 #else:
     #excluir_arquivo_excel_bom(excel_file_path)
