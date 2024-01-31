@@ -505,7 +505,7 @@ def inserir_itens_estrutura_totvs(codigo_pai, dataframe_codigos_adicionados_bom,
         conn.close()
 
 
-def remover_itens_estrutura_totvs(codigo_pai, codigos_removidos_bom_df, revisao_atualizada_estrutura):
+def remover_itens_estrutura_totvs(codigo_pai, codigos_removidos_bom_df):
     conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
     
     try:
@@ -590,8 +590,31 @@ def comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_query_consulta_es
     #resultado_comparacao()
     
 
-def atualizar_campo_revfim_codigos_existentes(codigo_pai, dataframe_codigos_em_comum, revisao_atualizada_estrutura):
-    return None
+def atualizar_campo_revfim_codigos_existentes(codigo_pai, codigos_em_comum_df, revisao_atualizada_estrutura):
+    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') 
+    try:
+        cursor = conn.cursor()
+         
+        for index, row in codigos_em_comum_df.iterrows():
+            codigo_filho = row.iloc[indice_coluna_codigo_excel]
+            
+            query_atualizar_campo_revfim_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_REVFIM = N'{revisao_atualizada_estrutura}' WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
+                AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+            """  
+                
+            cursor.execute(query_atualizar_campo_revfim_estrutura)
+            
+        conn.commit()
+        
+        return True
+        
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao atualizar campo revfim dos itens já existentes da estrutura", 16 | 0)
+        return False
+        
+    finally:
+        cursor.close()
+        conn.close()
 
 
 nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
@@ -634,11 +657,16 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                     itens_adicionados_sucesso = inserir_itens_estrutura_totvs(nome_desenho, codigos_adicionados_bom_df, revisao_atualizada)
 
                 if not codigos_removidos_bom_df.empty:  
-                    itens_removidos_sucesso = remover_itens_estrutura_totvs(nome_desenho, codigos_removidos_bom_df, revisao_atualizada)
+                    itens_removidos_sucesso = remover_itens_estrutura_totvs(nome_desenho, codigos_removidos_bom_df)
                     
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
-                    atualizar_campo_revfim_codigos_existentes(nome_desenho, codigos_em_comum_df, revisao_atualizada)
+                    if not codigos_em_comum_df.empty:
+                        atualizar_campo_revfim_codigos_existentes(nome_desenho, codigos_em_comum_df, revisao_atualizada)
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
                     ctypes.windll.user32.MessageBoxW(0, f"ATUALIZAÇÃO DE ESTRUTURA REALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+            else:
+                ctypes.windll.user32.MessageBoxW(0, f"Quantidades revisadas com sucesso!\n\nNENHUM ITEM FOI ADICIONADO E/OU REMOVIDO BOM.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+    else:
+        ctypes.windll.user32.MessageBoxW(0, f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n¯\_(ツ)_/¯", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
 #else:
     #excluir_arquivo_excel_bom(excel_file_path)
