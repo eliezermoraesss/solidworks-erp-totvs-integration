@@ -208,7 +208,7 @@ def validacao_de_dados_bom(excel_file_path):
     
     validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
 
-    validar_pesos = df_excel.iloc[:, indice_coluna_peso_excel].notna() & (df_excel.iloc[:, indice_coluna_peso_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0)
+    validar_pesos = df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
     
     if not codigo_filho_diferente_codigo_pai.all():
         ctypes.windll.user32.MessageBoxW(
@@ -228,7 +228,7 @@ def validacao_de_dados_bom(excel_file_path):
 
     if not validar_pesos.all():
         ctypes.windll.user32.MessageBoxW(
-            0, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores que zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+            0, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
     
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
 
@@ -414,7 +414,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"CADASTRO DE ESTRUTURA REALIZADO COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        ctypes.windll.user32.MessageBoxW(0, f"ESTRUTURA CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
         return True
         
     except Exception as ex:
@@ -534,7 +534,7 @@ def remover_itens_estrutura_totvs(codigo_pai, codigos_removidos_bom_df, revisao_
                 D_E_L_E_T_ = N'*',
                 R_E_C_D_E_L_ = R_E_C_N_O_
             WHERE
-                G1_COD = '{codigo_pai}'
+                G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
                 AND G1_REVFIM = N'{revisao_anterior}'
                 AND G1_REVFIM <> 'ZZZ'
                 AND D_E_L_E_T_ <> '*';
@@ -668,9 +668,9 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
-                    ctypes.windll.user32.MessageBoxW(0, f"ATUALIZAÇÃO DE ESTRUTURA REALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+                    ctypes.windll.user32.MessageBoxW(0, f"ESTRUTURA ATUALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
             else:
-                ctypes.windll.user32.MessageBoxW(0, f"Quantidades revisadas com sucesso!\n\nNENHUM ITEM FOI ADICIONADO E/OU REMOVIDO.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+                ctypes.windll.user32.MessageBoxW(0, f"QUANTIDADES ATUALIZADAS COM SUCESSO!\n\nNENHUM ITEM FOI ADICIONADO E/OU REMOVIDO.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
     elif not nova_estrutura_cadastrada:
         ctypes.windll.user32.MessageBoxW(0, f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
 #else:
