@@ -9,7 +9,7 @@ import os
 import time
 import pandas as pd
 import ctypes
-
+from datetime import datetime
 class ConsultaApp(QWidget):
     
     # Adicione este sinal à classe
@@ -18,7 +18,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.1 - BASE DE TESTE")
+        self.setWindowTitle("SMARTPLIC® v2.1.2 - BASE DE TESTE")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -483,7 +483,8 @@ class ConsultaApp(QWidget):
                 self.tabWidget.setCurrentIndex(index)
             else:
                 select_query_estrutura = f"""
-                    SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QTD, struct.G1_XUM AS UNID, struct.G1_REVFIM AS REV
+                    SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS "QTD.", struct.G1_XUM AS "UNID. MED.", struct.G1_REVFIM AS "REVISÃO", 
+                    struct.G1_INI AS "INSERIDO EM:"
                     FROM {database}.dbo.SG1010 struct
                     INNER JOIN {database}.dbo.SB1010 prod
                     ON struct.G1_COMP = prod.B1_COD
@@ -527,6 +528,9 @@ class ConsultaApp(QWidget):
                         for j, value in enumerate(row):
                             if j == 2:
                                 valor_formatado = "{:.2f}".format(float(value))
+                            elif j == 5:
+                                data_obj = datetime.strptime(value, "%Y%m%d")   
+                                valor_formatado = data_obj.strftime("%d/%m/%Y")                  
                             else:
                                 valor_formatado = str(value).strip()
                                 
@@ -630,8 +634,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
-    largura_janela = 1024  # Substitua pelo valor desejado
-    altura_janela = 800 # Substitua pelo valor desejado
+    largura_janela = 1080  # Substitua pelo valor desejado
+    altura_janela = 920 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
     altura_tela = app.primaryScreen().size().height()

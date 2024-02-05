@@ -670,7 +670,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
                     ctypes.windll.user32.MessageBoxW(0, f"ESTRUTURA ATUALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
             else:
-                ctypes.windll.user32.MessageBoxW(0, f"QUANTIDADES ATUALIZADAS COM SUCESSO!\n\nNENHUM ITEM FOI ADICIONADO E/OU REMOVIDO.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+                ctypes.windll.user32.MessageBoxW(0, f"QUANTIDADES ATUALIZADAS COM SUCESSO!\n\nNenhum item foi ADICIONADO e/ou REMOVIDO.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
     elif not nova_estrutura_cadastrada:
         ctypes.windll.user32.MessageBoxW(0, f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
 #else:

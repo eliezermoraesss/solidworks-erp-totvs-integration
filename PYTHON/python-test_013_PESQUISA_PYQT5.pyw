@@ -9,7 +9,7 @@ import os
 import time
 import pandas as pd
 import ctypes
-
+from datetime import datetime
 class ConsultaApp(QWidget):
     
     # Adicione este sinal à classe
@@ -18,7 +18,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.1")
+        self.setWindowTitle("SMARTPLIC® v2.1.2")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -359,7 +359,7 @@ class ConsultaApp(QWidget):
         # Construir a query de consulta
         select_query = f"""
         SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU
-        FROM PROTHEUS12_R27.dbo.SB1010
+        FROM {database}.dbo.SB1010
         WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
         AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' AND B1_ZZNOGRP LIKE '%{desc_grupo}%'
         AND D_E_L_E_T_ <> '*'
@@ -483,13 +483,14 @@ class ConsultaApp(QWidget):
                 self.tabWidget.setCurrentIndex(index)
             else:
                 select_query_estrutura = f"""
-                    SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS QTD, struct.G1_XUM AS UNID, struct.G1_REVFIM AS REV
-                    FROM PROTHEUS12_R27.dbo.SG1010 struct
-                    INNER JOIN PROTHEUS12_R27.dbo.SB1010 prod
+                    SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS "QTD.", struct.G1_XUM AS "UNID. MED.", struct.G1_REVFIM AS "REVISÃO", 
+                    struct.G1_INI AS "INSERIDO EM:"
+                    FROM {database}.dbo.SG1010 struct
+                    INNER JOIN {database}.dbo.SB1010 prod
                     ON struct.G1_COMP = prod.B1_COD
                     WHERE G1_COD = '{codigo}' 
                     AND G1_REVFIM <> 'ZZZ' AND struct.D_E_L_E_T_ <> '*' 
-                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM PROTHEUS12_R27.dbo.SG1010 WHERE G1_COD = '{codigo}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
+                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*')
                     ORDER BY B1_DESC ASC;
                 """
 
@@ -527,6 +528,9 @@ class ConsultaApp(QWidget):
                         for j, value in enumerate(row):
                             if j == 2:
                                 valor_formatado = "{:.2f}".format(float(value))
+                            elif j == 5:
+                                data_obj = datetime.strptime(value, "%Y%m%d")   
+                                valor_formatado = data_obj.strftime("%d/%m/%Y")                  
                             else:
                                 valor_formatado = str(value).strip()
                                 
@@ -592,14 +596,13 @@ class ConsultaApp(QWidget):
     
     def alterar_quantidade_estrutura(self, codigo_pai, codigo_filho, quantidade):
         query_alterar_quantidade_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_QUANT = {quantidade} WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
-            AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-            AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+                AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
             """  
         try:
             with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
                 cursor = conn.cursor()
                 cursor.execute(query_alterar_quantidade_estrutura)
-                    
                 conn.commit()
             
         except Exception as ex:
@@ -631,8 +634,8 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
-    largura_janela = 1024  # Substitua pelo valor desejado
-    altura_janela = 800 # Substitua pelo valor desejado
+    largura_janela = 1080  # Substitua pelo valor desejado
+    altura_janela = 920 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
     altura_tela = app.primaryScreen().size().height()
