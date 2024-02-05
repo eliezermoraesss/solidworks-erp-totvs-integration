@@ -31,6 +31,7 @@ def validar_formato_codigo_pai(codigo_pai):
         r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
         r'^(E\d{4}\-\d{3}\-\d{3})$',
         r'^(E\d{4}\-\d{3}\-A\d{2})$',
+        r'^(E\d{12})$',
     ]
     
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
@@ -46,6 +47,7 @@ def validar_formato_codigos_filho(df_excel, posicao_coluna_codigo):
         r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
         r'^(E\d{4}\-\d{3}\-\d{3})$',
         r'^(E\d{4}\-\d{3}\-A\d{2})$',
+        r'^(E\d{12})$',
     ]
 
     validacao_codigos = df_excel.iloc[:, posicao_coluna_codigo].apply(
