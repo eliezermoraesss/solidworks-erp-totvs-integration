@@ -15,6 +15,8 @@ username = 'coognicao'
 password = '0705@Abc'
 driver = '{ODBC Driver 17 for SQL Server}'
 
+titulo_janela = "CADASTRO DE ESTRUTURA - TOTVS®"
+
 # Arrays para armazenar os códigos
 codigos_adicionados_bom = []  # ITENS ADICIONADOS
 codigos_removidos_bom = []  # ITENS REMOVIDOS
@@ -36,13 +38,13 @@ def validar_formato_codigo_pai(codigo_pai):
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
     
     if not codigo_pai_validado:
-        ctypes.windll.user32.MessageBoxW(0, f"Este desenho está com o código fora do formato padrão ENAPLIC.\n\nCÓDIGO {codigo_pai}\n\nCorrija e tente novamente!\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0) 
-    
+        exibir_mensagem(titulo_janela, "Este desenho está com o código fora do formato padrão ENAPLIC.\n\nCÓDIGO {codigo_pai}\n\nCorrija e tente novamente!\n\nツ", "info")
+
     return codigo_pai_validado
     
 
-def validar_formato_codigos_filho(df_excel, posicao_coluna_codigo):
-    validacao_codigos = df_excel.iloc[:, posicao_coluna_codigo].apply(
+def validar_formato_codigos_filho(df_excel):
+    validacao_codigos = df_excel.iloc[:, indice_coluna_codigo_excel].apply(
         lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
 
     return validacao_codigos
@@ -68,8 +70,7 @@ def verificar_codigo_repetido(df_excel):
     
     # Exibe uma mensagem se houver códigos repetidos
     if not codigos_repetidos.empty:
-        ctypes.windll.user32.MessageBoxW(
-            0, f"PRODUTOS REPETIDOS NA BOM.\n\nOs códigos são iguais com descrições diferentes:\n\n{codigos_repetidos.tolist()}\n\nCorrija-os ou exclue da tabela e tente novamente!\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+        exibir_mensagem(titulo_janela, f"PRODUTOS REPETIDOS NA BOM.\n\nOs códigos são iguais com descrições diferentes:\n\n{codigos_repetidos.tolist()}\n\nCorrija-os ou exclue da tabela e tente novamente!\n\nツ", "warning")
         return True
     else:
         return False
@@ -95,7 +96,7 @@ def verificar_cadastro_codigo_filho(codigos_filho):
 
         if codigos_sem_cadastro:
             mensagem = f"CÓDIGOS-FILHO SEM CADASTRO NO TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!\n\nツ"
-            ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
+            exibir_mensagem(titulo_janela, mensagem, "info")
             return False
         else:
             return True
@@ -141,7 +142,7 @@ def verificar_se_existe_estrutura_codigos_filho(codigos_filho):
 
         if codigos_sem_estrutura:
             mensagem = f"CÓDIGOS-FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!\n\nツ"
-            ctypes.windll.user32.MessageBoxW(0, mensagem, "CADASTRO DE ESTRUTURA - TOTVS®", 64 | 0)
+            exibir_mensagem(titulo_janela, mensagem, "info")
             return False
         else:
             return True
@@ -186,8 +187,16 @@ def verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel):
     codigo_filho_diferente_codigo_pai = df_excel.iloc[:, indice_coluna_codigo_excel] != f"{nome_desenho}"
     return codigo_filho_diferente_codigo_pai
 
-def validacao_de_dados_bom(excel_file_path):
 
+def validacao_quantidades(df_excel):
+    return df_excel.iloc[:, indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_quantidade_excel], errors='coerce') > 0)   
+
+
+def validacao_pesos(df_excel):
+    return df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
+
+
+def validacao_de_dados_bom(excel_file_path):
     # Carrega a planilha do Excel em um DataFrame
     df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
 
@@ -196,33 +205,28 @@ def validacao_de_dados_bom(excel_file_path):
     
     codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
 
-    validar_codigos = validar_formato_codigos_filho(df_excel, indice_coluna_codigo_excel)
+    validar_codigos = validar_formato_codigos_filho(df_excel)
 
-    validar_quantidades = df_excel.iloc[:, indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_quantidade_excel], errors='coerce') > 0)
+    validar_quantidades = validacao_quantidades(df_excel)
     
     validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
 
-    validar_pesos = df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
+    validar_pesos = validacao_pesos(df_excel)
     
     if not codigo_filho_diferente_codigo_pai.all():
-        ctypes.windll.user32.MessageBoxW(
-            0, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
-        
+        exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツツ", "info")
+
     if not validar_codigos.all():
-        ctypes.windll.user32.MessageBoxW(
-            0, "CÓDIGO-FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
-        
+        exibir_mensagem(titulo_janela, "CÓDIGO-FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
+
     if not validar_descricoes.all():
-        ctypes.windll.user32.MessageBoxW(
-            0, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+        exibir_mensagem(titulo_janela, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ", "info")
 
     if not validar_quantidades.all():
-        ctypes.windll.user32.MessageBoxW(
-            0, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+        exibir_mensagem(titulo_janela, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\nツ", "info")
 
     if not validar_pesos.all():
-        ctypes.windll.user32.MessageBoxW(
-            0, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0)
+        exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info")
     
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
 
@@ -362,7 +366,7 @@ def verificar_cadastro_codigo_pai(codigo_pai):
             if resultado:
                 return True
             else:
-                ctypes.windll.user32.MessageBoxW(0, f"O cadastro do item pai não foi encontrado!\n\nEfetue o cadastro do código {codigo_pai} e, em seguida, tente novamente.\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 48 | 0) 
+                exibir_mensagem(titulo_janela, f"O cadastro do item pai não foi encontrado!\n\nEfetue o cadastro do código {codigo_pai} e, em seguida, tente novamente.\n\nツ", "warning") 
                 return False
         
     except Exception as ex:
@@ -408,7 +412,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        ctypes.windll.user32.MessageBoxW(0, f"ESTRUTURA CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        exibir_mensagem(titulo_janela, f"ESTRUTURA CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
         return True, revisao_atualizada
         
     except Exception as ex:
@@ -422,7 +426,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
 
 def janela_mensagem_alterar_estrutura(codigo_pai):
     user_choice = messagebox.askquestion(
-        "CADASTRO DE ESTRUTURA - TOTVS®",
+        titulo_janela,
         f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?"
     )
 
@@ -615,6 +619,24 @@ def calculo_revisao_anterior(revisao_atualizada):
     revisao_anterior = str(revisao_atualizada).zfill(3)
     return revisao_anterior
 
+
+def exibir_mensagem(title, message, icon_type):
+    root = tk.Tk()
+    root.withdraw()
+    root.lift()  # Garante que a janela esteja na frente
+    root.title(title)
+    #root.iconbitmap(default='info.ico')  # Substitua 'info.ico' pelo caminho do ícone desejado
+
+    if icon_type == 'info':
+        messagebox.showinfo(title, message)
+    elif icon_type == 'warning':
+        messagebox.showwarning(title, message)
+    elif icon_type == 'error':
+        messagebox.showerror(title, message)
+
+    root.destroy()
+
+
 nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
@@ -662,10 +684,10 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
-                    ctypes.windll.user32.MessageBoxW(0, f"ESTRUTURA ATUALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+                    exibir_mensagem(titulo_janela, f"ESTRUTURA ATUALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
             else:
-                ctypes.windll.user32.MessageBoxW(0, f"QUANTIDADES ATUALIZADAS COM SUCESSO!\n\nNenhum item foi ADICIONADO e/ou REMOVIDO.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+                exibir_mensagem(titulo_janela,f"QUANTIDADES ATUALIZADAS COM SUCESSO!\n\nNenhum item foi ADICIONADO e/ou REMOVIDO.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)","info")
     elif not nova_estrutura_cadastrada:
-        ctypes.windll.user32.MessageBoxW(0, f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ", "CADASTRO DE ESTRUTURA - TOTVS®", 0x40 | 0x1)
+        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ","warning")
 #else:
     #excluir_arquivo_excel_bom(excel_file_path)
