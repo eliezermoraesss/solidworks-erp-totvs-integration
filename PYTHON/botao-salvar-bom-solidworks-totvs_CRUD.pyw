@@ -25,15 +25,14 @@ indice_coluna_descricao_excel = 2
 indice_coluna_quantidade_excel = 3
 indice_coluna_peso_excel = 6
 
-def validar_formato_codigo_pai(codigo_pai):
-    
-    formatos_codigo = [
+formatos_codigo = [
         r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
         r'^(E\d{4}\-\d{3}\-\d{3})$',
         r'^(E\d{4}\-\d{3}\-A\d{2})$',
         r'^(E\d{12})$',
     ]
-    
+
+def validar_formato_codigo_pai(codigo_pai):
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
     
     if not codigo_pai_validado:
@@ -43,13 +42,6 @@ def validar_formato_codigo_pai(codigo_pai):
     
 
 def validar_formato_codigos_filho(df_excel, posicao_coluna_codigo):
-    formatos_codigo = [
-        r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
-        r'^(E\d{4}\-\d{3}\-\d{3})$',
-        r'^(E\d{4}\-\d{3}\-A\d{2})$',
-        r'^(E\d{12})$',
-    ]
-
     validacao_codigos = df_excel.iloc[:, posicao_coluna_codigo].apply(
         lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
 

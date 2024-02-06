@@ -483,7 +483,7 @@ class ConsultaApp(QWidget):
                 self.tabWidget.setCurrentIndex(index)
             else:
                 select_query_estrutura = f"""
-                    SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS "QTD.", struct.G1_XUM AS "UNID. MED.", struct.G1_REVFIM AS "REVISÃO", 
+                    SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS "QTD.", struct.G1_XUM AS "UNID.", struct.G1_REVFIM AS "REVISÃO", 
                     struct.G1_INI AS "INSERIDO EM:"
                     FROM {database}.dbo.SG1010 struct
                     INNER JOIN {database}.dbo.SB1010 prod
