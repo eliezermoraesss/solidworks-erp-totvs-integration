@@ -399,7 +399,10 @@ class ConsultaApp(QWidget):
                 for j, value in enumerate(row):
                     if j == 9:  # Verifica se o valor é da coluna B1_MSBLQL
                         # Converte o valor 1 para 'Sim' e 2 para 'Não'
-                        value = 'Sim' if value == 1 else 'Não'
+                        if value == '1':
+                            value = 'Sim'
+                        else:
+                            value = 'Não'
                     item = QTableWidgetItem(str(value).strip())
                     item.setBackground(cor_fundo)  # Definir cor de fundo
                     self.tree.setItem(i, j, item)
