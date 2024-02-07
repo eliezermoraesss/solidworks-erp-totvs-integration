@@ -18,7 +18,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.2 - BASE DE TESTE")
+        self.setWindowTitle("SMARTPLIC® v2.1.3 - BASE DE TESTE")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -82,7 +82,7 @@ class ConsultaApp(QWidget):
                 background-color: #7d85f0;
                 color: #fff;
                 padding: 5px;
-                height: 12px;
+                height: 18px;
             }
 
             QTableWidget QHeaderView::section:horizontal {
@@ -540,6 +540,7 @@ class ConsultaApp(QWidget):
                             item = QTableWidgetItem(valor_formatado)
                             tree_estrutura.setItem(i, j, item)
 
+                    tree_estrutura.setSortingEnabled(True)
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
