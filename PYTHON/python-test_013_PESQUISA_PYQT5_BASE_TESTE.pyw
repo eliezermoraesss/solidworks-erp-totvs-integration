@@ -347,14 +347,14 @@ class ConsultaApp(QWidget):
 
     def executar_consulta(self):
         # Obter os valores dos campos de consulta
-        codigo = self.codigo_var.text().upper()
-        descricao = self.descricao_var.text().upper()
-        descricao2 = self.descricao2_var.text().upper()
-        tipo = self.tipo_var.text().upper()
-        um = self.um_var.text().upper()
-        armazem = self.armazem_var.text().upper()
-        grupo = self.grupo_var.text().upper()
-        desc_grupo = self.grupo_desc_var.text().upper()
+        codigo = self.codigo_var.text().upper().strip()
+        descricao = self.descricao_var.text().upper().strip()
+        descricao2 = self.descricao2_var.text().upper().strip()
+        tipo = self.tipo_var.text().upper().strip()
+        um = self.um_var.text().upper().strip()
+        armazem = self.armazem_var.text().upper().strip()
+        grupo = self.grupo_var.text().upper().strip()
+        desc_grupo = self.grupo_desc_var.text().upper().strip()
         
         # Construir a query de consulta
         select_query = f"""
