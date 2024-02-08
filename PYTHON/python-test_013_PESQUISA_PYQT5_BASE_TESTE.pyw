@@ -38,7 +38,8 @@ class ConsultaApp(QWidget):
         self.tabWidget.setVisible(False)  # Inicialmente, a guia está invisível
 
         # Aplicar folha de estilo ao aplicativo
-        self.setStyleSheet("""                                                                         
+        self.setStyleSheet("""
+            
             QLabel {
                 color: #000;
                 font-size: 11px;

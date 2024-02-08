@@ -681,7 +681,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
-                    exibir_mensagem(titulo_janela, f"ESTRUTURA ATUALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
+                    exibir_mensagem(titulo_janela, f"ATUALIZAÇÃO DA ESTRUTURA REALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
             else:
                 exibir_mensagem(titulo_janela,f"QUANTIDADES ATUALIZADAS COM SUCESSO!\n\nNenhum item foi ADICIONADO e/ou REMOVIDO.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)","info")
     elif not nova_estrutura_cadastrada:
