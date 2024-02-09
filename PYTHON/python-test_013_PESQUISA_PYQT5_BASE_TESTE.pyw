@@ -289,11 +289,11 @@ class ConsultaApp(QWidget):
         self.tree.itemDoubleClicked.connect(self.copiar_linha)
         
         # Configurar a fonte da tabela
-        fonte_tabela = QFont("Segoe UI", 8)  # Substitua por sua fonte desejada e tamanho
+        fonte_tabela = QFont("Segoe UI", 10)  # Substitua por sua fonte desejada e tamanho
         self.tree.setFont(fonte_tabela)
 
         # Ajustar a altura das linhas
-        altura_linha = 22  # Substitua pelo valor desejado
+        altura_linha = 34  # Substitua pelo valor desejado
         self.tree.verticalHeader().setDefaultSectionSize(altura_linha)
         
         # Conectar o evento sectionClicked ao método ordenar_tabela
