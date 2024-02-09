@@ -214,7 +214,7 @@ def validacao_de_dados_bom(excel_file_path):
     validar_pesos = validacao_pesos(df_excel)
     
     if not codigo_filho_diferente_codigo_pai.all():
-        exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツツ", "info")
+        exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
 
     if not validar_codigos.all():
         exibir_mensagem(titulo_janela, "CÓDIGO-FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
