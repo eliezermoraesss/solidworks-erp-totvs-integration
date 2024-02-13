@@ -44,7 +44,7 @@ def validar_formato_codigo_pai(codigo_pai):
     
 
 def validar_formato_codigos_filho(df_excel):
-    validacao_codigos = df_excel.iloc[:, indice_coluna_codigo_excel].apply(
+    validacao_codigos = df_excel.iloc[:, indice_coluna_codigo_excel].str.strip().apply(
         lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
 
     return validacao_codigos

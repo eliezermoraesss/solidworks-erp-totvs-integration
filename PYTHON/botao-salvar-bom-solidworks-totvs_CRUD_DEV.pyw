@@ -44,7 +44,7 @@ def validar_formato_codigo_pai(codigo_pai):
     
 
 def validar_formato_codigos_filho(df_excel):
-    validacao_codigos = df_excel.iloc[:, indice_coluna_codigo_excel].apply(
+    validacao_codigos = df_excel.iloc[:, indice_coluna_codigo_excel].str.strip().apply(
         lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
 
     return validacao_codigos
@@ -166,8 +166,6 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
-        codigo = group[indice_coluna_codigo_excel].iloc[0]
-        descricao = group[indice_coluna_descricao_excel].iloc[0]
         quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
         peso_consolidado = group[indice_coluna_peso_excel].sum()
 
