@@ -85,7 +85,7 @@ def verificar_cadastro_codigo_filho(codigos_filho):
         
         for codigo_produto in codigos_filho:
             query_consulta_produto = f"""
-            SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto}';
+            SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto}' AND D_E_L_E_T_ <> '*';
             """
             
             cursor.execute(query_consulta_produto)
