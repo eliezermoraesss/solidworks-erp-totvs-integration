@@ -38,7 +38,7 @@ def validar_formato_codigo_pai(codigo_pai):
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
     
     if not codigo_pai_validado:
-        exibir_mensagem(titulo_janela, f"Este desenho está com o código fora do formato padrão ENAPLIC.\n\n{codigo_pai}\n\nPOR FAVOR, NOMEAR E SALVAR O DESENHO COM O CÓDIGO NO FORMATO PADRÃO.\n\nツ", "info")
+        exibir_mensagem(titulo_janela, f"Este desenho foi salvo com o código fora do formato padrão ENAPLIC.\n\n{codigo_pai}\n\nPor favor renomear e salvar o desenho com o código no formato padrão.\n\nツ", "info")
 
     return codigo_pai_validado
     
