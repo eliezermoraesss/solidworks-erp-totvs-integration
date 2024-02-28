@@ -166,6 +166,8 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
+        codigo = group[indice_coluna_codigo_excel].iloc[0]
+        descricao = group[indice_coluna_descricao_excel].iloc[0]
         quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
         peso_consolidado = group[indice_coluna_peso_excel].sum()
 
@@ -409,7 +411,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        exibir_mensagem(titulo_janela, f"ESTRUTURA CADASTRADA COM SUCESSO!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
+        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
         return True, revisao_inicial
         
     except Exception as ex:
@@ -622,7 +624,6 @@ def exibir_mensagem(title, message, icon_type):
     root.withdraw()
     root.lift()  # Garante que a janela esteja na frente
     root.title(title)
-    #root.iconbitmap(default='info.ico')  # Substitua 'info.ico' pelo caminho do ícone desejado
 
     if icon_type == 'info':
         messagebox.showinfo(title, message)
@@ -679,9 +680,9 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
-                    exibir_mensagem(titulo_janela, f"ATUALIZAÇÃO DA ESTRUTURA REALIZADA COM SUCESSO!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
+                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
             else:
-                exibir_mensagem(titulo_janela,f"QUANTIDADES ATUALIZADAS COM SUCESSO!\n\nNenhum item foi ADICIONADO e/ou REMOVIDO.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)","info")
+                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)","info")
     elif not nova_estrutura_cadastrada:
         exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ","warning")
 #else:

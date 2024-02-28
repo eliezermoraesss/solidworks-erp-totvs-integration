@@ -10,6 +10,7 @@ import time
 import pandas as pd
 import ctypes
 from datetime import datetime
+
 class ConsultaApp(QWidget):
     
     # Adicione este sinal à classe
@@ -640,7 +641,7 @@ if __name__ == "__main__":
     window = ConsultaApp()
 
     largura_janela = 1080  # Substitua pelo valor desejado
-    altura_janela = 920 # Substitua pelo valor desejado
+    altura_janela = 600 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
     altura_tela = app.primaryScreen().size().height()
