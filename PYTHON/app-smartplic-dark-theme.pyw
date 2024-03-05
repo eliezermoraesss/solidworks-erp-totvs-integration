@@ -552,17 +552,22 @@ class ConsultaApp(QWidget):
                             tree_estrutura.setItem(i, j, item)
 
                     tree_estrutura.setSortingEnabled(True)
+                    
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
-                    layout_cabecalho.addWidget(QLabel("ESTRUTURA DO PRODUTO"), alignment=Qt.AlignCenter)
+                    layout_cabecalho.addWidget(QLabel("ESTRUTURA DE PRODUTO"), alignment=Qt.AlignCenter)
                     layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
                     
-                    nova_guia_estrutura.setStyleSheet("""                                                                         
+                    nova_guia_estrutura.setStyleSheet("""                                           
+                        * {
+                            background-color: #363636;
+                        }
+                        
                         QLabel {
-                            color: #000;
+                            color: #A7A6A6;
                             font-size: 18px;
                             font-weight: bold;
                         }
