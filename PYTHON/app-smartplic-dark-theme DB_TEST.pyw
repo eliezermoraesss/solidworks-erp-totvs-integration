@@ -28,7 +28,7 @@ class ConsultaApp(QWidget):
         # Ajuste a cor de fundo da janela
         self.setAutoFillBackground(True)
         palette = self.palette()
-        palette.setColor(self.backgroundRole(), QColor('#eeeeee'))  # Substitua pela cor desejada
+        palette.setColor(self.backgroundRole(), QColor('#363636'))  # Substitua pela cor desejada
         self.setPalette(palette)
             
         self.nova_janela = None  # Adicione esta linha
@@ -42,21 +42,20 @@ class ConsultaApp(QWidget):
         self.setStyleSheet("""
             
             QLabel {
-                color: #000;
+                color: #EEEEEE;
                 font-size: 11px;
                 font-weight: bold;
             }
 
             QLineEdit {
-                background-color: #fff;
-                border: 1px solid #5ab3ee;
+                background-color: #A7A6A6;
+                border: 1px solid #000000;
                 padding: 5px;
-                border-color: #c0d1f7;
                 border-radius: 5px;
             }
 
             QPushButton {
-                background-color: #2416e0;
+                background-color: #0a79f8;
                 color: #fff;
                 padding: 5px 15px;
                 border: 2px;
@@ -77,12 +76,13 @@ class ConsultaApp(QWidget):
             }
 
             QTableWidget {
-                border: 1px solid #85aaf0;
+                border: 1px solid #000000;
+                background-color: #363636;
             }
 
             QTableWidget QHeaderView::section {
-                background-color: #7d85f0;
-                color: #fff;
+                background-color: #262626;
+                color: #A7A6A6;
                 padding: 5px;
                 height: 18px;
             }
@@ -91,9 +91,15 @@ class ConsultaApp(QWidget):
                 border-top: 1px solid #333;
             }
             
-            QTableWidget::item:selected {
-                background-color: #0066ff;
+            QTableWidget::item {
+                background-color: #363636;
                 color: #fff;
+                font-weight: bold;
+            }
+            
+            QTableWidget::item:selected {
+                background-color: #000000;
+                color: #EEEEEE;
                 font-weight: bold;
             }
         """)
@@ -277,10 +283,10 @@ class ConsultaApp(QWidget):
 
     def configurar_tabela(self):
         self.tree = QTableWidget(self)
-        self.tree.setColumnCount(11)
+        self.tree.setColumnCount(12)
         self.tree.setHorizontalHeaderLabels(
             ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?",
-             "REV."])
+             "REV.", ""])
         self.tree.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.tree.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tree.setSelectionBehavior(QTableWidget.SelectRows)
@@ -299,6 +305,9 @@ class ConsultaApp(QWidget):
         
         # Conectar o evento sectionClicked ao método ordenar_tabela
         self.tree.horizontalHeader().sectionClicked.connect(self.ordenar_tabela)
+        
+        # Redimensionar a última coluna para preencher o espaço restante
+        self.tree.horizontalHeader().setStretchLastSection(True)
         
     def configurar_tabela_tooltips(self):
         headers = ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."]
