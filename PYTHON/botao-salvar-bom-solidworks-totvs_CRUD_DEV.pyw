@@ -244,7 +244,9 @@ def validacao_de_dados_bom(excel_file_path):
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura:
             return bom_excel_sem_duplicatas
         else:
-            return None
+            return pd.DataFrame(columns=bom_excel_sem_duplicatas.columns)
+
+    return pd.DataFrame(columns=df_excel.columns)
 
 
 def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
@@ -657,7 +659,10 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
     if not bom_excel_sem_duplicatas.empty and resultado_estrutura_codigo_pai.empty:
         nova_estrutura_cadastrada, revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
         atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
-            
+        
+        if not nova_estrutura_cadastrada:
+            exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ","warning")
+
     if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
         usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
 
@@ -687,7 +692,5 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                     exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
             else:
                 exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)","info")
-    elif not nova_estrutura_cadastrada:
-        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ","warning")
-#else:
+    #else:
     #excluir_arquivo_excel_bom(excel_file_path)

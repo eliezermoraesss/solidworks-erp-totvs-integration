@@ -566,7 +566,7 @@ class ConsultaApp(QWidget):
                     
                     nova_guia_estrutura.setStyleSheet("""                                           
                         * {
-                            background-color: #363636;
+                            background-color: #262626;
                         }
                         
                         QLabel {
@@ -576,7 +576,7 @@ class ConsultaApp(QWidget):
                         }
                         
                         QTableWidget {
-                            border: 1px solid #85aaf0;
+                            border: 1px solid #000000;
                         }
 
                         QTableWidget QHeaderView::section {
