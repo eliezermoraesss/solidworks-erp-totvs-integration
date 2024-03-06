@@ -40,6 +40,9 @@ class ConsultaApp(QWidget):
 
         # Aplicar folha de estilo ao aplicativo
         self.setStyleSheet("""
+            * {
+                background-color: #363636;
+            }
             
             QLabel {
                 color: #EEEEEE;
