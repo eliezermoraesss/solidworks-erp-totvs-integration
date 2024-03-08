@@ -550,8 +550,13 @@ class ConsultaApp(QWidget):
                                 valor_formatado = data_obj.strftime("%d/%m/%Y")                  
                             else:
                                 valor_formatado = str(value).strip()
-                                
+                            
                             item = QTableWidgetItem(valor_formatado)
+                            item.setForeground(QColor("#EEEEEE"))  # Definir cor do texto da coluna quantidade
+                            
+                            if j != 0 and j != 1:
+                                item.setTextAlignment(Qt.AlignCenter)
+                            
                             tree_estrutura.setItem(i, j, item)
 
                     tree_estrutura.setSortingEnabled(True)
