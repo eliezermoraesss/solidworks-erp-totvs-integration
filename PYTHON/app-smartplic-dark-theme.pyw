@@ -19,7 +19,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.4 - Dark Theme")
+        self.setWindowTitle("SMARTPLIC® v2.1.4 - Dark theme - Developed by: Eliezer Moraes Silva")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -255,7 +255,7 @@ class ConsultaApp(QWidget):
 
             # Criar um DataFrame pandas
             df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM",
-                                             "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."])
+                                             "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV.", ""])
 
             # Salvar o DataFrame como um arquivo Excel
             df.to_excel(file_path, index=False)
