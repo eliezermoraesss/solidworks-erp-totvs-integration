@@ -158,6 +158,10 @@ class ConsultaApp(QWidget):
         self.btn_exportar_excel.setMinimumWidth(100)
         self.btn_exportar_excel.setEnabled(False)  # Desativar inicialmente
         
+        self.btn_abrir_lista_ramais = QPushButton("Lista de ramais", self)
+        self.btn_abrir_lista_ramais.clicked.connect(self.abrir_lista_ramais)
+        self.btn_abrir_lista_ramais.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        
         self.btn_fechar = QPushButton("Fechar", self)
         self.btn_fechar.clicked.connect(self.fechar_janela)
         self.btn_fechar.setMinimumWidth(100)  # Definindo o comprimento mínimo
@@ -222,6 +226,7 @@ class ConsultaApp(QWidget):
         layout_linha_03.addWidget(self.btn_nova_janela)
         layout_linha_03.addWidget(self.btn_abrir_desenho)
         layout_linha_03.addWidget(self.btn_exportar_excel)
+        layout_linha_03.addWidget(self.btn_abrir_lista_ramais)
         layout_linha_03.addWidget(self.btn_fechar)
         
         # Adicione um espaçador esticável para centralizar os botões
@@ -453,7 +458,11 @@ class ConsultaApp(QWidget):
                 QDesktopServices.openUrl(QUrl.fromLocalFile(pdf_path))
             else:
                 mensagem = f"Desenho não encontrado!\n\n:-("
-                QMessageBox.information(self, f"{codigo}", mensagem)            
+                QMessageBox.information(self, f"{codigo}", mensagem)
+
+                
+    def abrir_lista_ramais(self):
+        os.startfile('X:/ELIEZER/DOCUMENTOS_UTEIS/RAMAIS P&O.pdf')       
 
 
     def copiar_linha(self):

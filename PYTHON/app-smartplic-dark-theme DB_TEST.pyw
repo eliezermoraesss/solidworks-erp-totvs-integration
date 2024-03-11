@@ -19,7 +19,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.4 - Dark Theme - DB TEST")
+        self.setWindowTitle("SMARTPLIC® v2.1.4 - Dark theme - Developed by Eliezer Moraes Silva")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -52,9 +52,9 @@ class ConsultaApp(QWidget):
 
             QLineEdit {
                 background-color: #A7A6A6;
-                border: 1px solid #000000;
+                border: 1px solid #262626;
                 padding: 5px;
-                border-radius: 5px;
+                border-radius: 8px;
             }
 
             QPushButton {
@@ -62,7 +62,7 @@ class ConsultaApp(QWidget):
                 color: #fff;
                 padding: 5px 15px;
                 border: 2px;
-                border-radius: 5px;
+                border-radius: 8px;
                 font-size: 11px;
                 height: 20px;
                 font-weight: bold;
@@ -71,11 +71,13 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #0c9af8;
+                background-color: #deecf8;
+                color: #0a22f8
             }
 
             QPushButton:pressed {
                 background-color: #6703c5;
+                color: #fff;
             }
 
             QTableWidget {
@@ -156,6 +158,10 @@ class ConsultaApp(QWidget):
         self.btn_exportar_excel.setMinimumWidth(100)
         self.btn_exportar_excel.setEnabled(False)  # Desativar inicialmente
         
+        self.btn_abrir_lista_ramais = QPushButton("Lista de ramais", self)
+        self.btn_abrir_lista_ramais.clicked.connect(self.abrir_lista_ramais)
+        self.btn_abrir_lista_ramais.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        
         self.btn_fechar = QPushButton("Fechar", self)
         self.btn_fechar.clicked.connect(self.fechar_janela)
         self.btn_fechar.setMinimumWidth(100)  # Definindo o comprimento mínimo
@@ -220,6 +226,7 @@ class ConsultaApp(QWidget):
         layout_linha_03.addWidget(self.btn_nova_janela)
         layout_linha_03.addWidget(self.btn_abrir_desenho)
         layout_linha_03.addWidget(self.btn_exportar_excel)
+        layout_linha_03.addWidget(self.btn_abrir_lista_ramais)
         layout_linha_03.addWidget(self.btn_fechar)
         
         # Adicione um espaçador esticável para centralizar os botões
@@ -255,7 +262,7 @@ class ConsultaApp(QWidget):
 
             # Criar um DataFrame pandas
             df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM",
-                                             "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."])
+                                             "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV.", ""])
 
             # Salvar o DataFrame como um arquivo Excel
             df.to_excel(file_path, index=False)
@@ -451,7 +458,11 @@ class ConsultaApp(QWidget):
                 QDesktopServices.openUrl(QUrl.fromLocalFile(pdf_path))
             else:
                 mensagem = f"Desenho não encontrado!\n\n:-("
-                QMessageBox.information(self, f"{codigo}", mensagem)            
+                QMessageBox.information(self, f"{codigo}", mensagem)
+
+                
+    def abrir_lista_ramais(self):
+        os.startfile('X:/ELIEZER/DOCUMENTOS_UTEIS/RAMAIS P&O.pdf')       
 
 
     def copiar_linha(self):
@@ -550,8 +561,13 @@ class ConsultaApp(QWidget):
                                 valor_formatado = data_obj.strftime("%d/%m/%Y")                  
                             else:
                                 valor_formatado = str(value).strip()
-                                
+                            
                             item = QTableWidgetItem(valor_formatado)
+                            item.setForeground(QColor("#EEEEEE"))  # Definir cor do texto da coluna quantidade
+                            
+                            if j != 0 and j != 1:
+                                item.setTextAlignment(Qt.AlignCenter)
+                            
                             tree_estrutura.setItem(i, j, item)
 
                     tree_estrutura.setSortingEnabled(True)
@@ -566,7 +582,7 @@ class ConsultaApp(QWidget):
                     
                     nova_guia_estrutura.setStyleSheet("""                                           
                         * {
-                            background-color: #363636;
+                            background-color: #262626;
                         }
                         
                         QLabel {
@@ -576,7 +592,7 @@ class ConsultaApp(QWidget):
                         }
                         
                         QTableWidget {
-                            border: 1px solid #85aaf0;
+                            border: 1px solid #000000;
                         }
 
                         QTableWidget QHeaderView::section {
