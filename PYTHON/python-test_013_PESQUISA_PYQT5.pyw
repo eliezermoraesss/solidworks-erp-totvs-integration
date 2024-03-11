@@ -18,7 +18,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.4 - White theme - Developed by: Eliezer Moraes Silva")
+        self.setWindowTitle("SMARTPLIC® v2.1.4 - White theme - Developed by Eliezer Moraes Silva")
         
         # Configurar o ícone da janela
         icon_path = "010.png"

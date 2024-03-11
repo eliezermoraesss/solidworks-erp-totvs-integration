@@ -19,7 +19,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.4 - Dark theme - Developed by: Eliezer Moraes Silva")
+        self.setWindowTitle("SMARTPLIC® v2.1.4 - Dark theme - Developed by Eliezer Moraes Silva")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -52,9 +52,9 @@ class ConsultaApp(QWidget):
 
             QLineEdit {
                 background-color: #A7A6A6;
-                border: 1px solid #000000;
+                border: 1px solid #262626;
                 padding: 5px;
-                border-radius: 5px;
+                border-radius: 8px;
             }
 
             QPushButton {
@@ -62,7 +62,7 @@ class ConsultaApp(QWidget):
                 color: #fff;
                 padding: 5px 15px;
                 border: 2px;
-                border-radius: 5px;
+                border-radius: 8px;
                 font-size: 11px;
                 height: 20px;
                 font-weight: bold;
@@ -71,11 +71,13 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #0c9af8;
+                background-color: #deecf8;
+                color: #0a22f8
             }
 
             QPushButton:pressed {
                 background-color: #6703c5;
+                color: #fff;
             }
 
             QTableWidget {
