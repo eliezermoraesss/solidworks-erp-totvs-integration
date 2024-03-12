@@ -158,9 +158,9 @@ class ConsultaApp(QWidget):
         self.btn_exportar_excel.setMinimumWidth(100)
         self.btn_exportar_excel.setEnabled(False)  # Desativar inicialmente
         
-        self.btn_abrir_lista_ramais = QPushButton("Lista de ramais", self)
-        self.btn_abrir_lista_ramais.clicked.connect(self.abrir_lista_ramais)
-        self.btn_abrir_lista_ramais.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_calculo_peso = QPushButton("Tabela de pesos", self)
+        self.btn_calculo_peso.clicked.connect(self.abrir_tabela_pesos)
+        self.btn_calculo_peso.setMinimumWidth(100)  # Definindo o comprimento mínimo
         
         self.btn_fechar = QPushButton("Fechar", self)
         self.btn_fechar.clicked.connect(self.fechar_janela)
@@ -226,7 +226,7 @@ class ConsultaApp(QWidget):
         layout_linha_03.addWidget(self.btn_nova_janela)
         layout_linha_03.addWidget(self.btn_abrir_desenho)
         layout_linha_03.addWidget(self.btn_exportar_excel)
-        layout_linha_03.addWidget(self.btn_abrir_lista_ramais)
+        layout_linha_03.addWidget(self.btn_calculo_peso)
         layout_linha_03.addWidget(self.btn_fechar)
         
         # Adicione um espaçador esticável para centralizar os botões
@@ -461,8 +461,8 @@ class ConsultaApp(QWidget):
                 QMessageBox.information(self, f"{codigo}", mensagem)
 
                 
-    def abrir_lista_ramais(self):
-        os.startfile('X:/ELIEZER/DOCUMENTOS_UTEIS/RAMAIS P&O.pdf')       
+    def abrir_tabela_pesos(self):
+        os.startfile('X:/ELIEZER/DOCUMENTOS_UTEIS/TABELA_PESO.xlsx')       
 
 
     def copiar_linha(self):
