@@ -446,7 +446,7 @@ class ConsultaApp(QWidget):
 
 
     def abrir_tabela_pesos(self):
-        os.startfile('X:/ELIEZER/DOCUMENTOS_UTEIS/TABELA_PESO.xlsx')      
+        os.startfile(r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\DOCUMENTOS_UTEIS\TABELA_PESO.xlsx')     
 
 
     def copiar_linha(self):
