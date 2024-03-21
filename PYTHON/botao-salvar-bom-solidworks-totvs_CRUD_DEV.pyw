@@ -9,31 +9,20 @@ from tkinter import messagebox
 from sqlalchemy import create_engine
 import sys
 
-# Parâmetros de conexão com o banco de dados SQL Server
-server = 'SVRERP,1433'
-database = 'PROTHEUS1233_HML' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
-username = 'coognicao'
-password = '0705@Abc'
-driver = '{ODBC Driver 17 for SQL Server}'
+def setup_mssql():
+    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\user-password-mssql.txt"
+    try:
+        with open(caminho_do_arquivo, 'r') as arquivo:
+            string_lida = arquivo.read()
+            username, password, database, server = string_lida.split(';')
+            return username, password, database, server
+            
+    except FileNotFoundError:
+        print("O arquivo especificado não foi encontrado.")
 
-titulo_janela = "CADASTRO DE ESTRUTURA - TOTVS®"
+    except Exception as e:
+        print("Ocorreu um erro ao ler o arquivo:", e)
 
-# Arrays para armazenar os códigos
-codigos_adicionados_bom = []  # ITENS ADICIONADOS
-codigos_removidos_bom = []  # ITENS REMOVIDOS
-codigos_em_comum = []  # ITENS EM COMUM
-
-indice_coluna_codigo_excel = 1
-indice_coluna_descricao_excel = 2
-indice_coluna_quantidade_excel = 3
-indice_coluna_peso_excel = 6
-
-formatos_codigo = [
-        r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
-        r'^(E\d{4}\-\d{3}\-\d{3})$',
-        r'^(E\d{4}\-\d{3}\-A\d{2})$',
-        r'^(E\d{12})$',
-    ]
 
 def validar_formato_codigo_pai(codigo_pai):  
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
@@ -641,6 +630,30 @@ def exibir_mensagem(title, message, icon_type):
 
     root.destroy()
 
+
+# Parâmetros de conexão com o banco de dados SQL Server
+
+username, password, database, server = setup_mssql()
+driver = '{ODBC Driver 17 for SQL Server}'
+
+titulo_janela = "CADASTRO DE ESTRUTURA - TOTVS®"
+
+# Arrays para armazenar os códigos
+codigos_adicionados_bom = []  # ITENS ADICIONADOS
+codigos_removidos_bom = []  # ITENS REMOVIDOS
+codigos_em_comum = []  # ITENS EM COMUM
+
+indice_coluna_codigo_excel = 1
+indice_coluna_descricao_excel = 2
+indice_coluna_quantidade_excel = 3
+indice_coluna_peso_excel = 6
+
+formatos_codigo = [
+        r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
+        r'^(E\d{4}\-\d{3}\-\d{3})$',
+        r'^(E\d{4}\-\d{3}\-A\d{2})$',
+        r'^(E\d{12})$',
+    ]
 
 nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
