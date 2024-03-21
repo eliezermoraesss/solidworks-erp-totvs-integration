@@ -7,32 +7,22 @@ from datetime import date
 import tkinter as tk
 from tkinter import messagebox
 from sqlalchemy import create_engine
+import sys
 
-# Parâmetros de conexão com o banco de dados SQL Server
-server = 'SVRERP,1433'
-database = 'PROTHEUS1233_HML' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
-username = 'coognicao'
-password = '0705@Abc'
-driver = '{ODBC Driver 17 for SQL Server}'
+def setup_mssql():
+    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\user-password-mssql.txt"
+    try:
+        with open(caminho_do_arquivo, 'r') as arquivo:
+            string_lida = arquivo.read()
+            username, password, database, server = string_lida.split(';')
+            return username, password, database, server
+            
+    except FileNotFoundError:
+        print("O arquivo especificado não foi encontrado.")
 
-titulo_janela = "CADASTRO DE ESTRUTURA - TOTVS®"
+    except Exception as e:
+        print("Ocorreu um erro ao ler o arquivo:", e)
 
-# Arrays para armazenar os códigos
-codigos_adicionados_bom = []  # ITENS ADICIONADOS
-codigos_removidos_bom = []  # ITENS REMOVIDOS
-codigos_em_comum = []  # ITENS EM COMUM
-
-indice_coluna_codigo_excel = 1
-indice_coluna_descricao_excel = 2
-indice_coluna_quantidade_excel = 3
-indice_coluna_peso_excel = 6
-
-formatos_codigo = [
-        r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
-        r'^(E\d{4}\-\d{3}\-\d{3})$',
-        r'^(E\d{4}\-\d{3}\-A\d{2})$',
-        r'^(E\d{12})$',
-    ]
 
 def validar_formato_codigo_pai(codigo_pai):  
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
@@ -246,7 +236,7 @@ def validacao_de_dados_bom(excel_file_path):
         else:
             return pd.DataFrame(columns=bom_excel_sem_duplicatas.columns)
 
-    return pd.DataFrame(columns=df_excel.columns)
+    sys.exit()
 
 
 def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
@@ -641,6 +631,30 @@ def exibir_mensagem(title, message, icon_type):
     root.destroy()
 
 
+# Parâmetros de conexão com o banco de dados SQL Server
+
+username, password, database, server = setup_mssql()
+driver = '{ODBC Driver 17 for SQL Server}'
+
+titulo_janela = "CADASTRO DE ESTRUTURA - TOTVS®"
+
+# Arrays para armazenar os códigos
+codigos_adicionados_bom = []  # ITENS ADICIONADOS
+codigos_removidos_bom = []  # ITENS REMOVIDOS
+codigos_em_comum = []  # ITENS EM COMUM
+
+indice_coluna_codigo_excel = 1
+indice_coluna_descricao_excel = 2
+indice_coluna_quantidade_excel = 3
+indice_coluna_peso_excel = 6
+
+formatos_codigo = [
+        r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
+        r'^(E\d{4}\-\d{3}\-\d{3})$',
+        r'^(E\d{4}\-\d{3}\-A\d{2})$',
+        r'^(E\d{12})$',
+    ]
+
 nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
@@ -660,8 +674,8 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
         nova_estrutura_cadastrada, revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
         atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
         
-        if not nova_estrutura_cadastrada:
-            exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ EMS","warning")
+    if bom_excel_sem_duplicatas.empty and not nova_estrutura_cadastrada:
+        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ EMS","warning")
 
     if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
         usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
