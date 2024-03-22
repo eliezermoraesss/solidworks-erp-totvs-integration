@@ -7,32 +7,24 @@ from datetime import date
 import tkinter as tk
 from tkinter import messagebox
 from sqlalchemy import create_engine
+import sys
 
-# Parâmetros de conexão com o banco de dados SQL Server
-server = 'SVRERP,1433'
-database = 'PROTHEUS12_R27' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
-username = 'coognicao'
-password = '0705@Abc'
-driver = '{ODBC Driver 17 for SQL Server}'
+def setup_mssql():
+    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_PROD.txt"
+    try:
+        with open(caminho_do_arquivo, 'r') as arquivo:
+            string_lida = arquivo.read()
+            username, password, database, server = string_lida.split(';')
+            return username, password, database, server
+            
+    except FileNotFoundError:
+        ctypes.windll.user32.MessageBoxW(0, f"Erro ao ler credenciais de acesso ao banco de dados MSSQL.\n\nBase de dados ERP TOTVS PROTHEUS.\n\nPor favor, informe ao desenvolvedor/TI sobre o erro exibido.\n\nTenha um bom dia! ツ", "CADASTRO DE ESTRUTURA - TOTVS®", 16 | 0)
+        sys.exit()
 
-titulo_janela = "CADASTRO DE ESTRUTURA - TOTVS®"
+    except Exception as e:
+        ctypes.windll.user32.MessageBoxW(0, f"Ocorreu um erro ao ler o arquivo:", "CADASTRO DE ESTRUTURA - TOTVS®", 16 | 0)
+        sys.exit()
 
-# Arrays para armazenar os códigos
-codigos_adicionados_bom = []  # ITENS ADICIONADOS
-codigos_removidos_bom = []  # ITENS REMOVIDOS
-codigos_em_comum = []  # ITENS EM COMUM
-
-indice_coluna_codigo_excel = 1
-indice_coluna_descricao_excel = 2
-indice_coluna_quantidade_excel = 3
-indice_coluna_peso_excel = 6
-
-formatos_codigo = [
-        r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
-        r'^(E\d{4}\-\d{3}\-\d{3})$',
-        r'^(E\d{4}\-\d{3}\-A\d{2})$',
-        r'^(E\d{12})$',
-    ]
 
 def validar_formato_codigo_pai(codigo_pai):  
     codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in formatos_codigo)
@@ -166,8 +158,6 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
-        codigo = group[indice_coluna_codigo_excel].iloc[0]
-        descricao = group[indice_coluna_descricao_excel].iloc[0]
         quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
         peso_consolidado = group[indice_coluna_peso_excel].sum()
 
@@ -195,6 +185,29 @@ def validacao_quantidades(df_excel):
 def validacao_pesos(df_excel):
     return df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
 
+
+def validacao_pesos_unidade_kg(df_excel):
+    encontrado_peso_zero = False
+    try:
+        
+        for index, row in df_excel.iterrows():
+            codigo_filho = row.iloc[indice_coluna_codigo_excel]
+            unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+            
+            if unidade_medida == 'KG':
+                peso = row.iloc[indice_coluna_peso_excel]
+                if peso <= 0:
+                    encontrado_peso_zero = True
+                    exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nO peso deste item deve ser MAIOR QUE ZERO.\n\n{codigo_filho}\n\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
+        
+        if encontrado_peso_zero:
+            return False
+        else:
+            return True
+                
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao validar pesos em unidade KG", 16 | 0)
+        return False
 
 def validacao_de_dados_bom(excel_file_path):
     # Carrega a planilha do Excel em um DataFrame
@@ -232,15 +245,17 @@ def validacao_de_dados_bom(excel_file_path):
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
-        
         existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         
-        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura:
+        if codigos_filho_tem_cadastro:
+            pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(bom_excel_sem_duplicatas)
+        
+        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
             return bom_excel_sem_duplicatas
-        else:
-            return None
+
+    sys.exit()
 
 
 def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
@@ -340,7 +355,7 @@ def obter_unidade_medida_codigo_filho(codigo_filho):
             
             unidade_medida = cursor.fetchone()
             valor_unidade_medida = unidade_medida[0]
-
+            
             return valor_unidade_medida
 
     except Exception as ex:
@@ -411,7 +426,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nEMS\n\nEngenharia ENAPLIC®", "info")
+        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
         return True, revisao_inicial
         
     except Exception as ex:
@@ -544,8 +559,8 @@ def remover_itens_estrutura_totvs(codigo_pai, codigos_removidos_bom_df, revisao_
         return True
         
     except Exception as ex:
+        return False
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao remover item da estrutura", 16 | 0)
-        return False 
         
     finally:
         cursor.close()
@@ -635,6 +650,29 @@ def exibir_mensagem(title, message, icon_type):
     root.destroy()
 
 
+# Leitura dos parâmetros de conexão com o banco de dados SQL Server
+username, password, database, server = setup_mssql()
+driver = '{ODBC Driver 17 for SQL Server}'
+
+titulo_janela = "CADASTRO DE ESTRUTURA - TOTVS®"
+
+# Arrays para armazenar os códigos
+codigos_adicionados_bom = []  # ITENS ADICIONADOS
+codigos_removidos_bom = []  # ITENS REMOVIDOS
+codigos_em_comum = []  # ITENS EM COMUM
+
+indice_coluna_codigo_excel = 1
+indice_coluna_descricao_excel = 2
+indice_coluna_quantidade_excel = 3
+indice_coluna_peso_excel = 6
+
+formatos_codigo = [
+        r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
+        r'^(E\d{4}\-\d{3}\-\d{3})$',
+        r'^(E\d{4}\-\d{3}\-A\d{2})$',
+        r'^(E\d{12})$',
+    ]
+
 nome_desenho = ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
@@ -653,7 +691,10 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
     if not bom_excel_sem_duplicatas.empty and resultado_estrutura_codigo_pai.empty:
         nova_estrutura_cadastrada, revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
         atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
-            
+        
+    if bom_excel_sem_duplicatas.empty and not nova_estrutura_cadastrada:
+        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ EMS®\n\nEngenharia ENAPLIC®","warning")
+
     if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
         usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
 
@@ -680,10 +721,8 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
-                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS\n\nEngenharia ENAPLIC®", "info")
+                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°) EMS\n\nEngenharia ENAPLIC®", "info")
             else:
-                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS\n\nEngenharia ENAPLIC®","info")
-    elif not nova_estrutura_cadastrada:
-        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ\n\nEMS\n\nEngenharia ENAPLIC®","warning")
-else:
-    excluir_arquivo_excel_bom(excel_file_path)
+                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°) EMS\n\nEngenharia ENAPLIC®","info")
+    else:
+        excluir_arquivo_excel_bom(excel_file_path)
