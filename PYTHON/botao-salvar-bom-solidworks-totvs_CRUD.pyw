@@ -724,5 +724,5 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                     exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°) EMS\n\nEngenharia ENAPLIC®", "info")
             else:
                 exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°) EMS\n\nEngenharia ENAPLIC®","info")
-    else:
-        excluir_arquivo_excel_bom(excel_file_path)
+else:
+    excluir_arquivo_excel_bom(excel_file_path)
