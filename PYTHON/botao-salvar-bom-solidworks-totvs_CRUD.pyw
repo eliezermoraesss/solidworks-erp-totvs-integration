@@ -250,7 +250,7 @@ def validacao_de_dados_bom(excel_file_path):
         codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         
         if codigos_filho_tem_cadastro:
-            pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(bom_excel_sem_duplicatas)
+            pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)
         
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
             return bom_excel_sem_duplicatas
