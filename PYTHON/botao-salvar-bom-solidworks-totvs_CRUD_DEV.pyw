@@ -18,10 +18,12 @@ def setup_mssql():
             return username, password, database, server
             
     except FileNotFoundError:
-        print("O arquivo especificado não foi encontrado.")
+        exibir_mensagem(titulo_janela, f"O arquivo especificado não foi encontrado.", "error")
+        sys.exit()
 
     except Exception as e:
-        print("Ocorreu um erro ao ler o arquivo:", e)
+        exibir_mensagem(titulo_janela, f"Ocorreu um erro ao ler o arquivo:\n\n{e}", "error")
+        sys.exit()
 
 
 def validar_formato_codigo_pai(codigo_pai):  
