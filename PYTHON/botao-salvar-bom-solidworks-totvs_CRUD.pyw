@@ -426,7 +426,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
+        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\nEMS®\n\nEngenharia ENAPLIC®", "info")
         return True, revisao_inicial
         
     except Exception as ex:
@@ -693,7 +693,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
         atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
         
     if bom_excel_sem_duplicatas.empty and not nova_estrutura_cadastrada:
-        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ EMS®\n\nEngenharia ENAPLIC®","warning")
+        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ\nEMS®\n\nEngenharia ENAPLIC®","warning")
 
     if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
         usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
@@ -721,8 +721,8 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
-                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°) EMS\n\nEngenharia ENAPLIC®", "info")
+                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\nEMS®\n\nEngenharia ENAPLIC®", "info")
             else:
-                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°) EMS\n\nEngenharia ENAPLIC®","info")
+                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\nEMS®\n\nEngenharia ENAPLIC®","info")
 else:
     excluir_arquivo_excel_bom(excel_file_path)
