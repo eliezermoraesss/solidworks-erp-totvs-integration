@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 import sys
 
 def setup_mssql():
-    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\user-password-mssql.txt"
+    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
     try:
         with open(caminho_do_arquivo, 'r') as arquivo:
             string_lida = arquivo.read()
@@ -156,8 +156,6 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
-        codigo = group[indice_coluna_codigo_excel].iloc[0]
-        descricao = group[indice_coluna_descricao_excel].iloc[0]
         quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
         peso_consolidado = group[indice_coluna_peso_excel].sum()
 
@@ -187,8 +185,27 @@ def validacao_pesos(df_excel):
 
 
 def validacao_pesos_unidade_kg(df_excel):
-    return df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] > 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
-
+    encontrado_peso_zero = False
+    try:
+        
+        for index, row in df_excel.iterrows():
+            codigo_filho = row.iloc[indice_coluna_codigo_excel]
+            unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+            
+            if unidade_medida == 'KG':
+                peso = row.iloc[indice_coluna_peso_excel]
+                if peso <= 0:
+                    encontrado_peso_zero = True
+                    exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nO peso do código {codigo_filho} tem que ser MAIOR QUE ZERO.\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
+        
+        if encontrado_peso_zero:
+            return False
+        else:
+            return True
+                
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao validar pesos em unidade KG", 16 | 0)
+        return False
 
 def validacao_de_dados_bom(excel_file_path):
     # Carrega a planilha do Excel em um DataFrame
@@ -226,15 +243,13 @@ def validacao_de_dados_bom(excel_file_path):
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
-        
+        pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(bom_excel_sem_duplicatas)
         existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         
-        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura:
+        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
             return bom_excel_sem_duplicatas
-        else:
-            return pd.DataFrame(columns=bom_excel_sem_duplicatas.columns)
 
     sys.exit()
 
@@ -631,8 +646,7 @@ def exibir_mensagem(title, message, icon_type):
     root.destroy()
 
 
-# Parâmetros de conexão com o banco de dados SQL Server
-
+# Leitura dos parâmetros de conexão com o banco de dados SQL Server
 username, password, database, server = setup_mssql()
 driver = '{ODBC Driver 17 for SQL Server}'
 
