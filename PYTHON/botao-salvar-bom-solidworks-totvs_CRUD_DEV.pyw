@@ -196,7 +196,7 @@ def validacao_pesos_unidade_kg(df_excel):
                 peso = row.iloc[indice_coluna_peso_excel]
                 if peso <= 0:
                     encontrado_peso_zero = True
-                    exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nO peso do código {codigo_filho} tem que ser MAIOR QUE ZERO.\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
+                    exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nO peso deste item deve ser MAIOR QUE ZERO.\n\n{codigo_filho}\n\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
         
         if encontrado_peso_zero:
             return False
@@ -243,10 +243,12 @@ def validacao_de_dados_bom(excel_file_path):
 
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
-        pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(bom_excel_sem_duplicatas)
         existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
+        
+        if codigos_filho_tem_cadastro:
+            pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(bom_excel_sem_duplicatas)
         
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
             return bom_excel_sem_duplicatas
@@ -351,7 +353,7 @@ def obter_unidade_medida_codigo_filho(codigo_filho):
             
             unidade_medida = cursor.fetchone()
             valor_unidade_medida = unidade_medida[0]
-
+            
             return valor_unidade_medida
 
     except Exception as ex:
