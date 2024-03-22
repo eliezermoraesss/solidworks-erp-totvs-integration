@@ -187,7 +187,7 @@ def validacao_pesos(df_excel):
 
 
 def validacao_pesos_unidade_kg(df_excel):
-    encontrado_peso_zero = False
+    lista_codigos_peso_zero = []
     try:
         
         for index, row in df_excel.iterrows():
@@ -197,10 +197,10 @@ def validacao_pesos_unidade_kg(df_excel):
             if unidade_medida == 'KG':
                 peso = row.iloc[indice_coluna_peso_excel]
                 if peso <= 0:
-                    encontrado_peso_zero = True
-                    exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nO peso deste item deve ser MAIOR QUE ZERO.\n\n{codigo_filho}\n\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
+                    lista_codigos_peso_zero.append(codigo_filho)
         
-        if encontrado_peso_zero:
+        if lista_codigos_peso_zero:
+            exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO.\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
             return False
         else:
             return True
@@ -255,6 +255,7 @@ def validacao_de_dados_bom(excel_file_path):
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
             return bom_excel_sem_duplicatas
 
+    #excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
 
@@ -426,7 +427,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)", "info")
+        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®", "info")
         return True, revisao_inicial
         
     except Exception as ex:
@@ -693,7 +694,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
         atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
         
     if bom_excel_sem_duplicatas.empty and not nova_estrutura_cadastrada:
-        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ EMS","warning")
+        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ\n\nEMS®\n\nEngenharia ENAPLIC®","warning")
 
     if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
         usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
@@ -721,8 +722,8 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
-                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)\nEMS", "info")
+                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®", "info")
             else:
-                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\n( ͡° ͜ʖ ͡°)\nEMS","info")
+                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®","info")
 #else:
     #excluir_arquivo_excel_bom(excel_file_path)

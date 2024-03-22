@@ -187,7 +187,7 @@ def validacao_pesos(df_excel):
 
 
 def validacao_pesos_unidade_kg(df_excel):
-    encontrado_peso_zero = False
+    lista_codigos_peso_zero = []
     try:
         
         for index, row in df_excel.iterrows():
@@ -197,10 +197,10 @@ def validacao_pesos_unidade_kg(df_excel):
             if unidade_medida == 'KG':
                 peso = row.iloc[indice_coluna_peso_excel]
                 if peso <= 0:
-                    encontrado_peso_zero = True
-                    exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO.\n\n{codigo_filho}\n\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
+                    lista_codigos_peso_zero.append(codigo_filho)
         
-        if encontrado_peso_zero:
+        if lista_codigos_peso_zero:
+            exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO.\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
             return False
         else:
             return True
@@ -255,6 +255,7 @@ def validacao_de_dados_bom(excel_file_path):
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
             return bom_excel_sem_duplicatas
 
+    excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
 
