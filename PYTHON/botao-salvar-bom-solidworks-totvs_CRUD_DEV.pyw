@@ -18,11 +18,11 @@ def setup_mssql():
             return username, password, database, server
             
     except FileNotFoundError:
-        exibir_mensagem(titulo_janela, f"O arquivo especificado não foi encontrado.", "error")
+        ctypes.windll.user32.MessageBoxW(0, f"Erro ao ler credenciais de acesso ao banco de dados MSSQL.\n\nBase de dados ERP TOTVS PROTHEUS.\n\nPor favor, informe ao desenvolvedor/TI sobre o erro exibido.\n\nTenha um bom dia! ツ", "CADASTRO DE ESTRUTURA - TOTVS®", 16 | 0)
         sys.exit()
 
     except Exception as e:
-        exibir_mensagem(titulo_janela, f"Ocorreu um erro ao ler o arquivo:\n\n{e}", "error")
+        ctypes.windll.user32.MessageBoxW(0, f"Ocorreu um erro ao ler o arquivo:", "CADASTRO DE ESTRUTURA - TOTVS®", 16 | 0)
         sys.exit()
 
 
