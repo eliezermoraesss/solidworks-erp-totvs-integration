@@ -200,7 +200,7 @@ def validacao_pesos_unidade_kg(df_excel):
                     lista_codigos_peso_zero.append(codigo_filho)
         
         if lista_codigos_peso_zero:
-            exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO.\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
+            exibir_mensagem(titulo_janela, f"PESO ZERO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO.\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o(s) e tente novamente!\n\nツ", "info")
             return False
         else:
             return True
@@ -560,8 +560,8 @@ def remover_itens_estrutura_totvs(codigo_pai, codigos_removidos_bom_df, revisao_
         return True
         
     except Exception as ex:
-        return False
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao remover item da estrutura", 16 | 0)
+        return False    
         
     finally:
         cursor.close()
