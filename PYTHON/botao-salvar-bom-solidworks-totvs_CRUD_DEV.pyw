@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 import sys
 
 def setup_mssql():
-    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\user-password-mssql.txt"
+    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
     try:
         with open(caminho_do_arquivo, 'r') as arquivo:
             string_lida = arquivo.read()
@@ -18,10 +18,12 @@ def setup_mssql():
             return username, password, database, server
             
     except FileNotFoundError:
-        print("O arquivo especificado não foi encontrado.")
+        ctypes.windll.user32.MessageBoxW(0, f"Erro ao ler credenciais de acesso ao banco de dados MSSQL.\n\nBase de dados ERP TOTVS PROTHEUS.\n\nPor favor, informe ao desenvolvedor/TI sobre o erro exibido.\n\nTenha um bom dia! ツ", "CADASTRO DE ESTRUTURA - TOTVS®", 16 | 0)
+        sys.exit()
 
     except Exception as e:
-        print("Ocorreu um erro ao ler o arquivo:", e)
+        ctypes.windll.user32.MessageBoxW(0, f"Ocorreu um erro ao ler o arquivo:", "CADASTRO DE ESTRUTURA - TOTVS®", 16 | 0)
+        sys.exit()
 
 
 def validar_formato_codigo_pai(codigo_pai):  
@@ -198,7 +200,7 @@ def validacao_pesos_unidade_kg(df_excel):
                     lista_codigos_peso_zero.append(codigo_filho)
         
         if lista_codigos_peso_zero:
-            exibir_mensagem(titulo_janela, f"PESO INVÁLIDO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO.\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o e tente novamente!\n\nツ", "info")
+            exibir_mensagem(titulo_janela, f"PESO ZERO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO.\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o(s) e tente novamente!\n\nツ", "info")
             return False
         else:
             return True
@@ -253,6 +255,7 @@ def validacao_de_dados_bom(excel_file_path):
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
             return bom_excel_sem_duplicatas
 
+    #excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
 
@@ -557,8 +560,8 @@ def remover_itens_estrutura_totvs(codigo_pai, codigos_removidos_bom_df, revisao_
         return True
         
     except Exception as ex:
-        return False
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}", "Erro ao remover item da estrutura", 16 | 0)
+        return False    
         
     finally:
         cursor.close()
@@ -648,8 +651,7 @@ def exibir_mensagem(title, message, icon_type):
     root.destroy()
 
 
-# Parâmetros de conexão com o banco de dados SQL Server
-
+# Leitura dos parâmetros de conexão com o banco de dados SQL Server
 username, password, database, server = setup_mssql()
 driver = '{ODBC Driver 17 for SQL Server}'
 
@@ -692,7 +694,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
         atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
         
     if bom_excel_sem_duplicatas.empty and not nova_estrutura_cadastrada:
-        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nEngenharia ENAPLIC®\n\nツ EMS","warning")
+        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ\n\nEMS®\n\nEngenharia ENAPLIC®","warning")
 
     if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
         usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
