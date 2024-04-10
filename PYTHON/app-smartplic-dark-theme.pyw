@@ -71,8 +71,8 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #deecf8;
-                color: #0a22f8
+                background-color: #fff;
+                color: #0a79f8
             }
 
             QPushButton:pressed {
@@ -673,7 +673,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
-    largura_janela = 1080  # Substitua pelo valor desejado
+    largura_janela = 1200  # Substitua pelo valor desejado
     altura_janela = 700 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
