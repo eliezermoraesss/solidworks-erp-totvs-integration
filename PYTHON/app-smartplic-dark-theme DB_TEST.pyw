@@ -19,7 +19,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.4 - Dark theme - Developed by Eliezer Moraes Silva")
+        self.setWindowTitle("SMARTPLIC® v2.1.4 - Dark theme - DB_TEST - Developed by Eliezer Moraes Silva")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -71,8 +71,8 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #deecf8;
-                color: #0a22f8
+                background-color: #fff;
+                color: #0a79f8
             }
 
             QPushButton:pressed {
@@ -158,9 +158,9 @@ class ConsultaApp(QWidget):
         self.btn_exportar_excel.setMinimumWidth(100)
         self.btn_exportar_excel.setEnabled(False)  # Desativar inicialmente
         
-        self.btn_abrir_lista_ramais = QPushButton("Lista de ramais", self)
-        self.btn_abrir_lista_ramais.clicked.connect(self.abrir_lista_ramais)
-        self.btn_abrir_lista_ramais.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_calculo_peso = QPushButton("Tabela de pesos", self)
+        self.btn_calculo_peso.clicked.connect(self.abrir_tabela_pesos)
+        self.btn_calculo_peso.setMinimumWidth(100)  # Definindo o comprimento mínimo
         
         self.btn_fechar = QPushButton("Fechar", self)
         self.btn_fechar.clicked.connect(self.fechar_janela)
@@ -226,7 +226,7 @@ class ConsultaApp(QWidget):
         layout_linha_03.addWidget(self.btn_nova_janela)
         layout_linha_03.addWidget(self.btn_abrir_desenho)
         layout_linha_03.addWidget(self.btn_exportar_excel)
-        layout_linha_03.addWidget(self.btn_abrir_lista_ramais)
+        layout_linha_03.addWidget(self.btn_calculo_peso)
         layout_linha_03.addWidget(self.btn_fechar)
         
         # Adicione um espaçador esticável para centralizar os botões
@@ -459,26 +459,10 @@ class ConsultaApp(QWidget):
             else:
                 mensagem = f"Desenho não encontrado!\n\n:-("
                 QMessageBox.information(self, f"{codigo}", mensagem)
-    
-    
-    def abrir_desenho_estrutura(self):
-        item_selecionado = self.tree_estrutura.currentItem()
-
-        if item_selecionado:
-            codigo = self.tree_estrutura.item(item_selecionado.row(), 0).text()
-            pdf_path = os.path.join("Y:/PDF-OFICIAL/", f"{codigo}.PDF")
-            pdf_path = os.path.normpath(pdf_path)
-
-            if os.path.exists(pdf_path):
-                QCoreApplication.processEvents()
-                QDesktopServices.openUrl(QUrl.fromLocalFile(pdf_path))
-            else:
-                mensagem = f"Desenho não encontrado!\n\n:-("
-                QMessageBox.information(self, f"{codigo}", mensagem)
 
                 
-    def abrir_lista_ramais(self):
-        os.startfile('X:/ELIEZER/DOCUMENTOS_UTEIS/RAMAIS P&O.pdf')       
+    def abrir_tabela_pesos(self):
+        os.startfile(r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\DOCUMENTOS_UTEIS\TABELA_PESO.xlsx')  
 
 
     def copiar_linha(self):
@@ -515,7 +499,6 @@ class ConsultaApp(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
 
     def executar_consulta_estrutura(self):
-        
         item_selecionado = self.tree.currentItem()
 
         if item_selecionado:
@@ -567,10 +550,6 @@ class ConsultaApp(QWidget):
                     # Ajustar a altura das linhas
                     altura_linha = 22  # Substitua pelo valor desejado
                     tree_estrutura.verticalHeader().setDefaultSectionSize(altura_linha)
-                    
-                    btn_abrir_desenho_estrutura = QPushButton("Abrir Desenho", self)
-                    btn_abrir_desenho_estrutura.clicked.connect(self.abrir_desenho_estrutura)
-                    btn_abrir_desenho_estrutura.setMinimumWidth(100)  # Definindo o comprimento mínimo
 
                     for i, row in enumerate(cursor_estrutura.fetchall()):
                         tree_estrutura.insertRow(i)
@@ -597,9 +576,7 @@ class ConsultaApp(QWidget):
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
                     layout_cabecalho.addWidget(QLabel("ESTRUTURA DE PRODUTO"), alignment=Qt.AlignCenter)
-                    
-                    layout_nova_guia_estrutura.addLayout(layout_cabecalho)
-                    layout_nova_guia_estrutura.addWidget(self.btn_abrir_desenho_estrutura)             
+                    layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
                     
@@ -696,7 +673,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
-    largura_janela = 1080  # Substitua pelo valor desejado
+    largura_janela = 1200  # Substitua pelo valor desejado
     altura_janela = 700 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()

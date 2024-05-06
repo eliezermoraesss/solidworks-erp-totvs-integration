@@ -159,7 +159,7 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
         quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
-        dimensao_consolidada = group[indice_coluna_dimensao].sum()
+        dimensao_consolidada = (group[indice_coluna_quantidade_excel] * group[indice_coluna_dimensao]).sum()
         peso_consolidado = group[indice_coluna_peso_excel].sum()
 
         # Adiciona uma linha ao DataFrame sem duplicatas
@@ -217,19 +217,27 @@ def formatar_campos_dimensao(dataframe):
     df_campo_dimensao_formatado = dataframe.copy()
     
     # Obtém o índice da coluna de dimensões
-    indice_coluna_dimensao = 5  # Supondo que seja o índice 4
+    indice_coluna_dimensao = 5  # Supondo que seja o índice 5
     
     # Itera sobre os valores da coluna de dimensões
     for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
-        codigo_filho = dimensao.iloc[indice_coluna_codigo_excel]
+
+        codigo_filho = df_campo_dimensao_formatado.iloc[i, indice_coluna_codigo_excel]
         unidade_de_medida = obter_unidade_medida_codigo_filho(codigo_filho)
         
+        # Verifica se a unidade de medida é 'MT' antes de formatar a dimensão
         if unidade_de_medida == 'MT':
             # Remove todos os caracteres não numéricos
             dimensao_formatada = ''.join(filter(lambda x: x.isdigit() or x in [',', '.'], dimensao))
+
+        elif unidade_de_medida == 'M2':
+            dimensao_formatada = dimensao_formatada.split('m')[0]
+            dimensao_formatada = dimensao_formatada.replace('²', '')
             
-            # Substitui a dimensão na coluna do DataFrame pela dimensão formatada
-            df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = dimensao_formatada
+        dimensao_formatada = dimensao_formatada.replace(',','.')
+            
+        # Substitui a dimensão na coluna do DataFrame pela dimensão formatada
+        df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_formatada)
     
     return df_campo_dimensao_formatado
 
@@ -436,6 +444,8 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
             if unidade_medida == 'KG':
                 quantidade = row.iloc[indice_coluna_peso_excel]
+            elif unidade_medida in ('MT', 'M2'):
+                quantidade = row.iloc[indice_coluna_dimensao]
                 
             quantidade_formatada = "{:.2f}".format(float(quantidade))
             
@@ -491,6 +501,8 @@ def atualizar_itens_estrutura_totvs(codigo_pai, dataframe_codigos_em_comum):
             
             if unidade_medida == 'KG':
                 quantidade = row.iloc[indice_coluna_peso_excel]
+            elif unidade_medida in ('MT', 'M2'):
+                quantidade = row.iloc[indice_coluna_dimensao]
                 
             quantidade_formatada = "{:.2f}".format(float(quantidade))
             
@@ -529,7 +541,9 @@ def inserir_itens_estrutura_totvs(codigo_pai, dataframe_codigos_adicionados_bom,
             
             if unidade_medida == 'KG':
                 quantidade = row.iloc[indice_coluna_peso_excel]
-                
+            elif unidade_medida in ('MT', 'M2'):
+                quantidade = row.iloc[indice_coluna_dimensao]
+            
             quantidade_formatada = "{:.2f}".format(float(quantidade))
             
             query_criar_nova_estrutura_totvs = f"""
