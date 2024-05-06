@@ -159,11 +159,13 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
         quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
+        dimensao_consolidada = group[indice_coluna_dimensao].sum()
         peso_consolidado = group[indice_coluna_peso_excel].sum()
 
         # Adiciona uma linha ao DataFrame sem duplicatas
         df_sem_duplicatas = pd.concat([df_sem_duplicatas, group.head(1)])
         df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_quantidade_excel] = quantidade_consolidada
+        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_dimensao] = dimensao_consolidada
         df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_peso_excel] = peso_consolidado
 
     return df_sem_duplicatas
@@ -208,6 +210,29 @@ def validacao_pesos_unidade_kg(df_excel):
     except Exception as ex:
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao validar pesos em unidade KG", 16 | 0)
         return False
+    
+
+def formatar_campos_dimensao(dataframe):
+    # Copia o DataFrame original para não modificar o original
+    df_campo_dimensao_formatado = dataframe.copy()
+    
+    # Obtém o índice da coluna de dimensões
+    indice_coluna_dimensao = 5  # Supondo que seja o índice 4
+    
+    # Itera sobre os valores da coluna de dimensões
+    for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
+        codigo_filho = dimensao.iloc[indice_coluna_codigo_excel]
+        unidade_de_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+        
+        if unidade_de_medida == 'MT':
+            # Remove todos os caracteres não numéricos
+            dimensao_formatada = ''.join(filter(lambda x: x.isdigit() or x in [',', '.'], dimensao))
+            
+            # Substitui a dimensão na coluna do DataFrame pela dimensão formatada
+            df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = dimensao_formatada
+    
+    return df_campo_dimensao_formatado
+
 
 def validacao_de_dados_bom(excel_file_path):
     # Carrega a planilha do Excel em um DataFrame
@@ -243,7 +268,8 @@ def validacao_de_dados_bom(excel_file_path):
     
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
 
-        bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
+        df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
+        bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
         existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
@@ -255,7 +281,7 @@ def validacao_de_dados_bom(excel_file_path):
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
             return bom_excel_sem_duplicatas
 
-    #excluir_arquivo_excel_bom(excel_file_path)
+    excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
 
@@ -665,6 +691,7 @@ codigos_em_comum = []  # ITENS EM COMUM
 indice_coluna_codigo_excel = 1
 indice_coluna_descricao_excel = 2
 indice_coluna_quantidade_excel = 3
+indice_coluna_dimensao = 5
 indice_coluna_peso_excel = 6
 
 formatos_codigo = [
@@ -674,7 +701,7 @@ formatos_codigo = [
         r'^(E\d{12})$',
     ]
 
-nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'E3919-004-013'#ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None

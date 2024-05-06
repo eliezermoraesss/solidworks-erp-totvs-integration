@@ -459,6 +459,22 @@ class ConsultaApp(QWidget):
             else:
                 mensagem = f"Desenho não encontrado!\n\n:-("
                 QMessageBox.information(self, f"{codigo}", mensagem)
+    
+    
+    def abrir_desenho_estrutura(self):
+        item_selecionado = self.tree_estrutura.currentItem()
+
+        if item_selecionado:
+            codigo = self.tree_estrutura.item(item_selecionado.row(), 0).text()
+            pdf_path = os.path.join("Y:/PDF-OFICIAL/", f"{codigo}.PDF")
+            pdf_path = os.path.normpath(pdf_path)
+
+            if os.path.exists(pdf_path):
+                QCoreApplication.processEvents()
+                QDesktopServices.openUrl(QUrl.fromLocalFile(pdf_path))
+            else:
+                mensagem = f"Desenho não encontrado!\n\n:-("
+                QMessageBox.information(self, f"{codigo}", mensagem)
 
                 
     def abrir_lista_ramais(self):
@@ -499,6 +515,7 @@ class ConsultaApp(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
 
     def executar_consulta_estrutura(self):
+        
         item_selecionado = self.tree.currentItem()
 
         if item_selecionado:
@@ -550,6 +567,10 @@ class ConsultaApp(QWidget):
                     # Ajustar a altura das linhas
                     altura_linha = 22  # Substitua pelo valor desejado
                     tree_estrutura.verticalHeader().setDefaultSectionSize(altura_linha)
+                    
+                    btn_abrir_desenho_estrutura = QPushButton("Abrir Desenho", self)
+                    btn_abrir_desenho_estrutura.clicked.connect(self.abrir_desenho_estrutura)
+                    btn_abrir_desenho_estrutura.setMinimumWidth(100)  # Definindo o comprimento mínimo
 
                     for i, row in enumerate(cursor_estrutura.fetchall()):
                         tree_estrutura.insertRow(i)
@@ -576,7 +597,9 @@ class ConsultaApp(QWidget):
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
                     layout_cabecalho.addWidget(QLabel("ESTRUTURA DE PRODUTO"), alignment=Qt.AlignCenter)
-                    layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
+                    
+                    layout_nova_guia_estrutura.addLayout(layout_cabecalho)
+                    layout_nova_guia_estrutura.addWidget(self.btn_abrir_desenho_estrutura)             
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
                     
