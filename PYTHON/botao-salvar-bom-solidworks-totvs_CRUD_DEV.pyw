@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import messagebox
 from sqlalchemy import create_engine
 import sys
+import math
 
 def setup_mssql():
     caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
@@ -213,32 +214,20 @@ def validacao_pesos_unidade_kg(df_excel):
     
 
 def formatar_campos_dimensao(dataframe):
-    # Copia o DataFrame original para não modificar o original
     df_campo_dimensao_formatado = dataframe.copy()
-    
-    # Obtém o índice da coluna de dimensões
-    indice_coluna_dimensao = 5  # Supondo que seja o índice 5
-    
+    df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao] = df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao].str.replace(' ', '')
     # Itera sobre os valores da coluna de dimensões
     for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
 
         codigo_filho = df_campo_dimensao_formatado.iloc[i, indice_coluna_codigo_excel]
         unidade_de_medida = obter_unidade_medida_codigo_filho(codigo_filho)
-        
-        # Verifica se a unidade de medida é 'MT' antes de formatar a dimensão
-        if unidade_de_medida == 'MT':
-            # Remove todos os caracteres não numéricos
-            dimensao_formatada = ''.join(filter(lambda x: x.isdigit() or x in [',', '.'], dimensao))
 
-        elif unidade_de_medida == 'M2':
-            dimensao_formatada = dimensao_formatada.split('m')[0]
-            dimensao_formatada = dimensao_formatada.replace('²', '')
-            
-        dimensao_formatada = dimensao_formatada.replace(',','.')
-            
-        # Substitui a dimensão na coluna do DataFrame pela dimensão formatada
-        df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_formatada)
-    
+        if dimensao != '' and not pd.isna(dimensao) and unidade_de_medida in ('MT', 'M2'):
+            dimensao_final = dimensao.replace(',','.').split('m')[0]
+            df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)
+        else:
+            print('passei aqui')
+
     return df_campo_dimensao_formatado
 
 
