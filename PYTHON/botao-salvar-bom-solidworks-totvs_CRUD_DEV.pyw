@@ -243,8 +243,12 @@ def formatar_campos_dimensao(dataframe):
     if items_mt_m2_sem_dimensao:
         mensagem = ''
         for codigo, descricao in items_mt_m2_sem_dimensao.items():
-            mensagem += f"{codigo} - {descricao}"
-        exibir_mensagem(titulo_janela, mensagem, "warning")
+            mensagem += f"""Por favor, inserir no campo DIMENSÃO o valor correto seguindo o padrão abaixo como exemplo:\n\n
+            Para METRO -> X.XXX m\n
+            PARA METRO QUADRADO -> X.XXX m²\n\n
+            Código(s) a serem corrigidos:\n\n
+            {codigo} - {descricao}"""
+        exibir_mensagem("OPS...", mensagem, "warning")
         sys.exit()
 
     return df_campo_dimensao_formatado
