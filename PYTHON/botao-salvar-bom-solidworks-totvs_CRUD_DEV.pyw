@@ -8,7 +8,6 @@ import tkinter as tk
 from tkinter import messagebox
 from sqlalchemy import create_engine
 import sys
-import math
 
 def setup_mssql():
     caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
@@ -213,20 +212,40 @@ def validacao_pesos_unidade_kg(df_excel):
         return False
     
 
+regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
+
+def validar_formato_campo_dimensao(dimensao):
+    
+    dimensao_sem_espaco = dimensao.replace(' ', '')
+    
+    if re.match(regex_campo_dimensao, dimensao_sem_espaco):
+        return True
+    else:
+        return False
+    
+
 def formatar_campos_dimensao(dataframe):
+    items_mt_m2_sem_dimensao = {}
     df_campo_dimensao_formatado = dataframe.copy()
-    df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao] = df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao].str.replace(' ', '')
-    # Itera sobre os valores da coluna de dimensões
+
     for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
 
         codigo_filho = df_campo_dimensao_formatado.iloc[i, indice_coluna_codigo_excel]
+        descricao = df_campo_dimensao_formatado.iloc[i, indice_coluna_descricao_excel]
         unidade_de_medida = obter_unidade_medida_codigo_filho(codigo_filho)
 
-        if dimensao != '' and not pd.isna(dimensao) and unidade_de_medida in ('MT', 'M2'):
-            dimensao_final = dimensao.replace(',','.').split('m')[0]
+        if unidade_de_medida in ('MT', 'M2') and validar_formato_campo_dimensao(str(dimensao)):
+            dimensao_final = dimensao.lower().split('m')[0].replace(',','.')
             df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)
-        else:
-            print('passei aqui')
+        elif unidade_de_medida in ('MT', 'M2'):
+            items_mt_m2_sem_dimensao[codigo_filho] = descricao
+    
+    if items_mt_m2_sem_dimensao:
+        mensagem = ''
+        for codigo, descricao in items_mt_m2_sem_dimensao.items():
+            mensagem += f"{codigo} - {descricao}"
+        exibir_mensagem(titulo_janela, mensagem, "warning")
+        sys.exit()
 
     return df_campo_dimensao_formatado
 
@@ -635,12 +654,12 @@ def atualizar_campo_revfim_codigos_existentes(codigo_pai, revisao_anterior, revi
     conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') 
     try:
         cursor = conn.cursor()
-         
+
         for index, row in codigos_em_comum_df.iterrows():
             codigo_filho = row.iloc[indice_coluna_codigo_excel]
             
             query_atualizar_campo_revfim_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_REVFIM = N'{revisao_atualizada}' WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
-               AND G1_REVFIM = N'{revisao_anterior}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                AND G1_REVFIM = N'{revisao_anterior}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
             """  
                 
             cursor.execute(query_atualizar_campo_revfim_estrutura)
