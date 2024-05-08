@@ -159,11 +159,13 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
         quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
+        dimensao_consolidada = (group[indice_coluna_quantidade_excel] * group[indice_coluna_dimensao]).sum()
         peso_consolidado = group[indice_coluna_peso_excel].sum()
 
         # Adiciona uma linha ao DataFrame sem duplicatas
         df_sem_duplicatas = pd.concat([df_sem_duplicatas, group.head(1)])
         df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_quantidade_excel] = quantidade_consolidada
+        df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_dimensao] = dimensao_consolidada
         df_sem_duplicatas.loc[df_sem_duplicatas.index[-1], indice_coluna_peso_excel] = peso_consolidado
 
     return df_sem_duplicatas
@@ -208,6 +210,70 @@ def validacao_pesos_unidade_kg(df_excel):
     except Exception as ex:
         ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao validar pesos em unidade KG", 16 | 0)
         return False
+    
+
+regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
+
+def validar_formato_campo_dimensao(dimensao):
+    
+    dimensao_sem_espaco = dimensao.replace(' ', '')
+    
+    if re.match(regex_campo_dimensao, dimensao_sem_espaco):
+        return True
+    else:
+        return False
+    
+
+def formatar_campos_dimensao(dataframe):
+    items_mt_m2_dimensao_incorreta = {}
+    df_campo_dimensao_formatado = dataframe.copy()
+
+    for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
+
+        codigo_filho = df_campo_dimensao_formatado.iloc[i, indice_coluna_codigo_excel]
+        descricao = df_campo_dimensao_formatado.iloc[i, indice_coluna_descricao_excel]
+        unidade_de_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+
+        if unidade_de_medida in ('MT', 'M2') and validar_formato_campo_dimensao(str(dimensao)):
+            dimensao_final = dimensao.lower().split('m')[0].replace(',','.')
+            if float(dimensao_final) <= 0:
+                items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
+            else:            
+                df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)
+        elif unidade_de_medida in ('MT', 'M2'):
+            items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
+    
+    if items_mt_m2_dimensao_incorreta:
+        mensagem = ''
+        mensagem_fixa = f"""
+        ATENÇÃO!
+        
+        Por favor inserir na coluna DIMENSÃO da BOM o valor
+        correto seguindo o padrão informado abaixo:
+        
+        1. Quando a unidade for METRO (m):
+        
+        X.XXX m ou X m
+        
+        2. Quando a unidade for METRO QUADRADO (m²):
+        
+        X.XXX m² ou X m²
+        
+        3. É permitido, quando necessário, usar tanto ponto '.'
+        quanto vírgula ','
+        
+        4. O valor deve ser sempre maior que zero!
+        
+        Por favor corrigir o campo dimensão do(s) código(s)
+        abaixo:\n"""
+        for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
+            mensagem += f"""
+        {codigo} - {descricao}"""
+        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")
+        sys.exit()
+
+    return df_campo_dimensao_formatado
+
 
 def validacao_de_dados_bom(excel_file_path):
     # Carrega a planilha do Excel em um DataFrame
@@ -243,7 +309,8 @@ def validacao_de_dados_bom(excel_file_path):
     
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
 
-        bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel)
+        df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
+        bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
         existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
@@ -410,6 +477,8 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
             if unidade_medida == 'KG':
                 quantidade = row.iloc[indice_coluna_peso_excel]
+            elif unidade_medida in ('MT', 'M2'):
+                quantidade = row.iloc[indice_coluna_dimensao]
                 
             quantidade_formatada = "{:.2f}".format(float(quantidade))
             
@@ -465,6 +534,8 @@ def atualizar_itens_estrutura_totvs(codigo_pai, dataframe_codigos_em_comum):
             
             if unidade_medida == 'KG':
                 quantidade = row.iloc[indice_coluna_peso_excel]
+            elif unidade_medida in ('MT', 'M2'):
+                quantidade = row.iloc[indice_coluna_dimensao]
                 
             quantidade_formatada = "{:.2f}".format(float(quantidade))
             
@@ -503,7 +574,9 @@ def inserir_itens_estrutura_totvs(codigo_pai, dataframe_codigos_adicionados_bom,
             
             if unidade_medida == 'KG':
                 quantidade = row.iloc[indice_coluna_peso_excel]
-                
+            elif unidade_medida in ('MT', 'M2'):
+                quantidade = row.iloc[indice_coluna_dimensao]
+            
             quantidade_formatada = "{:.2f}".format(float(quantidade))
             
             query_criar_nova_estrutura_totvs = f"""
@@ -606,12 +679,12 @@ def atualizar_campo_revfim_codigos_existentes(codigo_pai, revisao_anterior, revi
     conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') 
     try:
         cursor = conn.cursor()
-         
+
         for index, row in codigos_em_comum_df.iterrows():
             codigo_filho = row.iloc[indice_coluna_codigo_excel]
             
             query_atualizar_campo_revfim_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_REVFIM = N'{revisao_atualizada}' WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
-               AND G1_REVFIM = N'{revisao_anterior}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                AND G1_REVFIM = N'{revisao_anterior}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
             """  
                 
             cursor.execute(query_atualizar_campo_revfim_estrutura)
@@ -665,6 +738,7 @@ codigos_em_comum = []  # ITENS EM COMUM
 indice_coluna_codigo_excel = 1
 indice_coluna_descricao_excel = 2
 indice_coluna_quantidade_excel = 3
+indice_coluna_dimensao = 5
 indice_coluna_peso_excel = 6
 
 formatos_codigo = [
@@ -674,7 +748,7 @@ formatos_codigo = [
         r'^(E\d{12})$',
     ]
 
-nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'E3919-004-013'#ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None
