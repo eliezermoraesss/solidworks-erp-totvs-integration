@@ -246,7 +246,7 @@ def formatar_campos_dimensao(dataframe):
     if items_mt_m2_dimensao_incorreta:
         mensagem = ''
         mensagem_fixa = f"""
-        ATENÇÃO!
+        OPS...
         
         Por favor inserir na coluna DIMENSÃO da BOM o valor
         correto seguindo o padrão informado abaixo:
@@ -261,15 +261,17 @@ def formatar_campos_dimensao(dataframe):
         
         3. É permitido, quando necessário, usar tanto ponto '.'
         quanto vírgula ','
-        
+            
         4. O valor deve ser sempre maior que zero!
         
         Por favor corrigir o campo dimensão do(s) código(s)
         abaixo:\n"""
+        
         for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
             mensagem += f"""
-        {codigo} - {descricao}"""
+        {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
         exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")
+        excluir_arquivo_excel_bom(excel_file_path)
         sys.exit()
 
     return df_campo_dimensao_formatado

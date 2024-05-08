@@ -223,18 +223,31 @@ def validar_formato_campo_dimensao(dimensao):
     else:
         return False
     
+    
+def extrair_unidade_medida(valor_dimensao):
+    padrao = r'[0-9.]+(m|²)\b'
+    unidade_extraida = re.findall(padrao, valor_dimensao, re.IGNORECASE)
+    return unidade_extraida
+    
 
 def formatar_campos_dimensao(dataframe):
     items_mt_m2_dimensao_incorreta = {}
+    items_unidade_incorreta = {}
+    alerta_unidade_incorreta = False
     df_campo_dimensao_formatado = dataframe.copy()
 
     for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
-
         codigo_filho = df_campo_dimensao_formatado.iloc[i, indice_coluna_codigo_excel]
         descricao = df_campo_dimensao_formatado.iloc[i, indice_coluna_descricao_excel]
         unidade_de_medida = obter_unidade_medida_codigo_filho(codigo_filho)
-
-        if unidade_de_medida in ('MT', 'M2') and validar_formato_campo_dimensao(str(dimensao)):
+        
+        unidade_de_medida_verificada = unidade_de_medida.replace('2','²') if unidade_de_medida == 'M2' else unidade_de_medida
+        
+        if unidade_de_medida_verificada == extrair_unidade_medida(dimensao):
+            alerta_unidade_incorreta = True
+            items_unidade_incorreta[codigo_filho] = descricao
+            
+        elif unidade_de_medida in ('MT', 'M2') and validar_formato_campo_dimensao(str(dimensao)):
             dimensao_final = dimensao.lower().split('m')[0].replace(',','.')
             if float(dimensao_final) <= 0:
                 items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
@@ -243,10 +256,10 @@ def formatar_campos_dimensao(dataframe):
         elif unidade_de_medida in ('MT', 'M2'):
             items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
     
-    if items_mt_m2_dimensao_incorreta:
+    if not alerta_unidade_incorreta and items_mt_m2_dimensao_incorreta:
         mensagem = ''
         mensagem_fixa = f"""
-        ATENÇÃO!
+        OPS...
         
         Por favor inserir na coluna DIMENSÃO da BOM o valor
         correto seguindo o padrão informado abaixo:
@@ -261,15 +274,17 @@ def formatar_campos_dimensao(dataframe):
         
         3. É permitido, quando necessário, usar tanto ponto '.'
         quanto vírgula ','
-        
+            
         4. O valor deve ser sempre maior que zero!
         
         Por favor corrigir o campo dimensão do(s) código(s)
         abaixo:\n"""
+        
         for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
             mensagem += f"""
-        {codigo} - {descricao}"""
+        {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
         exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")
+        #excluir_arquivo_excel_bom(excel_file_path)
         sys.exit()
 
     return df_campo_dimensao_formatado
