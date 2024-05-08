@@ -5,6 +5,26 @@
 Este script em Python foi desenvolvido para economizar horas de trabalho manual pelo simples clicar de um botão.
 Realiza a validação e cadastro de produtos e estruturas (BOM) em um banco de dados Microsoft SQL Server. Ele oferece funcionalidades para verificar a consistência dos dados da BOM, criar ou atualizar estruturas no banco de dados TOTVS® Protheus, e interagir com o usuário por meio de mensagens.
 
+## Imagens
+### Cadastro de estrutura no ERP TOTVS pela BOM do SOLIDWORKS
+
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/cadastro_estrutura_janela_sucesso_003.png)
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/cadastro_estrutura_janela_sucesso_002.png)
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/002_alterar_estrutura_adicionando_itens.gif)
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/feature-bom-item-filho-sem-estrutura.png)
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/vscode_debugg_001.png)
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/vscode_PYTHON_commit-history_02.png)
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/vscode_PYTHON_commit-history_03.png)
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/dbeaver_sql_%20imagem_02.png)
+
+### Cadastro de produto no ERP TOTVS pelo formulário de propriedades personalizadas do SOLIDWORKS
+
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/008.png)
+
+### SMARTPLIC - Aplicação Desktop desenvolvida em Python com recursos de acesso rápido e fácil para a engenharia
+
+![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/smartplic-dark-and-white-theme.png)
+
 ## Requisitos
 Certifique-se de que você tenha os seguintes requisitos instalados:
 
