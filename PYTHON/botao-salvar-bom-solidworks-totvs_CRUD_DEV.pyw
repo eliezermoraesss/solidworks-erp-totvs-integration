@@ -246,6 +246,8 @@ def formatar_campos_dimensao(dataframe):
     if items_mt_m2_dimensao_incorreta:
         mensagem = ''
         mensagem_fixa = f"""
+        ATENÇÃO!
+        
         Por favor inserir na coluna DIMENSÃO da BOM o valor
         correto seguindo o padrão informado abaixo:
         
@@ -267,7 +269,7 @@ def formatar_campos_dimensao(dataframe):
         for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
             mensagem += f"""
         {codigo} - {descricao}"""
-        exibir_mensagem("Atenção!", mensagem_fixa + mensagem, "info")
+        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")
         sys.exit()
 
     return df_campo_dimensao_formatado
@@ -320,7 +322,7 @@ def validacao_de_dados_bom(excel_file_path):
         if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
             return bom_excel_sem_duplicatas
 
-    excluir_arquivo_excel_bom(excel_file_path)
+    #excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
 
