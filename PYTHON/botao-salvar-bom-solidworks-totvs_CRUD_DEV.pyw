@@ -225,7 +225,7 @@ def validar_formato_campo_dimensao(dimensao):
     
 
 def formatar_campos_dimensao(dataframe):
-    items_mt_m2_sem_dimensao = {}
+    items_mt_m2_dimensao_incorreta = {}
     df_campo_dimensao_formatado = dataframe.copy()
 
     for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
@@ -236,19 +236,38 @@ def formatar_campos_dimensao(dataframe):
 
         if unidade_de_medida in ('MT', 'M2') and validar_formato_campo_dimensao(str(dimensao)):
             dimensao_final = dimensao.lower().split('m')[0].replace(',','.')
-            df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)
+            if float(dimensao_final) <= 0:
+                items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
+            else:            
+                df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)
         elif unidade_de_medida in ('MT', 'M2'):
-            items_mt_m2_sem_dimensao[codigo_filho] = descricao
+            items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
     
-    if items_mt_m2_sem_dimensao:
+    if items_mt_m2_dimensao_incorreta:
         mensagem = ''
-        mensagem_fixa = f"""Por favor, inserir no campo DIMENSÃO o valor correto seguindo o padrão abaixo como exemplo:\n\n
-            Para METRO -> X.XXX m\n
-            PARA METRO QUADRADO -> X.XXX m²\n
-            Código(s) a serem corrigidos:\n\n"""
-        for codigo, descricao in items_mt_m2_sem_dimensao.items():
-            mensagem += f"{codigo} - {descricao}\n"
-        exibir_mensagem("OPS...", mensagem_fixa + mensagem, "warning")
+        mensagem_fixa = f"""
+        Por favor inserir na coluna DIMENSÃO da BOM o valor
+        correto seguindo o padrão informado abaixo:
+        
+        1. Quando a unidade for METRO (m):
+        
+        X.XXX m ou X m
+        
+        2. Quando a unidade for METRO QUADRADO (m²):
+        
+        X.XXX m² ou X m²
+        
+        3. É permitido, quando necessário, usar tanto ponto '.'
+        quanto vírgula ','
+        
+        4. O valor deve ser sempre maior que zero!
+        
+        Por favor corrigir o campo dimensão do(s) código(s)
+        abaixo:\n"""
+        for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
+            mensagem += f"""
+        {codigo} - {descricao}"""
+        exibir_mensagem("Atenção!", mensagem_fixa + mensagem, "info")
         sys.exit()
 
     return df_campo_dimensao_formatado
