@@ -223,39 +223,54 @@ def validar_formato_campo_dimensao(dimensao):
     else:
         return False
     
+    
+def extrair_unidade_medida(valor_dimensao):
+    padrao = r'[0-9.]+\s*(m²|m)'
+    unidade_extraida = re.findall(padrao, valor_dimensao, re.IGNORECASE)
+    return unidade_extraida[0]
+    
 
 def formatar_campos_dimensao(dataframe):
     items_mt_m2_dimensao_incorreta = {}
+    items_unidade_incorreta = {}
+    unidade_de_medida_totvs = ''
     df_campo_dimensao_formatado = dataframe.copy()
 
     for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
-
         codigo_filho = df_campo_dimensao_formatado.iloc[i, indice_coluna_codigo_excel]
         descricao = df_campo_dimensao_formatado.iloc[i, indice_coluna_descricao_excel]
         unidade_de_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+        
+        if unidade_de_medida == 'M2':
+            unidade_de_medida_totvs = unidade_de_medida.replace('2','²').lower()
+        elif unidade_de_medida == 'MT':
+            unidade_de_medida_totvs = unidade_de_medida.replace('T','').lower()
 
         if unidade_de_medida in ('MT', 'M2') and validar_formato_campo_dimensao(str(dimensao)):
-            dimensao_final = dimensao.lower().split('m')[0].replace(',','.')
-            if float(dimensao_final) <= 0:
-                items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
-            else:            
-                df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)
+            if unidade_de_medida_totvs != extrair_unidade_medida(str(dimensao).lower()):
+                items_unidade_incorreta[codigo_filho] = descricao
+            else:           
+                dimensao_final = dimensao.lower().split('m')[0].replace(',','.')              
+                if float(dimensao_final) <= 0:
+                    items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
+                else:            
+                    df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)               
         elif unidade_de_medida in ('MT', 'M2'):
             items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
-    
+            
     if items_mt_m2_dimensao_incorreta:
         mensagem = ''
         mensagem_fixa = f"""
-        OPS...
+        OPS... Valor da dimensão fora do formato padrão
         
         Por favor inserir na coluna DIMENSÃO da BOM o valor
         correto seguindo o padrão informado abaixo:
         
-        1. Quando a unidade for METRO (m):
+        1. Quando a unidade for METRO 'm':
         
         X.XXX m ou X m
         
-        2. Quando a unidade for METRO QUADRADO (m²):
+        2. Quando a unidade for METRO QUADRADO 'm²':
         
         X.XXX m² ou X m²
         
@@ -271,7 +286,22 @@ def formatar_campos_dimensao(dataframe):
             mensagem += f"""
         {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
         exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")
-        excluir_arquivo_excel_bom(excel_file_path)
+    if items_unidade_incorreta:
+        mensagem = ''
+        mensagem_fixa = f"""
+        OPS... Unidade de medida errada (m ou m²)
+        
+        Provavelmente houve um erro de digitação.        
+        Por favor verifique a unidade de medida do(s)
+        código(s) abaixo e corrija no campo DIMENSÃO
+        com a unidade correta.\n"""
+        
+        for codigo, descricao in items_unidade_incorreta.items():
+            mensagem += f"""
+        {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
+        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")      
+    if items_mt_m2_dimensao_incorreta or items_unidade_incorreta:
+        #excluir_arquivo_excel_bom(excel_file_path)
         sys.exit()
 
     return df_campo_dimensao_formatado
