@@ -301,10 +301,54 @@ def formatar_campos_dimensao(dataframe):
         {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
         exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")      
     if items_mt_m2_dimensao_incorreta or items_unidade_incorreta:
-        #excluir_arquivo_excel_bom(excel_file_path)
+        excluir_arquivo_excel_bom(excel_file_path)
         sys.exit()
 
     return df_campo_dimensao_formatado
+
+
+def validacao_codigo_bloqueado(dataframe):
+    try:
+        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+        cursor = conn.cursor()
+        
+        codigos_bloqueados = {}
+        
+        for i, row in dataframe.iterrows():
+            codigo = row.iloc[indice_coluna_codigo_excel]
+            descricao = row.iloc[indice_coluna_descricao_excel]
+            query_retorna_valor_campo_bloqueio = f"""
+            SELECT B1_MSBLQL FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo}' AND B1_REVATU <> 'ZZZ' AND D_E_L_E_T_ <> '*';
+            """
+            
+            cursor.execute(query_retorna_valor_campo_bloqueio)
+            resultado = cursor.fetchone()[0]
+            
+            if resultado == '1':
+                codigos_bloqueados[codigo] = descricao
+                
+        if codigos_bloqueados:
+            mensagem = ''
+            mensagem_fixa = f"""
+    ESTRUTURA NÃO CADASTRADA
+            
+    Código bloqueado encontrado!
+            
+    Verificar:
+    """
+            for codigo, descricao in codigos_bloqueados.items():
+                mensagem += f"""
+    {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
+            exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, 'warning')
+            return False
+        else:
+            return True
+        
+    except Exception as e:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o banco de dados. Erro: {str(e)}", "Erro ao consultar campo BLOQUEIO (B1_MSBLQL) na tabela produtos SG1010 do TOTVS", 16 | 0)
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 
 def validacao_de_dados_bom(excel_file_path):
@@ -324,6 +368,8 @@ def validacao_de_dados_bom(excel_file_path):
 
     validar_pesos = validacao_pesos(df_excel)
     
+    validar_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)
+    
     if not codigo_filho_diferente_codigo_pai.all():
         exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
 
@@ -339,7 +385,7 @@ def validacao_de_dados_bom(excel_file_path):
     if not validar_pesos.all():
         exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info")
     
-    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
+    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_bloqueado:
 
         df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)

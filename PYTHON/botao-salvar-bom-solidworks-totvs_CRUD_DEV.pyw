@@ -212,8 +212,6 @@ def validacao_pesos_unidade_kg(df_excel):
         return False
     
 
-regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
-
 def validar_formato_campo_dimensao(dimensao):
     
     dimensao_sem_espaco = dimensao.replace(' ', '')
@@ -307,6 +305,50 @@ def formatar_campos_dimensao(dataframe):
     return df_campo_dimensao_formatado
 
 
+def validacao_codigo_bloqueado(dataframe):
+    try:
+        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+        cursor = conn.cursor()
+        
+        codigos_bloqueados = {}
+        
+        for i, row in dataframe.iterrows():
+            codigo = row.iloc[indice_coluna_codigo_excel]
+            descricao = row.iloc[indice_coluna_descricao_excel]
+            query_retorna_valor_campo_bloqueio = f"""
+            SELECT B1_MSBLQL FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo}' AND B1_REVATU <> 'ZZZ' AND D_E_L_E_T_ <> '*';
+            """
+            
+            cursor.execute(query_retorna_valor_campo_bloqueio)
+            resultado = cursor.fetchone()[0]
+            
+            if resultado == '1':
+                codigos_bloqueados[codigo] = descricao
+                
+        if codigos_bloqueados:
+            mensagem = ''
+            mensagem_fixa = f"""
+    ESTRUTURA NÃO CADASTRADA
+            
+    Código bloqueado encontrado!
+            
+    Verificar:
+    """
+            for codigo, descricao in codigos_bloqueados.items():
+                mensagem += f"""
+    {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
+            exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, 'warning')
+            return False
+        else:
+            return True
+        
+    except Exception as e:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o banco de dados. Erro: {str(e)}", "Erro ao consultar campo BLOQUEIO (B1_MSBLQL) na tabela produtos SG1010 do TOTVS", 16 | 0)
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
+
 def validacao_de_dados_bom(excel_file_path):
     # Carrega a planilha do Excel em um DataFrame
     df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
@@ -314,7 +356,7 @@ def validacao_de_dados_bom(excel_file_path):
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])
     
-    codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
+    validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
 
     validar_codigos = validar_formato_codigos_filho(df_excel)
 
@@ -324,7 +366,9 @@ def validacao_de_dados_bom(excel_file_path):
 
     validar_pesos = validacao_pesos(df_excel)
     
-    if not codigo_filho_diferente_codigo_pai.all():
+    validar_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)
+    
+    if not validar_codigo_filho_diferente_codigo_pai.all():
         exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
 
     if not validar_codigos.all():
@@ -338,12 +382,13 @@ def validacao_de_dados_bom(excel_file_path):
 
     if not validar_pesos.all():
         exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info")
-    
-    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
+
+    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_bloqueado:
 
         df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
         bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
         bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
+        
         existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
         codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
@@ -760,7 +805,7 @@ def exibir_mensagem(title, message, icon_type):
 username, password, database, server = setup_mssql()
 driver = '{ODBC Driver 17 for SQL Server}'
 
-titulo_janela = "CADASTRO DE ESTRUTURA - TOTVS®"
+titulo_janela = "CADASTRO DE ESTRUTURA TOTVS®"
 
 # Arrays para armazenar os códigos
 codigos_adicionados_bom = []  # ITENS ADICIONADOS
@@ -779,6 +824,8 @@ formatos_codigo = [
         r'^(E\d{4}\-\d{3}\-A\d{2})$',
         r'^(E\d{12})$',
     ]
+
+regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
 nome_desenho = 'E3919-004-013'#ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
