@@ -479,20 +479,19 @@ class ConsultaApp(QWidget):
         self.close()
         
     def fechar_guia(self, index):
-        try:
-            if index >= 0:
+        if index >= 0:
+            try:
                 codigo_guia_fechada = self.tabWidget.tabText(index)
                 self.guias_abertas.remove(codigo_guia_fechada)
-                self.tabWidget.removeTab(index)
-
-                if not self.existe_guias_abertas():
-                    # Se não houver mais guias abertas, remova a guia do layout principal
-                    self.tabWidget.setVisible(False)
-                    self.guia_fechada.emit()
-        except ValueError:
-            if index >= 0:
+            
+            # Por ter duas listas de controle de abas abertas, 'guias_abertas = []' e 'guias_abertas_onde_usado = []',
+            # ao fechar uma guia ocorre uma exceção (ValueError) se o código não for encontrado em uma das listas.
+            # Utilize try/except para contornar esse problema.   
+            except ValueError:
                 codigo_guia_fechada = self.tabWidget.tabText(index).split('-')[1].strip()
                 self.guias_abertas_onde_usado.remove(codigo_guia_fechada)
+                        
+            finally:
                 self.tabWidget.removeTab(index)
 
                 if not self.existe_guias_abertas():
