@@ -358,7 +358,7 @@ def validacao_de_dados_bom(excel_file_path):
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])
     
-    codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
+    validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
 
     validar_codigos = validar_formato_codigos_filho(df_excel)
 
@@ -368,9 +368,7 @@ def validacao_de_dados_bom(excel_file_path):
 
     validar_pesos = validacao_pesos(df_excel)
     
-    validar_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)
-    
-    if not codigo_filho_diferente_codigo_pai.all():
+    if not validar_codigo_filho_diferente_codigo_pai.all():
         exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
 
     if not validar_codigos.all():
@@ -384,21 +382,23 @@ def validacao_de_dados_bom(excel_file_path):
 
     if not validar_pesos.all():
         exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info")
-    
-    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_bloqueado:
 
-        df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
-        bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
-        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
-        existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
-        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
-        codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
+    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
+
+        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())
         
         if codigos_filho_tem_cadastro:
+            
+            df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
+            bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
+            bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()     
+            existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
+            nao_existe_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)          
+            codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
             pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)
         
-        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
-            return bom_excel_sem_duplicatas
+            if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
+                return bom_excel_sem_duplicatas
 
     excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()

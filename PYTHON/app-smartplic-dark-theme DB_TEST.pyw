@@ -488,7 +488,7 @@ class ConsultaApp(QWidget):
             # ao fechar uma guia ocorre uma exceção (ValueError) se o código não for encontrado em uma das listas.
             # Utilize try/except para contornar esse problema.   
             except ValueError:
-                codigo_guia_fechada = self.tabWidget.tabText(index).split('-')[1].strip()
+                codigo_guia_fechada = self.tabWidget.tabText(index).split(' - ')[1]
                 self.guias_abertas_onde_usado.remove(codigo_guia_fechada)
                         
             finally:
