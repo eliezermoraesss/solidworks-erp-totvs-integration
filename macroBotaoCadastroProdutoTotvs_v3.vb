@@ -268,7 +268,7 @@ End If
 
 End Sub
 Sub mensagemCodigoFormularioDivergenteComCodigoCadastro()
-    MsgBox "O código do formulário está diferente do código de cadastro do produto! Por favor, corrigir o código do formulário e deixá-lo igual ao código de cadastro do produto", vbExclamation, "CADASTRO TOTVS"
+    MsgBox "O código do campo 'N° PEÇA / COD.' está DIFERENTE do campo 'Código' do formulário de CADASTRO TOTVS." & vbNewLine & vbNewLine & "Para continuar com o cadastro, corrija o campo 'N° PEÇA / COD.' deixando IGUAL ao campo 'Código' do formulário de CADASTRO TOTVS e tente cadastrar novamente." & vbNewLine & vbNewLine & "Tenha um ótimo dia.", vbExclamation, "ATENÇÃO ENGENHEIRO"
     End
 End Sub
 Sub validacaoDeDadosDoFormularioDeCadastro()
@@ -428,7 +428,6 @@ Sub FormatarDataAtual()
     
     dataCadastro = dataString
 End Sub
-
 Sub exibirJanelaDePerguntaParaAlterarProduto(codigoMensagem As String, descricaoProdutoMensagem As String)
 Dim textoCorpo As String
 textoCorpo = "Já existe um produto cadastrado com esse código. " & vbNewLine & vbNewLine & codigoMensagem & " - " & descricaoProdutoMensagem & vbNewLine & vbNewLine & "Você TEM CERTEZA que deseja alterar os dados de cadastro deste produto?" & vbNewLine & vbNewLine & "SIM - Sobrescrever os dados do produto atual no TOTVS pelos dados atuais do formulário de cadastro." & vbNewLine & vbNewLine & "NÃO - Os dados de cadastro do produto não são alterados."
