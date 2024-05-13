@@ -19,7 +19,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.4 - Dark theme - DB_TEST - Developed by Eliezer Moraes Silva")
+        self.setWindowTitle("SMARTPLIC® v2.2.0 - Dark theme - DBTEST")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -633,8 +633,6 @@ class ConsultaApp(QWidget):
                     conn_estrutura.close()
 
                     
-    
-    
     def alterar_quantidade_estrutura(self, codigo_pai, codigo_filho, quantidade):
         query_alterar_quantidade_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_QUANT = {quantidade} WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
                 AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
