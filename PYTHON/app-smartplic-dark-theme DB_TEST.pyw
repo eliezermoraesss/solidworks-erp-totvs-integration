@@ -578,7 +578,7 @@ class ConsultaApp(QWidget):
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
-                    layout_cabecalho.addWidget(QLabel("ESTRUTURA DE PRODUTO"), alignment=Qt.AlignCenter)
+                    layout_cabecalho.addWidget(QLabel(f"Estrutura\n\n{codigo}"), alignment=Qt.AlignLeft)
                     layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
@@ -715,7 +715,7 @@ class ConsultaApp(QWidget):
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
-                    layout_cabecalho.addWidget(QLabel("ESTRUTURAS QUE USAM ESSE PRODUTO"), alignment=Qt.AlignCenter)
+                    layout_cabecalho.addWidget(QLabel(f'Onde é usado?\n\n{codigo}'), alignment=Qt.AlignLeft)
                     layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
