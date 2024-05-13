@@ -10,6 +10,8 @@ import time
 import pandas as pd
 import ctypes
 from datetime import datetime
+import tkinter as tk
+from tkinter import messagebox
 
 class ConsultaApp(QWidget):
     
@@ -19,7 +21,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.2 - Dark theme")
+        self.setWindowTitle("SMARTPLIC® v2.2.0 - Dark theme")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -134,11 +136,11 @@ class ConsultaApp(QWidget):
 
         self.btn_consultar = QPushButton("Pesquisar", self)
         self.btn_consultar.clicked.connect(self.executar_consulta)
-        self.btn_consultar.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_consultar.setMinimumWidth(100)
         
         self.btn_consultar_estrutura = QPushButton("Consultar Estrutura", self)
         self.btn_consultar_estrutura.clicked.connect(self.executar_consulta_estrutura)
-        self.btn_consultar_estrutura.setMinimumWidth(150)  # Definindo o comprimento mínimo
+        self.btn_consultar_estrutura.setMinimumWidth(150)
         self.btn_consultar_estrutura.setEnabled(False)
         
         self.btn_onde_e_usado = QPushButton("Onde é usado?", self)
@@ -148,15 +150,15 @@ class ConsultaApp(QWidget):
         
         self.btn_limpar = QPushButton("Limpar", self)
         self.btn_limpar.clicked.connect(self.limpar_campos)
-        self.btn_limpar.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_limpar.setMinimumWidth(100)
         
         self.btn_nova_janela = QPushButton("Nova Janela", self)
         self.btn_nova_janela.clicked.connect(self.abrir_nova_janela)
-        self.btn_nova_janela.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_nova_janela.setMinimumWidth(100)
         
         self.btn_abrir_desenho = QPushButton("Abrir Desenho", self)
         self.btn_abrir_desenho.clicked.connect(self.abrir_desenho)
-        self.btn_abrir_desenho.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_abrir_desenho.setMinimumWidth(100)
         
         self.btn_exportar_excel = QPushButton("Exportar Excel", self)
         self.btn_exportar_excel.clicked.connect(self.exportar_excel)
@@ -165,11 +167,11 @@ class ConsultaApp(QWidget):
         
         self.btn_calculo_peso = QPushButton("Tabela de pesos", self)
         self.btn_calculo_peso.clicked.connect(self.abrir_tabela_pesos)
-        self.btn_calculo_peso.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_calculo_peso.setMinimumWidth(100)
         
         self.btn_fechar = QPushButton("Fechar", self)
         self.btn_fechar.clicked.connect(self.fechar_janela)
-        self.btn_fechar.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_fechar.setMinimumWidth(100)
 
         self.configurar_tabela()
         
@@ -371,7 +373,6 @@ class ConsultaApp(QWidget):
         self.grupo_var.clear()
         self.grupo_desc_var.clear()
         
-    
     def bloquear_campos_pesquisa(self):
         # Bloquear campos de pesquisa
         self.codigo_var.setEnabled(False)
@@ -389,7 +390,6 @@ class ConsultaApp(QWidget):
         self.btn_consultar_estrutura.setEnabled(False)
         self.btn_onde_e_usado.setEnabled(False)
         
-        
     def desbloquear_campos_pesquisa(self):
         # Desbloquear campos de pesquisa
         self.codigo_var.setEnabled(True)
@@ -406,12 +406,26 @@ class ConsultaApp(QWidget):
         self.btn_exportar_excel.setEnabled(True)
         self.btn_consultar_estrutura.setEnabled(True)
         self.btn_onde_e_usado.setEnabled(True)
+        
+    
+    def exibir_mensagem(self, title, message, icon_type):
+        root = tk.Tk()
+        root.withdraw()
+        root.lift()  # Garante que a janela esteja na frente
+        root.title(title)
 
+        if icon_type == 'info':
+            messagebox.showinfo(title, message)
+        elif icon_type == 'warning':
+            messagebox.showwarning(title, message)
+        elif icon_type == 'error':
+            messagebox.showerror(title, message)
+
+        root.destroy()
+    
 
     def executar_consulta(self):
-        
-        self.bloquear_campos_pesquisa()
-        
+
         # Obter os valores dos campos de consulta
         codigo = self.codigo_var.text().upper().strip()
         descricao = self.descricao_var.text().upper().strip()
@@ -421,6 +435,12 @@ class ConsultaApp(QWidget):
         armazem = self.armazem_var.text().upper().strip()
         grupo = self.grupo_var.text().upper().strip()
         desc_grupo = self.grupo_desc_var.text().upper().strip()
+        
+        if codigo == '' and descricao == '' and descricao2 == '' and tipo == '' and um == '' and armazem == '' and grupo == '' and desc_grupo == '':
+            self.exibir_mensagem("ATENÇÃO!", "Os campos de pesquisa estão vazios.\nPreencha algum campo e tente novamente.\n\nツ\n\nSMARTPLIC®", "info")
+            return
+        
+        self.bloquear_campos_pesquisa()
         
         # Construir a query de consulta
         select_query = f"""
@@ -507,14 +527,17 @@ class ConsultaApp(QWidget):
     def abrir_tabela_pesos(self):
         os.startfile(r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\DOCUMENTOS_UTEIS\TABELA_PESO.xlsx')  
             
+            
     def abrir_nova_janela(self):
         if not self.nova_janela or not self.nova_janela.isVisible():
             self.nova_janela = ConsultaApp()
             self.nova_janela.setGeometry(self.x() + 50, self.y() + 50, self.width(), self.height())
             self.nova_janela.show()
             
+            
     def fechar_janela(self):
         self.close()
+        
         
     def fechar_guia(self, index):
         if index >= 0:
@@ -537,18 +560,22 @@ class ConsultaApp(QWidget):
                     self.tabWidget.setVisible(False)
                     self.guia_fechada.emit()
     
+    
     def existe_guias_abertas(self):
         return self.tabWidget.count() > 0
+    
     
     def ajustar_largura_coluna_descricao(self, tree_widget):
         header = tree_widget.horizontalHeader()
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+
 
     def executar_consulta_estrutura(self):
         item_selecionado = self.tree.currentItem()
 
         if item_selecionado:
             codigo = self.tree.item(item_selecionado.row(), 0).text()
+            descricao_onde_usado = self.tree.item(item_selecionado.row(), 1).text()
             
             if codigo not in self.guias_abertas:
                 select_query_estrutura = f"""
@@ -616,7 +643,7 @@ class ConsultaApp(QWidget):
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
-                    layout_cabecalho.addWidget(QLabel(f"Estrutura\n\n{codigo}"), alignment=Qt.AlignLeft)
+                    layout_cabecalho.addWidget(QLabel(f"CONSULTA DE ESTRUTURA\n\n{codigo} - {descricao_onde_usado}"), alignment=Qt.AlignLeft)
                     layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
@@ -685,6 +712,7 @@ class ConsultaApp(QWidget):
         except Exception as ex:
             ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro de execução", 16 | 0)
         
+        
     def handle_item_change(self, item, tree_estrutura, codigo_pai):
         if item.column() == 2:    
             linha_selecionada = tree_estrutura.currentItem()
@@ -705,6 +733,7 @@ class ConsultaApp(QWidget):
 
         if item_selecionado:
             codigo = self.tree.item(item_selecionado.row(), 0).text()
+            descricao_onde_usado = self.tree.item(item_selecionado.row(), 1).text()
             
             if codigo not in self.guias_abertas_onde_usado:
                 query_onde_usado = f"""
@@ -753,7 +782,7 @@ class ConsultaApp(QWidget):
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
-                    layout_cabecalho.addWidget(QLabel(f'Onde é usado?\n\n{codigo}'), alignment=Qt.AlignLeft)
+                    layout_cabecalho.addWidget(QLabel(f'Onde é usado?\n\n{codigo} - {descricao_onde_usado}'), alignment=Qt.AlignLeft)
                     layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
@@ -805,8 +834,8 @@ class ConsultaApp(QWidget):
                 finally:
                     self.tabWidget.setCurrentIndex(self.tabWidget.indexOf(nova_guia_estrutura))
                     conn_estrutura.close()
-        
-                
+
+
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
     server = 'SVRERP,1433'

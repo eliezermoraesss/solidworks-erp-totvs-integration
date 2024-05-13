@@ -575,6 +575,7 @@ class ConsultaApp(QWidget):
 
         if item_selecionado:
             codigo = self.tree.item(item_selecionado.row(), 0).text()
+            descricao_onde_usado = self.tree.item(item_selecionado.row(), 1).text()
             
             if codigo not in self.guias_abertas:
                 select_query_estrutura = f"""
@@ -642,7 +643,7 @@ class ConsultaApp(QWidget):
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
-                    layout_cabecalho.addWidget(QLabel(f"Estrutura\n\n{codigo}"), alignment=Qt.AlignLeft)
+                    layout_cabecalho.addWidget(QLabel(f"CONSULTA DE ESTRUTURA\n\n{codigo} - {descricao_onde_usado}"), alignment=Qt.AlignLeft)
                     layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
@@ -732,6 +733,7 @@ class ConsultaApp(QWidget):
 
         if item_selecionado:
             codigo = self.tree.item(item_selecionado.row(), 0).text()
+            descricao_onde_usado = self.tree.item(item_selecionado.row(), 1).text()
             
             if codigo not in self.guias_abertas_onde_usado:
                 query_onde_usado = f"""
@@ -780,7 +782,7 @@ class ConsultaApp(QWidget):
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
-                    layout_cabecalho.addWidget(QLabel(f'Onde é usado?\n\n{codigo}'), alignment=Qt.AlignLeft)
+                    layout_cabecalho.addWidget(QLabel(f'Onde é usado?\n\n{codigo} - {descricao_onde_usado}'), alignment=Qt.AlignLeft)
                     layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
