@@ -627,10 +627,12 @@ class ConsultaApp(QWidget):
                     print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
 
                 finally:
+                    self.tabWidget.setCurrentIndex(self.tabWidget.indexOf(nova_guia_estrutura))
+                    tree_estrutura.itemChanged.connect(lambda item: self.handle_item_change(item, tree_estrutura, codigo))
+                    self.guias_abertas.append(codigo)
                     conn_estrutura.close()
 
-                tree_estrutura.itemChanged.connect(lambda item: self.handle_item_change(item, tree_estrutura, codigo))
-                self.guias_abertas.append(codigo)     
+                    
     
     
     def alterar_quantidade_estrutura(self, codigo_pai, codigo_filho, quantidade):
@@ -757,7 +759,7 @@ class ConsultaApp(QWidget):
                         # Se não houver guias abertas, adicione a guia ao layout principal
                         self.layout().addWidget(self.tabWidget)
                         self.tabWidget.setVisible(True)
-                        
+                    
                     self.tabWidget.addTab(nova_guia_estrutura, f"Onde é usado? - {codigo}")
                     tree_estrutura.itemDoubleClicked.connect(self.copiar_linha)
 
@@ -765,6 +767,7 @@ class ConsultaApp(QWidget):
                     print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
 
                 finally:
+                    self.tabWidget.setCurrentIndex(self.tabWidget.indexOf(nova_guia_estrutura))
                     conn_estrutura.close()
         
                 
