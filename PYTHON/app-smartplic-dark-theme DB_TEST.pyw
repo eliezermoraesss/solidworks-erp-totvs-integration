@@ -10,6 +10,8 @@ import time
 import pandas as pd
 import ctypes
 from datetime import datetime
+import tkinter as tk
+from tkinter import messagebox
 
 class ConsultaApp(QWidget):
     
@@ -404,11 +406,26 @@ class ConsultaApp(QWidget):
         self.btn_exportar_excel.setEnabled(True)
         self.btn_consultar_estrutura.setEnabled(True)
         self.btn_onde_e_usado.setEnabled(True)
+        
+    
+    def exibir_mensagem(self, title, message, icon_type):
+        root = tk.Tk()
+        root.withdraw()
+        root.lift()  # Garante que a janela esteja na frente
+        root.title(title)
+
+        if icon_type == 'info':
+            messagebox.showinfo(title, message)
+        elif icon_type == 'warning':
+            messagebox.showwarning(title, message)
+        elif icon_type == 'error':
+            messagebox.showerror(title, message)
+
+        root.destroy()
+    
 
     def executar_consulta(self):
-        
-        self.bloquear_campos_pesquisa()
-        
+
         # Obter os valores dos campos de consulta
         codigo = self.codigo_var.text().upper().strip()
         descricao = self.descricao_var.text().upper().strip()
@@ -418,6 +435,12 @@ class ConsultaApp(QWidget):
         armazem = self.armazem_var.text().upper().strip()
         grupo = self.grupo_var.text().upper().strip()
         desc_grupo = self.grupo_desc_var.text().upper().strip()
+        
+        if codigo == '' and descricao == '' and descricao2 == '' and tipo == '' and um == '' and armazem == '' and grupo == '' and desc_grupo == '':
+            self.exibir_mensagem("ATENÇÃO!", "Os campos de pesquisa estão vazios.\nPreencha algum campo e tente novamente.\n\nツ\n\nSMARTPLIC®", "info")
+            return
+        
+        self.bloquear_campos_pesquisa()
         
         # Construir a query de consulta
         select_query = f"""
@@ -504,14 +527,17 @@ class ConsultaApp(QWidget):
     def abrir_tabela_pesos(self):
         os.startfile(r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\DOCUMENTOS_UTEIS\TABELA_PESO.xlsx')  
             
+            
     def abrir_nova_janela(self):
         if not self.nova_janela or not self.nova_janela.isVisible():
             self.nova_janela = ConsultaApp()
             self.nova_janela.setGeometry(self.x() + 50, self.y() + 50, self.width(), self.height())
             self.nova_janela.show()
             
+            
     def fechar_janela(self):
         self.close()
+        
         
     def fechar_guia(self, index):
         if index >= 0:
@@ -534,12 +560,15 @@ class ConsultaApp(QWidget):
                     self.tabWidget.setVisible(False)
                     self.guia_fechada.emit()
     
+    
     def existe_guias_abertas(self):
         return self.tabWidget.count() > 0
+    
     
     def ajustar_largura_coluna_descricao(self, tree_widget):
         header = tree_widget.horizontalHeader()
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+
 
     def executar_consulta_estrutura(self):
         item_selecionado = self.tree.currentItem()
@@ -682,6 +711,7 @@ class ConsultaApp(QWidget):
         except Exception as ex:
             ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro de execução", 16 | 0)
         
+        
     def handle_item_change(self, item, tree_estrutura, codigo_pai):
         if item.column() == 2:    
             linha_selecionada = tree_estrutura.currentItem()
@@ -802,8 +832,8 @@ class ConsultaApp(QWidget):
                 finally:
                     self.tabWidget.setCurrentIndex(self.tabWidget.indexOf(nova_guia_estrutura))
                     conn_estrutura.close()
-        
-                
+
+
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
     server = 'SVRERP,1433'
