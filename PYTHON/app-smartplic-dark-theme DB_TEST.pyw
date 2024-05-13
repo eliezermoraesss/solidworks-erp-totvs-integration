@@ -511,13 +511,8 @@ class ConsultaApp(QWidget):
 
         if item_selecionado:
             codigo = self.tree.item(item_selecionado.row(), 0).text()
-            descricao = self.tree.item(item_selecionado.row(), 1).text()
             
-            if codigo in self.guias_abertas:
-                # Se estiver aberta, traga a guia existente para frente
-                index = self.guias_abertas.index(codigo)
-                self.tabWidget.setCurrentIndex(index)
-            else:
+            if codigo not in self.guias_abertas:
                 select_query_estrutura = f"""
                     SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS "QTD.", struct.G1_XUM AS "UNID.", struct.G1_REVFIM AS "REVISÃO", 
                     struct.G1_INI AS "INSERIDO EM:"
@@ -673,11 +668,7 @@ class ConsultaApp(QWidget):
         if item_selecionado:
             codigo = self.tree.item(item_selecionado.row(), 0).text()
             
-            if codigo in self.guias_abertas_onde_usado:
-                # Se estiver aberta, traga a guia existente para frente
-                index = self.guias_abertas_onde_usado.index(codigo)
-                self.tabWidget.setCurrentIndex(index)
-            else:
+            if codigo not in self.guias_abertas_onde_usado:
                 query_onde_usado = f"""
                     SELECT STRUT.G1_COD AS "CÓDIGO", PROD.B1_DESC "DESCRIÇÃO" 
                     FROM {database}.dbo.SG1010 STRUT 
