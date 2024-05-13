@@ -134,11 +134,11 @@ class ConsultaApp(QWidget):
 
         self.btn_consultar = QPushButton("Pesquisar", self)
         self.btn_consultar.clicked.connect(self.executar_consulta)
-        self.btn_consultar.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_consultar.setMinimumWidth(100)
         
         self.btn_consultar_estrutura = QPushButton("Consultar Estrutura", self)
         self.btn_consultar_estrutura.clicked.connect(self.executar_consulta_estrutura)
-        self.btn_consultar_estrutura.setMinimumWidth(150)  # Definindo o comprimento mínimo
+        self.btn_consultar_estrutura.setMinimumWidth(150)
         self.btn_consultar_estrutura.setEnabled(False)
         
         self.btn_onde_e_usado = QPushButton("Onde é usado?", self)
@@ -148,15 +148,15 @@ class ConsultaApp(QWidget):
         
         self.btn_limpar = QPushButton("Limpar", self)
         self.btn_limpar.clicked.connect(self.limpar_campos)
-        self.btn_limpar.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_limpar.setMinimumWidth(100)
         
         self.btn_nova_janela = QPushButton("Nova Janela", self)
         self.btn_nova_janela.clicked.connect(self.abrir_nova_janela)
-        self.btn_nova_janela.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_nova_janela.setMinimumWidth(100)
         
         self.btn_abrir_desenho = QPushButton("Abrir Desenho", self)
         self.btn_abrir_desenho.clicked.connect(self.abrir_desenho)
-        self.btn_abrir_desenho.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_abrir_desenho.setMinimumWidth(100)
         
         self.btn_exportar_excel = QPushButton("Exportar Excel", self)
         self.btn_exportar_excel.clicked.connect(self.exportar_excel)
@@ -165,11 +165,11 @@ class ConsultaApp(QWidget):
         
         self.btn_calculo_peso = QPushButton("Tabela de pesos", self)
         self.btn_calculo_peso.clicked.connect(self.abrir_tabela_pesos)
-        self.btn_calculo_peso.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_calculo_peso.setMinimumWidth(100)
         
         self.btn_fechar = QPushButton("Fechar", self)
         self.btn_fechar.clicked.connect(self.fechar_janela)
-        self.btn_fechar.setMinimumWidth(100)  # Definindo o comprimento mínimo
+        self.btn_fechar.setMinimumWidth(100)
 
         self.configurar_tabela()
         
@@ -370,8 +370,45 @@ class ConsultaApp(QWidget):
         self.armazem_var.clear()
         self.grupo_var.clear()
         self.grupo_desc_var.clear()
+        
+    def bloquear_campos_pesquisa(self):
+        # Bloquear campos de pesquisa
+        self.codigo_var.setEnabled(False)
+        self.descricao_var.setEnabled(False)
+        self.descricao2_var.setEnabled(False)
+        self.tipo_var.setEnabled(False)
+        self.um_var.setEnabled(False)
+        self.armazem_var.setEnabled(False)
+        self.grupo_var.setEnabled(False)
+        self.grupo_desc_var.setEnabled(False)
+    
+        # Desativar os botões após o carregamento da tabela
+        self.btn_consultar.setEnabled(False)
+        self.btn_exportar_excel.setEnabled(False)
+        self.btn_consultar_estrutura.setEnabled(False)
+        self.btn_onde_e_usado.setEnabled(False)
+        
+    def desbloquear_campos_pesquisa(self):
+        # Desbloquear campos de pesquisa
+        self.codigo_var.setEnabled(True)
+        self.descricao_var.setEnabled(True)
+        self.descricao2_var.setEnabled(True)
+        self.tipo_var.setEnabled(True)
+        self.um_var.setEnabled(True)
+        self.armazem_var.setEnabled(True)
+        self.grupo_var.setEnabled(True)
+        self.grupo_desc_var.setEnabled(True)
+    
+        # Ativar o botões após o carregamento da tabela
+        self.btn_consultar.setEnabled(True)
+        self.btn_exportar_excel.setEnabled(True)
+        self.btn_consultar_estrutura.setEnabled(True)
+        self.btn_onde_e_usado.setEnabled(True)
 
     def executar_consulta(self):
+        
+        self.bloquear_campos_pesquisa()
+        
         # Obter os valores dos campos de consulta
         codigo = self.codigo_var.text().upper().strip()
         descricao = self.descricao_var.text().upper().strip()
@@ -438,10 +475,8 @@ class ConsultaApp(QWidget):
 
             self.tree.setSortingEnabled(True)  # Permitir ordenação
             
-            # Ativar o botões após o carregamento da tabela
-            self.btn_exportar_excel.setEnabled(True)
-            self.btn_consultar_estrutura.setEnabled(True)
-            self.btn_onde_e_usado.setEnabled(True)
+            self.desbloquear_campos_pesquisa()
+            
         except pyodbc.Error as ex:
             print(f"Falha na consulta. Erro: {str(ex)}")
 
