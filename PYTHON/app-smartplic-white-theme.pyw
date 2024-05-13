@@ -10,6 +10,7 @@ import time
 import pandas as pd
 import ctypes
 from datetime import datetime
+
 class ConsultaApp(QWidget):
     
     # Adicione este sinal à classe
@@ -18,7 +19,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.1.4 - White theme - Developed by Eliezer Moraes Silva")
+        self.setWindowTitle("SMARTPLIC® v2.2 - White theme")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -50,7 +51,7 @@ class ConsultaApp(QWidget):
                 border: 1px solid #5ab3ee;
                 padding: 5px;
                 border-color: #c0d1f7;
-                border-radius: 5px;
+                border-radius: 8px;
             }
 
             QPushButton {
@@ -58,7 +59,7 @@ class ConsultaApp(QWidget):
                 color: #fff;
                 padding: 5px 15px;
                 border: 2px;
-                border-radius: 5px;
+                border-radius: 8px;
                 font-size: 11px;
                 height: 20px;
                 font-weight: bold;
@@ -127,6 +128,11 @@ class ConsultaApp(QWidget):
         self.btn_consultar_estrutura.clicked.connect(self.executar_consulta_estrutura)
         self.btn_consultar_estrutura.setMinimumWidth(150)  # Definindo o comprimento mínimo
         self.btn_consultar_estrutura.setEnabled(False)
+        
+        self.btn_onde_e_usado = QPushButton("Onde é usado?", self)
+        self.btn_onde_e_usado.clicked.connect(self.executar_consulta_onde_usado)
+        self.btn_onde_e_usado.setMinimumWidth(150)
+        self.btn_onde_e_usado.setEnabled(False)
         
         self.btn_limpar = QPushButton("Limpar", self)
         self.btn_limpar.clicked.connect(self.limpar_campos)
@@ -209,6 +215,7 @@ class ConsultaApp(QWidget):
         
         layout_linha_03.addWidget(self.btn_consultar)
         layout_linha_03.addWidget(self.btn_consultar_estrutura)
+        layout_linha_03.addWidget(self.btn_onde_e_usado)
         layout_linha_03.addWidget(self.btn_limpar)
         layout_linha_03.addWidget(self.btn_nova_janela)
         layout_linha_03.addWidget(self.btn_abrir_desenho)
@@ -230,6 +237,7 @@ class ConsultaApp(QWidget):
         self.setLayout(layout)
         
         self.guias_abertas = []
+        self.guias_abertas_onde_usado = []
     
     def criar_botao_limpar(self, campo):
         botao_limpar = QToolButton(self)
@@ -248,8 +256,7 @@ class ConsultaApp(QWidget):
             data = self.obter_dados_tabela()
 
             # Criar um DataFrame pandas
-            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM",
-                                             "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."])
+            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM","GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV.", ""])
 
             # Salvar o DataFrame como um arquivo Excel
             df.to_excel(file_path, index=False)
@@ -280,10 +287,9 @@ class ConsultaApp(QWidget):
 
     def configurar_tabela(self):
         self.tree = QTableWidget(self)
-        self.tree.setColumnCount(11)
+        self.tree.setColumnCount(12)
         self.tree.setHorizontalHeaderLabels(
-            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?",
-             "REV."])
+            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?","REV.", ""])
         self.tree.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.tree.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tree.setSelectionBehavior(QTableWidget.SelectRows)
@@ -302,6 +308,9 @@ class ConsultaApp(QWidget):
         
         # Conectar o evento sectionClicked ao método ordenar_tabela
         self.tree.horizontalHeader().sectionClicked.connect(self.ordenar_tabela)
+        
+        # Redimensionar a última coluna para preencher o espaço restante
+        self.tree.horizontalHeader().setStretchLastSection(True)
         
     def configurar_tabela_tooltips(self):
         headers = ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV."]
@@ -417,9 +426,10 @@ class ConsultaApp(QWidget):
 
             self.tree.setSortingEnabled(True)  # Permitir ordenação
             
-            # Ativar o botão Exportar Excel após o carregamento da tabela
+            # Ativar o botões após o carregamento da tabela
             self.btn_exportar_excel.setEnabled(True)
             self.btn_consultar_estrutura.setEnabled(True)
+            self.btn_onde_e_usado.setEnabled(True)
 
         except pyodbc.Error as ex:
             print(f"Falha na consulta. Erro: {str(ex)}")
@@ -448,12 +458,6 @@ class ConsultaApp(QWidget):
     def abrir_tabela_pesos(self):
         os.startfile(r'\\192.175.175.4\f\INTEGRANTES\ELIEZER\DOCUMENTOS_UTEIS\TABELA_PESO.xlsx')     
 
-
-    def copiar_linha(self):
-        item_clicado = self.tree.currentItem()
-        if item_clicado:
-            valor_campo = item_clicado.text()
-            pyperclip.copy(str(valor_campo))
             
     def abrir_nova_janela(self):
         if not self.nova_janela or not self.nova_janela.isVisible():
@@ -463,17 +467,28 @@ class ConsultaApp(QWidget):
             
     def fechar_janela(self):
         self.close()
+
         
     def fechar_guia(self, index):
         if index >= 0:
-            codigo_guia_fechada = self.tabWidget.tabText(index)
-            self.guias_abertas.remove(codigo_guia_fechada)
-            self.tabWidget.removeTab(index)
+            try:
+                codigo_guia_fechada = self.tabWidget.tabText(index)
+                self.guias_abertas.remove(codigo_guia_fechada)
+            
+            # Por ter duas listas de controle de abas abertas, 'guias_abertas = []' e 'guias_abertas_onde_usado = []',
+            # ao fechar uma guia ocorre uma exceção (ValueError) se o código não for encontrado em uma das listas.
+            # Utilize try/except para contornar esse problema.   
+            except ValueError:
+                codigo_guia_fechada = self.tabWidget.tabText(index).split(' - ')[1]
+                self.guias_abertas_onde_usado.remove(codigo_guia_fechada)
+                        
+            finally:
+                self.tabWidget.removeTab(index)
 
-            if not self.existe_guias_abertas():
-                # Se não houver mais guias abertas, remova a guia do layout principal
-                self.tabWidget.setVisible(False)
-                self.guia_fechada.emit()
+                if not self.existe_guias_abertas():
+                    # Se não houver mais guias abertas, remova a guia do layout principal
+                    self.tabWidget.setVisible(False)
+                    self.guia_fechada.emit()
     
     def existe_guias_abertas(self):
         return self.tabWidget.count() > 0
@@ -487,13 +502,8 @@ class ConsultaApp(QWidget):
 
         if item_selecionado:
             codigo = self.tree.item(item_selecionado.row(), 0).text()
-            descricao = self.tree.item(item_selecionado.row(), 1).text()
             
-            if codigo in self.guias_abertas:
-                # Se estiver aberta, traga a guia existente para frente
-                index = self.guias_abertas.index(codigo)
-                self.tabWidget.setCurrentIndex(index)
-            else:
+            if codigo not in self.guias_abertas:
                 select_query_estrutura = f"""
                     SELECT struct.G1_COMP AS CÓDIGO, prod.B1_DESC AS DESCRIÇÃO, struct.G1_QUANT AS "QTD.", struct.G1_XUM AS "UNID.", struct.G1_REVFIM AS "REVISÃO", 
                     struct.G1_INI AS "INSERIDO EM:"
@@ -545,15 +555,20 @@ class ConsultaApp(QWidget):
                                 valor_formatado = data_obj.strftime("%d/%m/%Y")                  
                             else:
                                 valor_formatado = str(value).strip()
-                                
+                            
                             item = QTableWidgetItem(valor_formatado)
+                                                        
+                            if j != 0 and j != 1:
+                                item.setTextAlignment(Qt.AlignCenter)
+                            
                             tree_estrutura.setItem(i, j, item)
 
-                    tree_estrutura.setSortingEnabled(True)  # Permitir ordenação
+                    tree_estrutura.setSortingEnabled(True)
+                    
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
                         
-                    layout_cabecalho.addWidget(QLabel("ESTRUTURA DO PRODUTO"), alignment=Qt.AlignCenter)
+                    layout_cabecalho.addWidget(QLabel(f"Estrutura\n\n{codigo}"), alignment=Qt.AlignLeft)
                     layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
                     layout_nova_guia_estrutura.addWidget(tree_estrutura)              
                     nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
@@ -594,17 +609,14 @@ class ConsultaApp(QWidget):
                         
                     self.tabWidget.addTab(nova_guia_estrutura, f"{codigo}")
 
-                    #mensagem = f"Produto sem estrutura!"
-                    #QMessageBox.information(self, f"{codigo}", mensagem)
-
                 except pyodbc.Error as ex:
                     print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
 
                 finally:
-                    conn_estrutura.close()
-
-                tree_estrutura.itemChanged.connect(lambda item: self.handle_item_change(item, tree_estrutura, codigo))
-                self.guias_abertas.append(codigo)     
+                    self.tabWidget.setCurrentIndex(self.tabWidget.indexOf(nova_guia_estrutura))
+                    tree_estrutura.itemChanged.connect(lambda item: self.handle_item_change(item, tree_estrutura, codigo))
+                    self.guias_abertas.append(codigo)
+                    conn_estrutura.close()   
     
     
     def alterar_quantidade_estrutura(self, codigo_pai, codigo_filho, quantidade):
@@ -635,6 +647,108 @@ class ConsultaApp(QWidget):
                 ctypes.windll.user32.MessageBoxW(
             0, "QUANTIDADE INVÁLIDA\n\nOs valores devem ser números, não nulos, sem espaços em branco e maiores que zero.\nPor favor, corrija tente novamente!", "SMARTPLIC®", 48 | 0)
 
+    
+    def executar_consulta_onde_usado(self):
+        item_selecionado = self.tree.currentItem()
+
+        if item_selecionado:
+            codigo = self.tree.item(item_selecionado.row(), 0).text()
+            
+            if codigo not in self.guias_abertas_onde_usado:
+                query_onde_usado = f"""
+                    SELECT STRUT.G1_COD AS "CÓDIGO", PROD.B1_DESC "DESCRIÇÃO" 
+                    FROM {database}.dbo.SG1010 STRUT 
+                    INNER JOIN {database}.dbo.SB1010 PROD 
+                    ON G1_COD = B1_COD WHERE G1_COMP = '{codigo}' 
+                    AND STRUT.D_E_L_E_T_ <> '*';
+                """
+                self.guias_abertas_onde_usado.append(codigo)
+                try:
+                    conn_estrutura = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+
+                    cursor_estrutura = conn_estrutura.cursor()
+                    cursor_estrutura.execute(query_onde_usado)
+                    
+                    nova_guia_estrutura = QWidget()
+                    layout_nova_guia_estrutura = QVBoxLayout()
+                    layout_cabecalho = QHBoxLayout()
+
+                    tree_estrutura = QTableWidget(nova_guia_estrutura)
+                    tree_estrutura.setColumnCount(len(cursor_estrutura.description))
+                    tree_estrutura.setHorizontalHeaderLabels([desc[0] for desc in cursor_estrutura.description])
+                    
+                    # Tornar a tabela somente leitura
+                    tree_estrutura.setEditTriggers(QTableWidget.NoEditTriggers)
+                    
+                    # Configurar a fonte da tabela
+                    fonte_tabela = QFont("Segoe UI", 8)  # Substitua por sua fonte desejada e tamanho
+                    tree_estrutura.setFont(fonte_tabela)
+
+                    # Ajustar a altura das linhas
+                    altura_linha = 22  # Substitua pelo valor desejado
+                    tree_estrutura.verticalHeader().setDefaultSectionSize(altura_linha)
+
+                    for i, row in enumerate(cursor_estrutura.fetchall()):
+                        tree_estrutura.insertRow(i)
+                        for j, value in enumerate(row):
+                            valor_formatado = str(value).strip()
+                            
+                            item = QTableWidgetItem(valor_formatado)                          
+                            tree_estrutura.setItem(i, j, item)
+
+                    tree_estrutura.setSortingEnabled(True)
+                    
+                    # Ajustar automaticamente a largura da coluna "Descrição"
+                    self.ajustar_largura_coluna_descricao(tree_estrutura)
+                        
+                    layout_cabecalho.addWidget(QLabel(f'Onde é usado?\n\n{codigo}'), alignment=Qt.AlignLeft)
+                    layout_nova_guia_estrutura.addLayout(layout_cabecalho)                
+                    layout_nova_guia_estrutura.addWidget(tree_estrutura)              
+                    nova_guia_estrutura.setLayout(layout_nova_guia_estrutura)
+                    
+                    nova_guia_estrutura.setStyleSheet("""
+                        QLabel {
+                            color: #000;
+                            font-size: 18px;
+                            font-weight: bold;
+                        }
+                        
+                        QTableWidget {
+                            border: 1px solid #85aaf0;
+                        }
+
+                        QTableWidget QHeaderView::section {
+                            background-color: #575a5f;
+                            color: #fff;
+                            padding: 5px;
+                            height: 18px;
+                        }
+
+                        QTableWidget QHeaderView::section:horizontal {
+                            border-top: 1px solid #333;
+                        }
+                        
+                        QTableWidget::item:selected {
+                            background-color: #0066ff;
+                            color: #fff;
+                            font-weight: bold;
+                        }        
+                    """)
+
+                    if not self.existe_guias_abertas():
+                        # Se não houver guias abertas, adicione a guia ao layout principal
+                        self.layout().addWidget(self.tabWidget)
+                        self.tabWidget.setVisible(True)
+                    
+                    self.tabWidget.addTab(nova_guia_estrutura, f"Onde é usado? - {codigo}")
+                    tree_estrutura.itemDoubleClicked.connect(self.copiar_linha)
+
+                except pyodbc.Error as ex:
+                    print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
+
+                finally:
+                    self.tabWidget.setCurrentIndex(self.tabWidget.indexOf(nova_guia_estrutura))
+                    conn_estrutura.close()
 
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
@@ -647,7 +761,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
-    largura_janela = 1080  # Substitua pelo valor desejado
+    largura_janela = 1200  # Substitua pelo valor desejado
     altura_janela = 700 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
@@ -660,3 +774,4 @@ if __name__ == "__main__":
 
     window.show()
     sys.exit(app.exec_())
+    
