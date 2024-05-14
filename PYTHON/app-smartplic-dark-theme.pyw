@@ -376,6 +376,7 @@ class ConsultaApp(QWidget):
         self.grupo_var.clear()
         self.grupo_desc_var.clear()
         self.checkbox_bloqueado.setChecked(False)
+
         
     def bloquear_campos_pesquisa(self):
         # Bloquear campos de pesquisa
@@ -465,10 +466,9 @@ class ConsultaApp(QWidget):
                 ORDER BY B1_COD ASC"""
 
 
-    def executar_consulta(self):
-        
+    def executar_consulta(self):    
         select_query = self.selecionar_query_conforme_filtro()
-        
+
         if isinstance(select_query, bool) and select_query:
             self.btn_consultar.setEnabled(True)
             return
