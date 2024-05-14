@@ -375,6 +375,8 @@ class ConsultaApp(QWidget):
         self.armazem_var.clear()
         self.grupo_var.clear()
         self.grupo_desc_var.clear()
+        self.checkbox_bloqueado.setChecked(False)
+
         
     def bloquear_campos_pesquisa(self):
         # Bloquear campos de pesquisa
@@ -464,10 +466,9 @@ class ConsultaApp(QWidget):
                 ORDER BY B1_COD ASC"""
 
 
-    def executar_consulta(self):
-        
+    def executar_consulta(self):    
         select_query = self.selecionar_query_conforme_filtro()
-        
+
         if isinstance(select_query, bool) and select_query:
             self.btn_consultar.setEnabled(True)
             return
@@ -870,7 +871,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
-    largura_janela = 1200  # Substitua pelo valor desejado
+    largura_janela = 1400  # Substitua pelo valor desejado
     altura_janela = 700 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
