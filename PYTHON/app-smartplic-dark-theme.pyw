@@ -463,10 +463,10 @@ class ConsultaApp(QWidget):
                 AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
                 AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND D_E_L_E_T_ <> '*'
                 ORDER BY B1_COD ASC"""
-
-
+ 
     def executar_consulta(self):    
         select_query = self.selecionar_query_conforme_filtro()
+
 
         if isinstance(select_query, bool) and select_query:
             self.btn_consultar.setEnabled(True)

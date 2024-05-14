@@ -875,6 +875,10 @@ if __name__ == "__main__":
     window = ConsultaApp()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7dfa9a07060130a3a1ea638d023cde06182c467e
 =======
 
 >>>>>>> 7dfa9a07060130a3a1ea638d023cde06182c467e
