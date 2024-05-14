@@ -304,9 +304,9 @@ class ConsultaApp(QWidget):
 
     def configurar_tabela(self):
         self.tree = QTableWidget(self)
-        self.tree.setColumnCount(12)
+        self.tree.setColumnCount(14)
         self.tree.setHorizontalHeaderLabels(
-            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?","REV.", ""])
+            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?","REV.", "DATA CADASTRO", "DATA ULT. REV.",""])
         self.tree.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.tree.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tree.setSelectionBehavior(QTableWidget.SelectRows)
@@ -448,7 +448,7 @@ class ConsultaApp(QWidget):
         if status_checkbox:
             status_bloqueado = '1'
             return f"""
-                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU
+                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU, B1_DATREF, B1_UREV
                 FROM {database}.dbo.SB1010
                 WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
                 AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
@@ -457,7 +457,7 @@ class ConsultaApp(QWidget):
                 ORDER BY B1_COD ASC"""
         else:
             return f"""
-                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU
+                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU, B1_DATREF, B1_UREV
                 FROM {database}.dbo.SB1010
                 WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
                 AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
@@ -498,9 +498,6 @@ class ConsultaApp(QWidget):
 
             # Preencher a tabela com os resultados
             for i, row in enumerate(cursor.fetchall()):
-                # Calcular índice da cor alternada
-                indice_cor = i % 2
-                cor_fundo = cores[indice_cor]
 
                 self.tree.setSortingEnabled(False)  # Permitir ordenação
                 # Inserir os valores formatados na tabela
@@ -512,8 +509,16 @@ class ConsultaApp(QWidget):
                             value = 'Sim'
                         else:
                             value = 'Não'
+                    elif j == 11 or j == 12:
+                        if not value.isspace():
+                            data_obj = datetime.strptime(value, "%Y%m%d")   
+                            value = data_obj.strftime("%d/%m/%Y")
+                                
                     item = QTableWidgetItem(str(value).strip())
-                    item.setBackground(cor_fundo)  # Definir cor de fundo
+                    
+                    if j != 0 and j != 1:
+                        item.setTextAlignment(Qt.AlignCenter)
+                        
                     self.tree.setItem(i, j, item)
 
                 # Permitir que a interface gráfica seja atualizada
