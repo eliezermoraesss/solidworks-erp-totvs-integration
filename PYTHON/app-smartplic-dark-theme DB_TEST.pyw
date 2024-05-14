@@ -21,7 +21,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.2.1 - Dark theme - DBTEST")
+        self.setWindowTitle("SMARTPLIC® v2.2.1 - Dark theme")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -73,8 +73,6 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #fff;
-                color: #0a79f8
                 background-color: #fff;
                 color: #0a79f8
             }
@@ -240,7 +238,6 @@ class ConsultaApp(QWidget):
         layout_linha_03.addWidget(self.btn_abrir_desenho)
         layout_linha_03.addWidget(self.btn_exportar_excel)
         layout_linha_03.addWidget(self.btn_calculo_peso)
-        layout_linha_03.addWidget(self.btn_calculo_peso)
         layout_linha_03.addWidget(self.btn_fechar)
         
         # Adicione um espaçador esticável para centralizar os botões
@@ -378,6 +375,7 @@ class ConsultaApp(QWidget):
         self.armazem_var.clear()
         self.grupo_var.clear()
         self.grupo_desc_var.clear()
+        self.checkbox_bloqueado.setChecked(False)
         
     def bloquear_campos_pesquisa(self):
         # Bloquear campos de pesquisa
@@ -873,8 +871,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
-    largura_janela = 1200  # Substitua pelo valor desejado
-    largura_janela = 1200  # Substitua pelo valor desejado
+    largura_janela = 1400  # Substitua pelo valor desejado
     altura_janela = 700 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
