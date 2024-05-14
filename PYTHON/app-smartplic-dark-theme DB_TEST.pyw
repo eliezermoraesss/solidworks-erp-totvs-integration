@@ -21,7 +21,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.2.1 - Dark theme - DBTEST")
+        self.setWindowTitle("SMARTPLIC® v2.2.1 - Dark theme - TEST_DB")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -73,8 +73,6 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
-                background-color: #fff;
-                color: #0a79f8
                 background-color: #fff;
                 color: #0a79f8
             }
@@ -239,7 +237,6 @@ class ConsultaApp(QWidget):
         layout_linha_03.addWidget(self.btn_nova_janela)
         layout_linha_03.addWidget(self.btn_abrir_desenho)
         layout_linha_03.addWidget(self.btn_exportar_excel)
-        layout_linha_03.addWidget(self.btn_calculo_peso)
         layout_linha_03.addWidget(self.btn_calculo_peso)
         layout_linha_03.addWidget(self.btn_fechar)
         
@@ -466,12 +463,11 @@ class ConsultaApp(QWidget):
                 AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
                 AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND D_E_L_E_T_ <> '*'
                 ORDER BY B1_COD ASC"""
-
-
-    def executar_consulta(self):
-        
+ 
+    def executar_consulta(self):    
         select_query = self.selecionar_query_conforme_filtro()
-        
+
+
         if isinstance(select_query, bool) and select_query:
             self.btn_consultar.setEnabled(True)
             return
