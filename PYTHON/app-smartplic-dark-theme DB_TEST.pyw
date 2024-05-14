@@ -21,7 +21,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.2.0 - Dark theme - DBTEST")
+        self.setWindowTitle("SMARTPLIC® v2.2.1 - Dark theme - DBTEST")
         
         # Configurar o ícone da janela
         icon_path = "010.png"

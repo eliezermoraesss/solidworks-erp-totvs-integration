@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QHBoxLayout, QTableWidget, \
-    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton, QTabWidget, QItemDelegate, QAbstractItemView
+    QTableWidgetItem, QHeaderView, QSizePolicy, QSpacerItem, QMessageBox, QFileDialog, QToolButton, QTabWidget, QItemDelegate, QAbstractItemView, QCheckBox
 from PyQt5.QtGui import QFont, QIcon, QDesktopServices, QColor
 from PyQt5.QtCore import Qt, QUrl, QCoreApplication, pyqtSignal
 import pyodbc
@@ -21,7 +21,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.2.0 - Dark theme")
+        self.setWindowTitle("SMARTPLIC® v2.2.1 - Dark theme")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -46,7 +46,7 @@ class ConsultaApp(QWidget):
                 background-color: #363636;
             }
             
-            QLabel {
+            QLabel, QCheckBox {
                 color: #EEEEEE;
                 font-size: 11px;
                 font-weight: bold;
@@ -225,6 +225,9 @@ class ConsultaApp(QWidget):
         layout_linha_02.addWidget(self.grupo_desc_var)
         layout_linha_02.addWidget(self.criar_botao_limpar(self.grupo_desc_var))
         
+        self.checkbox_bloqueado = QCheckBox("Bloqueado?", self)
+        layout_linha_02.addWidget(self.checkbox_bloqueado)
+        
         layout_linha_03.addItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
         
         layout_linha_03.addWidget(self.btn_consultar)
@@ -274,7 +277,6 @@ class ConsultaApp(QWidget):
 
             # Salvar o DataFrame como um arquivo Excel
             df.to_excel(file_path, index=False)
-
             
     def obter_dados_tabela(self):
         # Obter os dados da tabela
@@ -290,7 +292,6 @@ class ConsultaApp(QWidget):
             data.append(row_data)
         return data
 
-
     def configurar_campos(self):
         self.codigo_var
         self.descricao_var
@@ -300,7 +301,6 @@ class ConsultaApp(QWidget):
         self.armazem_var
         self.grupo_var
         self.grupo_desc_var
-
 
     def configurar_tabela(self):
         self.tree = QTableWidget(self)
@@ -349,13 +349,11 @@ class ConsultaApp(QWidget):
             self.tree.setHorizontalHeaderItem(i, QTableWidgetItem(header))
             self.tree.horizontalHeaderItem(i).setToolTip(tooltips[i])
         
-        
     def copiar_linha(self, item):
         # Verificar se um item foi clicado
         if item is not None:
             valor_campo = item.text()
             pyperclip.copy(str(valor_campo))
-        
         
     def ordenar_tabela(self, logicalIndex):
         # Obter o índice real da coluna (considerando a ordem de classificação)
@@ -367,7 +365,6 @@ class ConsultaApp(QWidget):
         # Ordenar a tabela pela coluna clicada
         self.tree.sortItems(logicalIndex, order)
         
-        
     def limpar_campos(self):
         # Limpar os dados dos campos
         self.codigo_var.clear()
@@ -378,7 +375,6 @@ class ConsultaApp(QWidget):
         self.armazem_var.clear()
         self.grupo_var.clear()
         self.grupo_desc_var.clear()
-        
         
     def bloquear_campos_pesquisa(self):
         # Bloquear campos de pesquisa
@@ -396,7 +392,6 @@ class ConsultaApp(QWidget):
         self.btn_exportar_excel.setEnabled(False)
         self.btn_consultar_estrutura.setEnabled(False)
         self.btn_onde_e_usado.setEnabled(False)
-        
         
     def desbloquear_campos_pesquisa(self):
         # Desbloquear campos de pesquisa
@@ -421,6 +416,7 @@ class ConsultaApp(QWidget):
         root.withdraw()
         root.lift()  # Garante que a janela esteja na frente
         root.title(title)
+        root.attributes('-topmost', True)
 
         if icon_type == 'info':
             messagebox.showinfo(title, message)
@@ -430,10 +426,8 @@ class ConsultaApp(QWidget):
             messagebox.showerror(title, message)
 
         root.destroy()
-    
-
-    def executar_consulta(self):
-
+        
+    def selecionar_query_conforme_filtro(self):
         # Obter os valores dos campos de consulta
         codigo = self.codigo_var.text().upper().strip()
         descricao = self.descricao_var.text().upper().strip()
@@ -443,21 +437,42 @@ class ConsultaApp(QWidget):
         armazem = self.armazem_var.text().upper().strip()
         grupo = self.grupo_var.text().upper().strip()
         desc_grupo = self.grupo_desc_var.text().upper().strip()
+        status_checkbox = self.checkbox_bloqueado.isChecked()
         
         if codigo == '' and descricao == '' and descricao2 == '' and tipo == '' and um == '' and armazem == '' and grupo == '' and desc_grupo == '':
+            self.btn_consultar.setEnabled(False)
             self.exibir_mensagem("ATENÇÃO!", "Os campos de pesquisa estão vazios.\nPreencha algum campo e tente novamente.\n\nツ\n\nSMARTPLIC®", "info")
+            return True
+        
+        if status_checkbox:
+            status_bloqueado = '1'
+            return f"""
+                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU
+                FROM {database}.dbo.SB1010
+                WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
+                AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
+                AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND B1_MSBLQL = '{status_bloqueado}'
+                AND D_E_L_E_T_ <> '*'
+                ORDER BY B1_COD ASC"""
+        else:
+            return f"""
+                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU
+                FROM {database}.dbo.SB1010
+                WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
+                AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
+                AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND D_E_L_E_T_ <> '*'
+                ORDER BY B1_COD ASC"""
+
+
+    def executar_consulta(self):
+        
+        select_query = self.selecionar_query_conforme_filtro()
+        
+        if isinstance(select_query, bool) and select_query:
+            self.btn_consultar.setEnabled(True)
             return
         
         self.bloquear_campos_pesquisa()
-        
-        # Construir a query de consulta
-        select_query = f"""
-        SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU
-        FROM {database}.dbo.SB1010
-        WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
-        AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' AND B1_ZZNOGRP LIKE '%{desc_grupo}%'
-        AND D_E_L_E_T_ <> '*'
-        ORDER BY B1_COD ASC"""
 
         try:
             # Estabelecer a conexão com o banco de dados
