@@ -1,0 +1,37 @@
+{
+  "coord": { "lon": -46.9578, "lat": -22.4319 },
+  "weather": [
+    {
+      "id": 804,
+      "main": "Clouds",
+      "description": "overcast clouds",
+      "icon": "04d"
+    }
+  ],
+  "base": "stations",
+  "main": {
+    "temp": 304.8,
+    "feels_like": 303.8,
+    "temp_min": 304.8,
+    "temp_max": 304.8,
+    "pressure": 1013,
+    "humidity": 32,
+    "sea_level": 1013,
+    "grnd_level": 944
+  },
+  "visibility": 10000,
+  "wind": { "speed": 0.54, "deg": 51, "gust": 0.76 },
+  "clouds": { "all": 99 },
+  "dt": 1707153918,
+  "sys": {
+    "type": 2,
+    "id": 2090366,
+    "country": "BR",
+    "sunrise": 1707123044,
+    "sunset": 1707169971
+  },
+  "timezone": -10800,
+  "id": 3456998,
+  "name": "Mogi Mirim",
+  "cod": 200
+}
