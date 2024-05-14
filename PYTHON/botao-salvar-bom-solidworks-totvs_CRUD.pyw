@@ -223,56 +223,132 @@ def validar_formato_campo_dimensao(dimensao):
     else:
         return False
     
+    
+def extrair_unidade_medida(valor_dimensao):
+    padrao = r'[0-9.]+\s*(m²|m)'
+    unidade_extraida = re.findall(padrao, valor_dimensao, re.IGNORECASE)
+    return unidade_extraida[0]
+    
 
 def formatar_campos_dimensao(dataframe):
     items_mt_m2_dimensao_incorreta = {}
+    items_unidade_incorreta = {}
+    unidade_de_medida_totvs = ''
     df_campo_dimensao_formatado = dataframe.copy()
 
     for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
-
         codigo_filho = df_campo_dimensao_formatado.iloc[i, indice_coluna_codigo_excel]
         descricao = df_campo_dimensao_formatado.iloc[i, indice_coluna_descricao_excel]
         unidade_de_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+        
+        if unidade_de_medida == 'M2':
+            unidade_de_medida_totvs = unidade_de_medida.replace('2','²').lower()
+        elif unidade_de_medida == 'MT':
+            unidade_de_medida_totvs = unidade_de_medida.replace('T','').lower()
 
         if unidade_de_medida in ('MT', 'M2') and validar_formato_campo_dimensao(str(dimensao)):
-            dimensao_final = dimensao.lower().split('m')[0].replace(',','.')
-            if float(dimensao_final) <= 0:
-                items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
-            else:            
-                df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)
+            if unidade_de_medida_totvs != extrair_unidade_medida(str(dimensao).lower()):
+                items_unidade_incorreta[codigo_filho] = descricao
+            else:           
+                dimensao_final = dimensao.lower().split('m')[0].replace(',','.')              
+                if float(dimensao_final) <= 0:
+                    items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
+                else:            
+                    df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)               
         elif unidade_de_medida in ('MT', 'M2'):
             items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
-    
+            
     if items_mt_m2_dimensao_incorreta:
         mensagem = ''
         mensagem_fixa = f"""
-        ATENÇÃO!
+        OPS... Valor da dimensão fora do formato padrão
         
         Por favor inserir na coluna DIMENSÃO da BOM o valor
         correto seguindo o padrão informado abaixo:
         
-        1. Quando a unidade for METRO (m):
+        1. Quando a unidade for METRO 'm':
         
         X.XXX m ou X m
         
-        2. Quando a unidade for METRO QUADRADO (m²):
+        2. Quando a unidade for METRO QUADRADO 'm²':
         
         X.XXX m² ou X m²
         
         3. É permitido, quando necessário, usar tanto ponto '.'
         quanto vírgula ','
-        
+            
         4. O valor deve ser sempre maior que zero!
         
         Por favor corrigir o campo dimensão do(s) código(s)
         abaixo:\n"""
+        
         for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
             mensagem += f"""
-        {codigo} - {descricao}"""
+        {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
         exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")
+    if items_unidade_incorreta:
+        mensagem = ''
+        mensagem_fixa = f"""
+        OPS... Unidade de medida errada (m ou m²)
+        
+        Provavelmente houve um erro de digitação.        
+        Por favor verifique a unidade de medida do(s)
+        código(s) abaixo e corrija no campo DIMENSÃO
+        com a unidade correta.\n"""
+        
+        for codigo, descricao in items_unidade_incorreta.items():
+            mensagem += f"""
+        {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
+        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")      
+    if items_mt_m2_dimensao_incorreta or items_unidade_incorreta:
+        excluir_arquivo_excel_bom(excel_file_path)
         sys.exit()
 
     return df_campo_dimensao_formatado
+
+
+def validacao_codigo_bloqueado(dataframe):
+    try:
+        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+        cursor = conn.cursor()
+        
+        codigos_bloqueados = {}
+        
+        for i, row in dataframe.iterrows():
+            codigo = row.iloc[indice_coluna_codigo_excel]
+            descricao = row.iloc[indice_coluna_descricao_excel]
+            query_retorna_valor_campo_bloqueio = f"""
+            SELECT B1_MSBLQL FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo}' AND B1_REVATU <> 'ZZZ' AND D_E_L_E_T_ <> '*';
+            """
+            
+            cursor.execute(query_retorna_valor_campo_bloqueio)
+            resultado = cursor.fetchone()[0]
+            
+            if resultado == '1':
+                codigos_bloqueados[codigo] = descricao
+                
+        if codigos_bloqueados:
+            mensagem = ''
+            mensagem_fixa = f"""
+    ESTRUTURA NÃO CADASTRADA
+            
+    Código bloqueado encontrado!
+            
+    Verificar:
+    """
+            for codigo, descricao in codigos_bloqueados.items():
+                mensagem += f"""
+    {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
+            exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, 'warning')
+            return False
+        else:
+            return True
+        
+    except Exception as e:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o banco de dados. Erro: {str(e)}", "Erro ao consultar campo BLOQUEIO (B1_MSBLQL) na tabela produtos SG1010 do TOTVS", 16 | 0)
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 
 def validacao_de_dados_bom(excel_file_path):
@@ -282,7 +358,7 @@ def validacao_de_dados_bom(excel_file_path):
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])
     
-    codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
+    validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
 
     validar_codigos = validar_formato_codigos_filho(df_excel)
 
@@ -292,7 +368,7 @@ def validacao_de_dados_bom(excel_file_path):
 
     validar_pesos = validacao_pesos(df_excel)
     
-    if not codigo_filho_diferente_codigo_pai.all():
+    if not validar_codigo_filho_diferente_codigo_pai.all():
         exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
 
     if not validar_codigos.all():
@@ -306,21 +382,23 @@ def validacao_de_dados_bom(excel_file_path):
 
     if not validar_pesos.all():
         exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info")
-    
-    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
 
-        df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
-        bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
-        bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()
-        existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
-        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
-        codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
+    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
+
+        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())
         
         if codigos_filho_tem_cadastro:
+            
+            df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
+            bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
+            bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()     
+            existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
+            nao_existe_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)          
+            codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
             pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)
         
-        if not existe_codigo_filho_repetido and codigos_filho_tem_cadastro and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
-            return bom_excel_sem_duplicatas
+            if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
+                return bom_excel_sem_duplicatas
 
     excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()

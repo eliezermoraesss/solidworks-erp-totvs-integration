@@ -367,6 +367,7 @@ pyrightconfig.json
 ### Windows ###
 # Windows thumbnail cache files
 Thumbs.db
+assets/images/Thumbs.db
 Thumbs.db:encryptable
 ehthumbs.db
 ehthumbs_vista.db
