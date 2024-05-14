@@ -274,6 +274,7 @@ class ConsultaApp(QWidget):
 
             # Salvar o DataFrame como um arquivo Excel
             df.to_excel(file_path, index=False)
+
             
     def obter_dados_tabela(self):
         # Obter os dados da tabela
@@ -289,6 +290,7 @@ class ConsultaApp(QWidget):
             data.append(row_data)
         return data
 
+
     def configurar_campos(self):
         self.codigo_var
         self.descricao_var
@@ -298,6 +300,7 @@ class ConsultaApp(QWidget):
         self.armazem_var
         self.grupo_var
         self.grupo_desc_var
+
 
     def configurar_tabela(self):
         self.tree = QTableWidget(self)
@@ -346,11 +349,13 @@ class ConsultaApp(QWidget):
             self.tree.setHorizontalHeaderItem(i, QTableWidgetItem(header))
             self.tree.horizontalHeaderItem(i).setToolTip(tooltips[i])
         
+        
     def copiar_linha(self, item):
         # Verificar se um item foi clicado
         if item is not None:
             valor_campo = item.text()
             pyperclip.copy(str(valor_campo))
+        
         
     def ordenar_tabela(self, logicalIndex):
         # Obter o índice real da coluna (considerando a ordem de classificação)
@@ -362,6 +367,7 @@ class ConsultaApp(QWidget):
         # Ordenar a tabela pela coluna clicada
         self.tree.sortItems(logicalIndex, order)
         
+        
     def limpar_campos(self):
         # Limpar os dados dos campos
         self.codigo_var.clear()
@@ -372,6 +378,7 @@ class ConsultaApp(QWidget):
         self.armazem_var.clear()
         self.grupo_var.clear()
         self.grupo_desc_var.clear()
+        
         
     def bloquear_campos_pesquisa(self):
         # Bloquear campos de pesquisa
@@ -389,6 +396,7 @@ class ConsultaApp(QWidget):
         self.btn_exportar_excel.setEnabled(False)
         self.btn_consultar_estrutura.setEnabled(False)
         self.btn_onde_e_usado.setEnabled(False)
+        
         
     def desbloquear_campos_pesquisa(self):
         # Desbloquear campos de pesquisa
