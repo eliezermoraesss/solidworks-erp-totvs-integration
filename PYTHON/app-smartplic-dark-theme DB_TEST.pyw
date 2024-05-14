@@ -874,6 +874,10 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7dfa9a07060130a3a1ea638d023cde06182c467e
     largura_janela = 1400  # Substitua pelo valor desejado
     altura_janela = 700 # Substitua pelo valor desejado
 
