@@ -347,57 +347,63 @@ def validacao_codigo_bloqueado(dataframe):
     finally:
         if 'conn' in locals():
             conn.close()
+            
+
+def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
+    codigos_diferentes = {}  
+    for index, row in dataframe.iterrows():
+        codigo_filho = row.iloc[indice_coluna_codigo_excel]
+        codigo_nome_desenho = row.iloc[indice_coluna_nome_arquivo]
+        descricao = row.iloc[indice_coluna_descricao_excel]
+        
+        if len(codigo_nome_desenho) > 13:
+            codigo_nome_desenho_formatado = codigo_nome_desenho.split('_')[0].strip()
+        elif len(codigo_nome_desenho) == 13:
+            codigo_nome_desenho_formatado = codigo_nome_desenho
+        
+        if codigo_filho != codigo_nome_desenho_formatado:
+            codigos_diferentes[codigo_nome_desenho] = descricao
+    
+    if codigos_diferentes:
+        exibir_mensagem(titulo_janela, f"ATENÇÃO!\n\nCÓDIGO-FILHO ERRADO!\n\nCorrigir no formulário o N° DA PEÇA conforme o nome do desenho:\n\n{codigos_diferentes}\n\nツ", "info")
+        return False
+    else:
+        return True
 
 
 def validacao_de_dados_bom(excel_file_path):
     # Carrega a planilha do Excel em um DataFrame
     df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
-
     # Exclui a última linha do DataFrame
-    df_excel = df_excel.drop(df_excel.index[-1])
-    
+    df_excel = df_excel.drop(df_excel.index[-1])  
     validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
-
     validar_codigos = validar_formato_codigos_filho(df_excel)
-
-    validar_quantidades = validacao_quantidades(df_excel)
-    
+    validar_quantidades = validacao_quantidades(df_excel)    
     validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
-
     validar_pesos = validacao_pesos(df_excel)
-    
+    validar_codigo_filho_com_nome_desenho = verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)
     if not validar_codigo_filho_diferente_codigo_pai.all():
         exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
-
     if not validar_codigos.all():
         exibir_mensagem(titulo_janela, "CÓDIGO-FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
-
     if not validar_descricoes.all():
         exibir_mensagem(titulo_janela, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ", "info")
-
     if not validar_quantidades.all():
         exibir_mensagem(titulo_janela, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\nツ", "info")
-
     if not validar_pesos.all():
-        exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info")
-
-    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
-
-        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())
-        
-        if codigos_filho_tem_cadastro:
-            
+        exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info")       
+    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_filho_com_nome_desenho:
+        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())      
+        if codigos_filho_tem_cadastro:          
             df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
             bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
             bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()     
             existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
             nao_existe_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)          
             codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
-            pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)
-        
+            pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)       
             if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
                 return bom_excel_sem_duplicatas
-
     #excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
@@ -817,6 +823,7 @@ indice_coluna_descricao_excel = 2
 indice_coluna_quantidade_excel = 3
 indice_coluna_dimensao = 5
 indice_coluna_peso_excel = 6
+indice_coluna_nome_arquivo = 8
 
 formatos_codigo = [
         r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
@@ -827,7 +834,7 @@ formatos_codigo = [
 
 regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-nome_desenho = 'M-034-008-539' #ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None
