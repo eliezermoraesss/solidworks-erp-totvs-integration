@@ -417,7 +417,7 @@ class ConsultaApp(QWidget):
         root.withdraw()
         root.lift()  # Garante que a janela esteja na frente
         root.title(title)
-        root.attributes('-topmost', True)
+        root.attributes("-topmost", True)
 
         if icon_type == 'info':
             messagebox.showinfo(title, message)

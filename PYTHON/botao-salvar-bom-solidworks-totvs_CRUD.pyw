@@ -791,6 +791,7 @@ def exibir_mensagem(title, message, icon_type):
     root.withdraw()
     root.lift()  # Garante que a janela esteja na frente
     root.title(title)
+    root.attributes('-topmost', True)
 
     if icon_type == 'info':
         messagebox.showinfo(title, message)

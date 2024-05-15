@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 import sys
 
 def setup_mssql():
-    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_PROD.txt"
+    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
     try:
         with open(caminho_do_arquivo, 'r') as arquivo:
             string_lida = arquivo.read()
@@ -539,7 +539,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
     revisao_inicial = obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
     data_atual_formatada = formatar_data_atual()
     
-    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID=q{username};PWD={password}')
     
     try:
         
@@ -789,6 +789,7 @@ def exibir_mensagem(title, message, icon_type):
     root.withdraw()
     root.lift()  # Garante que a janela esteja na frente
     root.title(title)
+    root.attributes('-topmost', True)
 
     if icon_type == 'info':
         messagebox.showinfo(title, message)
@@ -826,7 +827,7 @@ formatos_codigo = [
 
 regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-nome_desenho = 'M-034-008-539'#ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'M-034-008-539' #ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None
