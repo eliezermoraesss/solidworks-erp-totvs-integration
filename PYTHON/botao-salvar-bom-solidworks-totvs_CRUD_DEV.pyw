@@ -88,7 +88,7 @@ def verificar_cadastro_codigo_filho(codigos_filho):
                 codigos_sem_cadastro.append(codigo_produto)
 
         if codigos_sem_cadastro:
-            mensagem = f"CÓDIGOS-FILHO SEM CADASTRO NO TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!\n\nツ"
+            mensagem = f"CÓDIGOS FILHO SEM CADASTRO NO TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!\n\nツ"
             exibir_mensagem(titulo_janela, mensagem, "info")
             return False
         else:
@@ -134,7 +134,7 @@ def verificar_se_existe_estrutura_codigos_filho(codigos_filho):
                     codigos_sem_estrutura.append(codigo_produto)
 
         if codigos_sem_estrutura:
-            mensagem = f"CÓDIGOS-FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!\n\nツ"
+            mensagem = f"CÓDIGOS FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!\n\nツ"
             exibir_mensagem(titulo_janela, mensagem, "info")
             return False
         else:
@@ -267,25 +267,23 @@ def formatar_campos_dimensao(dataframe):
     if items_mt_m2_dimensao_incorreta:
         mensagem = ''
         mensagem_fixa = f"""
-        OPS... Valor da dimensão fora do formato padrão
+        ATENÇÃO!
+        VALOR DA DIMENSÃO FORA DO FORMATO PADRÃO
         
-        Por favor inserir na coluna DIMENSÃO da BOM o valor
-        correto seguindo o padrão informado abaixo:
+        Insira na coluna DIMENSÃO o valor
+        conforme o padrão informado abaixo:
         
-        1. Quando a unidade for METRO 'm':
-        
+        1. Quando a unidade for METRO 'm':   
         X.XXX m ou X m
-        
-        2. Quando a unidade for METRO QUADRADO 'm²':
-        
-        X.XXX m² ou X m²
-        
-        3. É permitido, quando necessário, usar tanto ponto '.'
-        quanto vírgula ','
             
-        4. O valor deve ser sempre maior que zero!
+        2. Quando a unidade for METRO QUADRADO 'm²':     
+        X.XXX m² ou X m²
+            
+        3. É permitido usar tanto ponto '.'
+        quanto vírgula ','         
+        4. O valor deve ser sempre maior que zero.
         
-        Por favor corrigir o campo dimensão do(s) código(s)
+        Verificar o campo dimensão do(s) código(s)
         abaixo:\n"""
         
         for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
