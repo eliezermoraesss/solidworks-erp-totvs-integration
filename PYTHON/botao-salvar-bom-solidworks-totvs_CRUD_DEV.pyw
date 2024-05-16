@@ -38,7 +38,8 @@ def validar_formato_codigo_pai(codigo_pai):
 def validar_formato_codigos_filho(df_excel):
     validacao_codigos = df_excel.iloc[:, indice_coluna_codigo_excel].str.strip().apply(
         lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
-
+    if not validacao_codigos.all():
+        exibir_mensagem(titulo_janela, "CÓDIGO FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
     return validacao_codigos
 
 
@@ -172,21 +173,28 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 
 
 def validar_descricao(descricoes):
-    return descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
-
+    validar_descricoes = descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
+    if not validar_descricoes.all():
+        exibir_mensagem(titulo_janela, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ", "info")
+    return validar_descricoes
 
 def verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel):
     codigo_filho_diferente_codigo_pai = df_excel.iloc[:, indice_coluna_codigo_excel] != f"{nome_desenho}"
+    if not codigo_filho_diferente_codigo_pai.all():
+        exibir_mensagem(titulo_janela, "EXISTE CÓDIGO FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
     return codigo_filho_diferente_codigo_pai
 
-
 def validacao_quantidades(df_excel):
-    return df_excel.iloc[:, indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_quantidade_excel], errors='coerce') > 0)   
-
+    validar_quantidades = df_excel.iloc[:, indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_quantidade_excel], errors='coerce') > 0)
+    if not validar_quantidades.all():
+        exibir_mensagem(titulo_janela, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\nツ", "info") 
+    return validar_quantidades
 
 def validacao_pesos(df_excel):
-    return df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
-
+    validar_pesos = df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
+    if not validar_pesos.all():
+        exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info") 
+    return validar_pesos
 
 def validacao_pesos_unidade_kg(df_excel):
     lista_codigos_peso_zero = []
@@ -349,30 +357,69 @@ def validacao_codigo_bloqueado(dataframe):
             conn.close()
             
 
+def extrair_numero(texto):
+    numeros = ''
+    for char in texto:
+        if char.isdigit():
+            numeros += char
+    return numeros
+
+
 def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
-    codigos_diferentes = {}  
+    codigos_diferentes = {}
+    codigo_nome_desenho_verificado = ''
+    
     for index, row in dataframe.iterrows():
         codigo_filho = row.iloc[indice_coluna_codigo_excel]
-        codigo_nome_desenho = row.iloc[indice_coluna_nome_arquivo]
+        codigo_nome_desenho = str(row.iloc[indice_coluna_nome_arquivo])
         descricao = row.iloc[indice_coluna_descricao_excel]
         
-        if len(codigo_nome_desenho) > 13:
+        if len(codigo_nome_desenho) > 13 and '_' in codigo_nome_desenho:
             codigo_nome_desenho_verificado = codigo_nome_desenho.split('_')[0].strip()
-        elif len(codigo_nome_desenho) == 13:
+        elif len(codigo_nome_desenho) > 13 and 'C-' in codigo_nome_desenho:
+            codigo_nome_desenho_verificado = codigo_nome_desenho[:13].strip()
+        elif len(codigo_nome_desenho) > 13 and '-' in codigo_nome_desenho:
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0].strip()
+        elif len(codigo_nome_desenho) == 9 and '.' in codigo_nome_desenho:
+            codigo_nome_desenho_verificado = codigo_nome_desenho.replace('.','')
+        elif len(codigo_nome_desenho) == 10 and '.' in codigo_nome_desenho:
+            codigo_nome_desenho_verificado = codigo_nome_desenho.replace('.','')      
+        elif len(codigo_nome_desenho) == 8 or len(codigo_nome_desenho) == 13:
             codigo_nome_desenho_verificado = codigo_nome_desenho
         
-        if codigo_filho != codigo_nome_desenho_verificado:
-            codigos_diferentes[codigo_nome_desenho] = descricao
+        if len(codigo_nome_desenho_verificado) <= 7:          
+            codigo_filho_formatado = extrair_numero(codigo_filho).lstrip("0")
+            if codigo_filho_formatado != codigo_nome_desenho_verificado:
+                codigos_diferentes[codigo_nome_desenho] = descricao
+                
+        elif len(codigo_nome_desenho_verificado) == 8:
+            primeira_parte = codigo_nome_desenho_verificado[:3]
+            segunda_parte = codigo_nome_desenho_verificado[3:5]
+            terceira_parte = codigo_nome_desenho_verificado[5:9]
+            codigo_nome_desenho_verificado = 'M-' + primeira_parte + '-0' + segunda_parte + '-' + terceira_parte
+            
+            if codigo_filho != codigo_nome_desenho_verificado:
+                codigos_diferentes[codigo_nome_desenho] = descricao
+                
+        elif len(codigo_nome_desenho_verificado) == 13:
+            if codigo_filho != codigo_nome_desenho_verificado:
+                codigos_diferentes[codigo_nome_desenho] = descricao
     
     if codigos_diferentes:
-        exibir_mensagem(titulo_janela, f"ATENÇÃO!\n\nCÓDIGO-FILHO ERRADO!\n\nCorrigir no formulário o N° DA PEÇA conforme o nome do desenho:\n\n{codigos_diferentes}\n\nツ", "info")
+        mensagem_codigos = ''
+        mensagem_fixa = f"ATENÇÃO!\n\nCÓDIGO FILHO ERRADO\n\nVerificar no formulário se o campo N° DA PEÇA dos componentes abaixo está correto:\n\n"
+        mensagem_final = "\nツ\n\nSMARTPLIC®"
+        
+        for code, description in codigos_diferentes.items():
+            mensagem_codigos += f"{code[:24] + '...' if len(code) > 24 else code} - {description[:10] + '...' if len(description) > 10 else description}\n"            
+        
+        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "warning")
         return False
     else:
         return True
 
 
 def validacao_de_dados_bom(excel_file_path):
-    # Carrega a planilha do Excel em um DataFrame
     df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
     # Exclui a última linha do DataFrame
     df_excel = df_excel.drop(df_excel.index[-1])  
@@ -381,17 +428,8 @@ def validacao_de_dados_bom(excel_file_path):
     validar_quantidades = validacao_quantidades(df_excel)    
     validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
     validar_pesos = validacao_pesos(df_excel)
-    validar_codigo_filho_com_nome_desenho = verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)
-    if not validar_codigo_filho_diferente_codigo_pai.all():
-        exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
-    if not validar_codigos.all():
-        exibir_mensagem(titulo_janela, "CÓDIGO-FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
-    if not validar_descricoes.all():
-        exibir_mensagem(titulo_janela, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ", "info")
-    if not validar_quantidades.all():
-        exibir_mensagem(titulo_janela, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\nツ", "info")
-    if not validar_pesos.all():
-        exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info")       
+    validar_codigo_filho_com_nome_desenho = verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)      
+    
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_filho_com_nome_desenho:
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())      
         if codigos_filho_tem_cadastro:          
@@ -409,7 +447,7 @@ def validacao_de_dados_bom(excel_file_path):
 
 
 def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
-    query_atualizar_campo_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' WHERE B1_COD = N'{codigo_pai}';"""
+    query_atualizar_campo_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
@@ -418,9 +456,22 @@ def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
             return True
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar o campo revisão do código pai", 16 | 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar o campo REV. do código pai", 16 | 0)
         return False
-    
+
+
+def atualizar_campo_data_ultima_revisao_do_codigo_pai(codigo_pai):
+    data_atual = formatar_data_atual()
+    query_atualizar_data_ultima_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_UREV = N'{data_atual}' WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
+    try:
+        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            cursor = conn.cursor()
+            cursor.execute(query_atualizar_data_ultima_revisao)
+            return True
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar o campo DATA ULT. REV. do código pai", 16 | 0)
+        return False
+
 
 def verificar_se_existe_estrutura_codigo_pai(codigo_pai):
     try:
@@ -509,7 +560,7 @@ def obter_unidade_medida_codigo_filho(codigo_filho):
             return valor_unidade_medida
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar Unidade de Medida de código-filho", 16 | 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar Unidade de Medida de código filho", 16 | 0)
         return None
     
             
@@ -535,7 +586,7 @@ def verificar_cadastro_codigo_pai(codigo_pai):
                 return False
         
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar cadastro do código-pai", 16 | 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar cadastro do código pai", 16 | 0)
         return None
     
             
@@ -892,7 +943,8 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                     
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
-                    atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
+                    atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
+                    atualizar_campo_data_ultima_revisao_do_codigo_pai(nome_desenho)
                     exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®", "info")
             else:
                 exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®","info")
