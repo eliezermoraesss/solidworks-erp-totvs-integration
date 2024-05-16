@@ -357,11 +357,11 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
         descricao = row.iloc[indice_coluna_descricao_excel]
         
         if len(codigo_nome_desenho) > 13:
-            codigo_nome_desenho_formatado = codigo_nome_desenho.split('_')[0].strip()
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('_')[0].strip()
         elif len(codigo_nome_desenho) == 13:
-            codigo_nome_desenho_formatado = codigo_nome_desenho
+            codigo_nome_desenho_verificado = codigo_nome_desenho
         
-        if codigo_filho != codigo_nome_desenho_formatado:
+        if codigo_filho != codigo_nome_desenho_verificado:
             codigos_diferentes[codigo_nome_desenho] = descricao
     
     if codigos_diferentes:
@@ -591,10 +591,21 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
 
 
 def janela_mensagem_alterar_estrutura(codigo_pai):
+    root = tk.Tk()
+    root.withdraw()  # Esconde a janela principal
+    root.attributes('-topmost', True)  # Garante que a janela estará sempre no topo
+    root.lift()  # Traz a janela para frente
+    root.focus_force()  # Força o foco na janela
+
+    # Mostrar a mensagem
     user_choice = messagebox.askquestion(
-        titulo_janela,
-        f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?"
+        "Alterar Estrutura",
+        f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?",
+        parent=root  # Define a janela principal como pai da mensagem
     )
+
+    # Fechar a janela principal após a escolha do usuário
+    root.destroy()
 
     if user_choice == "yes":
         return True
