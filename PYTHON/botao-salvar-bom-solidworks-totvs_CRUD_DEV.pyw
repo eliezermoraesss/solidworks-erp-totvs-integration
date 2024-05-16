@@ -426,7 +426,12 @@ def validacao_de_dados_bom(excel_file_path):
     validar_quantidades = validacao_quantidades(df_excel)    
     validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
     validar_pesos = validacao_pesos(df_excel)
-    validar_codigo_filho_com_nome_desenho = verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)      
+    
+    # Quando o dataframe ter apenas uma linha não se aplica a regra de verificação de código filho errado, pois é desenho de matéria-prima -> Template BOM SW BOM-P_NOVO.sldbomtbt
+    if df_excel.shape[0] > 1: 
+        validar_codigo_filho_com_nome_desenho = verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)  
+    else:
+        validar_codigo_filho_com_nome_desenho = True
     
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_filho_com_nome_desenho:
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())      
