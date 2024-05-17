@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 import sys
 
 def setup_mssql():
-    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_PROD.txt"
+    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
     try:
         with open(caminho_do_arquivo, 'r') as arquivo:
             string_lida = arquivo.read()
@@ -305,7 +305,7 @@ def formatar_campos_dimensao(dataframe):
         {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
         exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")      
     if items_mt_m2_dimensao_incorreta or items_unidade_incorreta:
-        #excluir_arquivo_excel_bom(excel_file_path)(excel_file_path)
+        #excluir_arquivo_excel_bom(excel_file_path)
         sys.exit()
 
     return df_campo_dimensao_formatado
@@ -411,7 +411,7 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
         for code, description in codigos_diferentes.items():
             mensagem_codigos += f"{code[:24] + '...' if len(code) > 24 else code} - {description[:10] + '...' if len(description) > 10 else description}\n"            
         
-        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "warning")
+        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "info")
         return False
     else:
         return True
@@ -420,7 +420,7 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
 def verificar_se_template_bom_esta_correto(dataframe):
     # Quando o dataframe ter apenas uma linha não se aplica a regra de verificação de código filho errado, 
     # pois é desenho de matéria-prima -> Template BOM SW BOM-P_NOVO.sldbomtbt
-    if dataframe.shape[0] > 1 and dataframe.shape[1] >= 9: 
+    if dataframe.shape[0] > 1 and dataframe.shape[1] > 9: 
         return True, "montagem"
     elif dataframe.shape[0] == 1 and dataframe.shape[1] >= 8:
         return True, "peca"
@@ -623,7 +623,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
     revisao_inicial = obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
     data_atual_formatada = formatar_data_atual()
     
-    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID=q{username};PWD={password}')
+    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
     
     try:
         
@@ -936,7 +936,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
     bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
     resultado_estrutura_codigo_pai = verificar_se_existe_estrutura_codigo_pai(nome_desenho)
     
-    #excluir_arquivo_excel_bom(excel_file_path)(excel_file_path)
+    #excluir_arquivo_excel_bom(excel_file_path)
 
     if not bom_excel_sem_duplicatas.empty and resultado_estrutura_codigo_pai.empty:
         nova_estrutura_cadastrada, revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
@@ -976,4 +976,4 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
             else:
                 exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®","info")
 #else:
-    #excluir_arquivo_excel_bom(excel_file_path)(excel_file_path)
+    #excluir_arquivo_excel_bom(excel_file_path)

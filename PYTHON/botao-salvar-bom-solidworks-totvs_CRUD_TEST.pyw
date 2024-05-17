@@ -411,48 +411,64 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
         for code, description in codigos_diferentes.items():
             mensagem_codigos += f"{code[:24] + '...' if len(code) > 24 else code} - {description[:10] + '...' if len(description) > 10 else description}\n"            
         
-        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "warning")
+        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "info")
         return False
     else:
         return True
     
 
-def verificar_se_templatebom_esta_correto(dataframe):
+def verificar_se_template_bom_esta_correto(dataframe):
     # Quando o dataframe ter apenas uma linha não se aplica a regra de verificação de código filho errado, 
     # pois é desenho de matéria-prima -> Template BOM SW BOM-P_NOVO.sldbomtbt
-    if dataframe.shape[0] > 1 and dataframe.shape[1] >= 9: 
-        return verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe)  
-    elif dataframe.shape[0] == 1 and dataframe.shape[1] == 7:
-        return True
+    if dataframe.shape[0] > 1 and dataframe.shape[1] > 9: 
+        return True, "montagem"
+    elif dataframe.shape[0] == 1 and dataframe.shape[1] >= 8:
+        return True, "peca"
     else:
         exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO!\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
-        return False
+        return False, ""
 
 
-def validacao_de_dados_bom(excel_file_path):
+def validacao_de_dados_bom(excel_file_path):  
     df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
-    # Exclui a última linha do DataFrame
-    df_excel = df_excel.drop(df_excel.index[-1])  
-    validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
-    validar_codigos = validar_formato_codigos_filho(df_excel)
-    validar_quantidades = validacao_quantidades(df_excel)    
-    validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
-    validar_pesos = validacao_pesos(df_excel)
     
-    validar_codigo_filho_com_nome_desenho = verificar_se_templatebom_esta_correto(df_excel)
+    # Encontra o índice da linha que contém "Pos." na segunda coluna
+    pos_index = df_excel[df_excel.iloc[:, 0] == "Pos."].index[0]
+    
+    # Mantém todas as linhas até o índice encontrado
+    df_excel = df_excel.iloc[:pos_index]
 
-    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_filho_com_nome_desenho:
-        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())      
-        if codigos_filho_tem_cadastro:          
-            df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
-            bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
-            bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()     
-            existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
-            nao_existe_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)          
-            codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
-            pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)       
-            if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
-                return bom_excel_sem_duplicatas
+    bom_esta_correta, tipo_da_bom = verificar_se_template_bom_esta_correto(df_excel)
+    
+    if bom_esta_correta:
+        if tipo_da_bom == "montagem":     
+            validar_codigo_filho_com_nome_desenho = verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)
+        elif tipo_da_bom == "peca":
+            validar_codigo_filho_com_nome_desenho = True
+        else:
+            validar_codigo_filho_com_nome_desenho = False
+    else:
+        validar_codigo_filho_com_nome_desenho = False
+    
+    if validar_codigo_filho_com_nome_desenho:
+        validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
+        validar_codigos = validar_formato_codigos_filho(df_excel)
+        validar_quantidades = validacao_quantidades(df_excel)    
+        validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
+        validar_pesos = validacao_pesos(df_excel)
+
+        if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_filho_com_nome_desenho:
+            codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())      
+            if codigos_filho_tem_cadastro:          
+                df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
+                bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
+                bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()     
+                existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
+                nao_existe_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)          
+                codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
+                pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)       
+                if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
+                    return bom_excel_sem_duplicatas
     #excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
@@ -607,7 +623,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
     revisao_inicial = obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
     data_atual_formatada = formatar_data_atual()
     
-    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID=q{username};PWD={password}')
+    conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
     
     try:
         
@@ -907,7 +923,7 @@ formatos_codigo = [
 
 regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-nome_desenho = 'E3919-004-013' #ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'E3919-004-013' # ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None
