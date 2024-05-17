@@ -415,6 +415,18 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
         return False
     else:
         return True
+    
+
+def verificar_se_templatebom_esta_correto(dataframe):
+    # Quando o dataframe ter apenas uma linha não se aplica a regra de verificação de código filho errado, 
+    # pois é desenho de matéria-prima -> Template BOM SW BOM-P_NOVO.sldbomtbt
+    if dataframe.shape[0] > 1 and dataframe.shape[1] == 9: 
+        return verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe)  
+    elif dataframe.shape[0] == 1 and dataframe.shape[1] == 7:
+        return True
+    else:
+        exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO!\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
+        return False
 
 
 def validacao_de_dados_bom(excel_file_path):
@@ -427,12 +439,8 @@ def validacao_de_dados_bom(excel_file_path):
     validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
     validar_pesos = validacao_pesos(df_excel)
     
-    # Quando o dataframe ter apenas uma linha não se aplica a regra de verificação de código filho errado, pois é desenho de matéria-prima -> Template BOM SW BOM-P_NOVO.sldbomtbt
-    if df_excel.shape[0] > 1: 
-        validar_codigo_filho_com_nome_desenho = verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)  
-    else:
-        validar_codigo_filho_com_nome_desenho = True
-    
+    validar_codigo_filho_com_nome_desenho = verificar_se_templatebom_esta_correto(df_excel)
+
     if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_filho_com_nome_desenho:
         codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())      
         if codigos_filho_tem_cadastro:          
@@ -632,7 +640,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®", "info")
+        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®", "info")
         return True, revisao_inicial
         
     except Exception as ex:
@@ -919,7 +927,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
         atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
         
     if bom_excel_sem_duplicatas.empty and not nova_estrutura_cadastrada:
-        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ\n\nEMS®\n\nEngenharia ENAPLIC®","warning")
+        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ\n\nSMARTPLIC®","warning")
 
     if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
         usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
@@ -948,8 +956,8 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
                     atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
                     atualizar_campo_data_ultima_revisao_do_codigo_pai(nome_desenho)
-                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®", "info")
+                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®", "info")
             else:
-                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®","info")
+                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®","info")
 #else:
     #excluir_arquivo_excel_bom(excel_file_path)
