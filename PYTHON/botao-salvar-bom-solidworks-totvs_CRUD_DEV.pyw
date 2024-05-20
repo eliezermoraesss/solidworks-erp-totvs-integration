@@ -425,7 +425,7 @@ def verificar_se_template_bom_esta_correto(dataframe):
     elif dataframe.shape[0] == 1 and dataframe.shape[1] >= 8:
         return True, "peca"
     else:
-        exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO!\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
+        exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
         return False, ""
 
 
@@ -469,7 +469,7 @@ def validacao_de_dados_bom(excel_file_path):
                 pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)       
                 if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
                     return bom_excel_sem_duplicatas
-    #excluir_arquivo_excel_bom(excel_file_path)(excel_file_path)
+    #excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
 

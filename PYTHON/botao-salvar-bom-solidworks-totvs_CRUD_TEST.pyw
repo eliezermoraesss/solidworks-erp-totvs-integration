@@ -372,16 +372,16 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
         codigo_nome_desenho = str(row.iloc[indice_coluna_nome_arquivo])
         descricao = row.iloc[indice_coluna_descricao_excel]
         
-        if len(codigo_nome_desenho) > 13 and '_' in codigo_nome_desenho:
+        if codigo_nome_desenho[13] == ' ':
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split(' ')[0]
+        elif len(codigo_nome_desenho) > 13 and '_' in codigo_nome_desenho:
             codigo_nome_desenho_verificado = codigo_nome_desenho.split('_')[0].strip()
         elif len(codigo_nome_desenho) > 13 and 'C-' in codigo_nome_desenho:
             codigo_nome_desenho_verificado = codigo_nome_desenho[:13].strip()
         elif len(codigo_nome_desenho) > 13 and '-' in codigo_nome_desenho:
             codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0].strip()
-        elif len(codigo_nome_desenho) == 9 and '.' in codigo_nome_desenho:
-            codigo_nome_desenho_verificado = codigo_nome_desenho.replace('.','')
-        elif len(codigo_nome_desenho) == 10 and '.' in codigo_nome_desenho:
-            codigo_nome_desenho_verificado = codigo_nome_desenho.replace('.','')      
+        elif (len(codigo_nome_desenho) == 9 or len(codigo_nome_desenho) == 10) and '.' in codigo_nome_desenho:
+            codigo_nome_desenho_verificado = codigo_nome_desenho.replace('.','')    
         elif len(codigo_nome_desenho) == 8 or len(codigo_nome_desenho) == 13:
             codigo_nome_desenho_verificado = codigo_nome_desenho
         
@@ -389,19 +389,18 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
             codigo_filho_formatado = extrair_numero(codigo_filho).lstrip("0")
             if codigo_filho_formatado != codigo_nome_desenho_verificado:
                 codigos_diferentes[codigo_nome_desenho] = descricao
-                
         elif len(codigo_nome_desenho_verificado) == 8:
             primeira_parte = codigo_nome_desenho_verificado[:3]
             segunda_parte = codigo_nome_desenho_verificado[3:5]
             terceira_parte = codigo_nome_desenho_verificado[5:9]
-            codigo_nome_desenho_verificado = 'M-' + primeira_parte + '-0' + segunda_parte + '-' + terceira_parte
-            
+            codigo_nome_desenho_verificado = 'M-' + primeira_parte + '-0' + segunda_parte + '-' + terceira_parte 
             if codigo_filho != codigo_nome_desenho_verificado:
-                codigos_diferentes[codigo_nome_desenho] = descricao
-                
+                codigos_diferentes[codigo_nome_desenho] = descricao 
         elif len(codigo_nome_desenho_verificado) == 13:
             if codigo_filho != codigo_nome_desenho_verificado:
                 codigos_diferentes[codigo_nome_desenho] = descricao
+        else:
+            codigos_diferentes[codigo_nome_desenho] = descricao
     
     if codigos_diferentes:
         mensagem_codigos = ''
@@ -425,7 +424,7 @@ def verificar_se_template_bom_esta_correto(dataframe):
     elif dataframe.shape[0] == 1 and dataframe.shape[1] >= 8:
         return True, "peca"
     else:
-        exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO!\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
+        exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
         return False, ""
 
 

@@ -425,7 +425,7 @@ def verificar_se_template_bom_esta_correto(dataframe):
     elif dataframe.shape[0] == 1 and dataframe.shape[1] >= 8:
         return True, "peca"
     else:
-        exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO!\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
+        exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
         return False, ""
 
 
