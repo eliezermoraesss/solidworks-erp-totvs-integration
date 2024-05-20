@@ -159,8 +159,9 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
+        group_filtrado = group[group[indice_coluna_dimensao].apply(lambda x: isinstance(x, (int, float)) and not pd.isna(x))]
         quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
-        dimensao_consolidada = (group[indice_coluna_quantidade_excel] * group[indice_coluna_dimensao]).sum()
+        dimensao_consolidada = (group_filtrado[indice_coluna_quantidade_excel] * group_filtrado[indice_coluna_dimensao]).sum()
         peso_consolidado = group[indice_coluna_peso_excel].sum()
 
         # Adiciona uma linha ao DataFrame sem duplicatas
@@ -372,16 +373,18 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
         codigo_nome_desenho = str(row.iloc[indice_coluna_nome_arquivo])
         descricao = row.iloc[indice_coluna_descricao_excel]
         
-        if len(codigo_nome_desenho) > 13 and '_' in codigo_nome_desenho:
-            codigo_nome_desenho_verificado = codigo_nome_desenho.split('_')[0].strip()
-        elif len(codigo_nome_desenho) > 13 and 'C-' in codigo_nome_desenho:
-            codigo_nome_desenho_verificado = codigo_nome_desenho[:13].strip()
-        elif len(codigo_nome_desenho) > 13 and '-' in codigo_nome_desenho:
-            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0].strip()
-        elif len(codigo_nome_desenho) == 9 and '.' in codigo_nome_desenho:
-            codigo_nome_desenho_verificado = codigo_nome_desenho.replace('.','')
-        elif len(codigo_nome_desenho) == 10 and '.' in codigo_nome_desenho:
-            codigo_nome_desenho_verificado = codigo_nome_desenho.replace('.','')      
+        if len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == ' ' and codigo_nome_desenho.startswith(('C', 'M','E')):
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split(' ')[0]
+        elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == '_' and codigo_nome_desenho.startswith(('C', 'M','E')):
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('_')[0] 
+        elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == '-' and codigo_nome_desenho.startswith(('C', 'M','E')):
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
+        elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[7] == '-':
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
+        elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[9] == '-':
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
+        elif (len(codigo_nome_desenho) == 9 or len(codigo_nome_desenho) == 10) and '.' in codigo_nome_desenho:
+            codigo_nome_desenho_verificado = codigo_nome_desenho.replace('.','')    
         elif len(codigo_nome_desenho) == 8 or len(codigo_nome_desenho) == 13:
             codigo_nome_desenho_verificado = codigo_nome_desenho
         
@@ -389,24 +392,27 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
             codigo_filho_formatado = extrair_numero(codigo_filho).lstrip("0")
             if codigo_filho_formatado != codigo_nome_desenho_verificado:
                 codigos_diferentes[codigo_nome_desenho] = descricao
-                
         elif len(codigo_nome_desenho_verificado) == 8:
             primeira_parte = codigo_nome_desenho_verificado[:3]
             segunda_parte = codigo_nome_desenho_verificado[3:5]
             terceira_parte = codigo_nome_desenho_verificado[5:9]
-            codigo_nome_desenho_verificado = 'M-' + primeira_parte + '-0' + segunda_parte + '-' + terceira_parte
-            
+            codigo_nome_desenho_verificado = 'M-' + primeira_parte + '-0' + segunda_parte + '-' + terceira_parte 
+            if codigo_filho != codigo_nome_desenho_verificado:
+                codigos_diferentes[codigo_nome_desenho] = descricao 
+        elif len(codigo_nome_desenho_verificado) == 9:
+            codigo_nome_desenho_verificado = 'C-00' + codigo_nome_desenho_verificado.replace('.','-')
             if codigo_filho != codigo_nome_desenho_verificado:
                 codigos_diferentes[codigo_nome_desenho] = descricao
-                
         elif len(codigo_nome_desenho_verificado) == 13:
             if codigo_filho != codigo_nome_desenho_verificado:
                 codigos_diferentes[codigo_nome_desenho] = descricao
+        else:
+            codigos_diferentes[codigo_nome_desenho] = descricao
     
     if codigos_diferentes:
         mensagem_codigos = ''
         mensagem_fixa = f"ATENÇÃO!\n\nCÓDIGO FILHO ERRADO\n\nVerificar no formulário se o campo N° DA PEÇA dos componentes abaixo está correto:\n\n"
-        mensagem_final = "\nツ\n\nSMARTPLIC®"
+        mensagem_final = "\n\nAPÓS A CORREÇÃO ATUALIZE O TEMPLATE DA BOM\n\nツ\n\nSMARTPLIC®"
         
         for code, description in codigos_diferentes.items():
             mensagem_codigos += f"{code[:24] + '...' if len(code) > 24 else code} - {description[:10] + '...' if len(description) > 10 else description}\n"            
