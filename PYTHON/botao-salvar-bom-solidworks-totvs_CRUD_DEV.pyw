@@ -38,7 +38,8 @@ def validar_formato_codigo_pai(codigo_pai):
 def validar_formato_codigos_filho(df_excel):
     validacao_codigos = df_excel.iloc[:, indice_coluna_codigo_excel].str.strip().apply(
         lambda x: any(re.match(formato, str(x)) for formato in formatos_codigo))
-
+    if not validacao_codigos.all():
+        exibir_mensagem(titulo_janela, "CÓDIGO FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
     return validacao_codigos
 
 
@@ -87,7 +88,7 @@ def verificar_cadastro_codigo_filho(codigos_filho):
                 codigos_sem_cadastro.append(codigo_produto)
 
         if codigos_sem_cadastro:
-            mensagem = f"CÓDIGOS-FILHO SEM CADASTRO NO TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!\n\nツ"
+            mensagem = f"CÓDIGOS FILHO SEM CADASTRO NO TOTVS:\n\n{', '.join(codigos_sem_cadastro)}\n\nEfetue o cadastro e tente novamente!\n\nツ"
             exibir_mensagem(titulo_janela, mensagem, "info")
             return False
         else:
@@ -133,7 +134,7 @@ def verificar_se_existe_estrutura_codigos_filho(codigos_filho):
                     codigos_sem_estrutura.append(codigo_produto)
 
         if codigos_sem_estrutura:
-            mensagem = f"CÓDIGOS-FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!\n\nツ"
+            mensagem = f"CÓDIGOS FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!\n\nツ"
             exibir_mensagem(titulo_janela, mensagem, "info")
             return False
         else:
@@ -158,8 +159,9 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 
     # Itera sobre os grupos consolidando as quantidades
     for _, group in grouped:
+        group_filtrado = group[group[indice_coluna_dimensao].apply(lambda x: isinstance(x, (int, float)) and not pd.isna(x))]
         quantidade_consolidada = group[indice_coluna_quantidade_excel].sum()
-        dimensao_consolidada = (group[indice_coluna_quantidade_excel] * group[indice_coluna_dimensao]).sum()
+        dimensao_consolidada = (group_filtrado[indice_coluna_quantidade_excel] * group_filtrado[indice_coluna_dimensao]).sum()
         peso_consolidado = group[indice_coluna_peso_excel].sum()
 
         # Adiciona uma linha ao DataFrame sem duplicatas
@@ -172,21 +174,28 @@ def remover_linhas_duplicadas_e_consolidar_quantidade(df_excel):
 
 
 def validar_descricao(descricoes):
-    return descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
-
+    validar_descricoes = descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
+    if not validar_descricoes.all():
+        exibir_mensagem(titulo_janela, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ", "info")
+    return validar_descricoes
 
 def verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel):
     codigo_filho_diferente_codigo_pai = df_excel.iloc[:, indice_coluna_codigo_excel] != f"{nome_desenho}"
+    if not codigo_filho_diferente_codigo_pai.all():
+        exibir_mensagem(titulo_janela, "EXISTE CÓDIGO FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
     return codigo_filho_diferente_codigo_pai
 
-
 def validacao_quantidades(df_excel):
-    return df_excel.iloc[:, indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_quantidade_excel], errors='coerce') > 0)   
-
+    validar_quantidades = df_excel.iloc[:, indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_quantidade_excel], errors='coerce') > 0)
+    if not validar_quantidades.all():
+        exibir_mensagem(titulo_janela, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\nツ", "info") 
+    return validar_quantidades
 
 def validacao_pesos(df_excel):
-    return df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
-
+    validar_pesos = df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
+    if not validar_pesos.all():
+        exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info") 
+    return validar_pesos
 
 def validacao_pesos_unidade_kg(df_excel):
     lista_codigos_peso_zero = []
@@ -259,25 +268,23 @@ def formatar_campos_dimensao(dataframe):
     if items_mt_m2_dimensao_incorreta:
         mensagem = ''
         mensagem_fixa = f"""
-        OPS... Valor da dimensão fora do formato padrão
+        ATENÇÃO!
+        VALOR DA DIMENSÃO FORA DO FORMATO PADRÃO
         
-        Por favor inserir na coluna DIMENSÃO da BOM o valor
-        correto seguindo o padrão informado abaixo:
+        Insira na coluna DIMENSÃO o valor
+        conforme o padrão informado abaixo:
         
-        1. Quando a unidade for METRO 'm':
-        
+        1. Quando a unidade for METRO 'm':   
         X.XXX m ou X m
-        
-        2. Quando a unidade for METRO QUADRADO 'm²':
-        
-        X.XXX m² ou X m²
-        
-        3. É permitido, quando necessário, usar tanto ponto '.'
-        quanto vírgula ','
             
-        4. O valor deve ser sempre maior que zero!
+        2. Quando a unidade for METRO QUADRADO 'm²':     
+        X.XXX m² ou X m²
+            
+        3. É permitido usar tanto ponto '.'
+        quanto vírgula ','         
+        4. O valor deve ser sempre maior que zero.
         
-        Por favor corrigir o campo dimensão do(s) código(s)
+        Verificar o campo dimensão do(s) código(s)
         abaixo:\n"""
         
         for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
@@ -347,63 +354,135 @@ def validacao_codigo_bloqueado(dataframe):
     finally:
         if 'conn' in locals():
             conn.close()
-
-
-def validacao_de_dados_bom(excel_file_path):
-    # Carrega a planilha do Excel em um DataFrame
-    df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
-
-    # Exclui a última linha do DataFrame
-    df_excel = df_excel.drop(df_excel.index[-1])
-    
-    validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
-
-    validar_codigos = validar_formato_codigos_filho(df_excel)
-
-    validar_quantidades = validacao_quantidades(df_excel)
-    
-    validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
-
-    validar_pesos = validacao_pesos(df_excel)
-    
-    if not validar_codigo_filho_diferente_codigo_pai.all():
-        exibir_mensagem(titulo_janela, "EXISTE CÓDIGO-FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
-
-    if not validar_codigos.all():
-        exibir_mensagem(titulo_janela, "CÓDIGO-FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
-
-    if not validar_descricoes.all():
-        exibir_mensagem(titulo_janela, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ", "info")
-
-    if not validar_quantidades.all():
-        exibir_mensagem(titulo_janela, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\nツ", "info")
-
-    if not validar_pesos.all():
-        exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info")
-
-    if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all():
-
-        codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())
-        
-        if codigos_filho_tem_cadastro:
             
-            df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
-            bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
-            bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()     
-            existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
-            nao_existe_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)          
-            codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
-            pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)
-        
-            if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
-                return bom_excel_sem_duplicatas
 
+def extrair_numero(texto):
+    numeros = ''
+    for char in texto:
+        if char.isdigit():
+            numeros += char
+    return numeros
+
+
+def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
+    codigos_diferentes = {}
+    codigo_nome_desenho_verificado = ''
+    
+    for index, row in dataframe.iterrows():
+        codigo_filho = row.iloc[indice_coluna_codigo_excel]
+        codigo_nome_desenho = str(row.iloc[indice_coluna_nome_arquivo])
+        descricao = row.iloc[indice_coluna_descricao_excel]
+        
+        if len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == ' ' and codigo_nome_desenho.startswith(('C', 'M','E')):
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split(' ')[0]
+        elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == '_' and codigo_nome_desenho.startswith(('C', 'M','E')):
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('_')[0] 
+        elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == '-' and codigo_nome_desenho.startswith(('C', 'M','E')):
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
+        elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[7] == '-':
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
+        elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[9] == '-':
+            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
+        elif (len(codigo_nome_desenho) == 9 or len(codigo_nome_desenho) == 10) and '.' in codigo_nome_desenho:
+            codigo_nome_desenho_verificado = codigo_nome_desenho.replace('.','')    
+        elif len(codigo_nome_desenho) == 8 or len(codigo_nome_desenho) == 13:
+            codigo_nome_desenho_verificado = codigo_nome_desenho
+        
+        if len(codigo_nome_desenho_verificado) <= 7:          
+            codigo_filho_formatado = extrair_numero(codigo_filho).lstrip("0")
+            if codigo_filho_formatado != codigo_nome_desenho_verificado:
+                codigos_diferentes[codigo_nome_desenho] = descricao
+        elif len(codigo_nome_desenho_verificado) == 8:
+            primeira_parte = codigo_nome_desenho_verificado[:3]
+            segunda_parte = codigo_nome_desenho_verificado[3:5]
+            terceira_parte = codigo_nome_desenho_verificado[5:9]
+            codigo_nome_desenho_verificado = 'M-' + primeira_parte + '-0' + segunda_parte + '-' + terceira_parte 
+            if codigo_filho != codigo_nome_desenho_verificado:
+                codigos_diferentes[codigo_nome_desenho] = descricao 
+        elif len(codigo_nome_desenho_verificado) == 9:
+            codigo_nome_desenho_verificado = 'C-00' + codigo_nome_desenho_verificado.replace('.','-')
+            if codigo_filho != codigo_nome_desenho_verificado:
+                codigos_diferentes[codigo_nome_desenho] = descricao
+        elif len(codigo_nome_desenho_verificado) == 13:
+            if codigo_filho != codigo_nome_desenho_verificado:
+                codigos_diferentes[codigo_nome_desenho] = descricao
+        else:
+            codigos_diferentes[codigo_nome_desenho] = descricao
+    
+    if codigos_diferentes:
+        mensagem_codigos = ''
+        mensagem_fixa = f"ATENÇÃO\n\n O CÓDIGO FILHO PODE ESTAR ERRADO.\n\n> APÓS A CORREÇÃO ATUALIZE O TEMPLATE DA BOM <\nO nome do desenho deve ser igual ao campo nº da peça.\n\nVerificar:\n\n"
+        mensagem_final = "\nSMARTPLIC®"
+        i = 1
+        for code, description in codigos_diferentes.items():
+            if code == 'nan':
+                mensagem_codigos += f"{i}. ALTERAR CONFIG. NOME USUÁRIO - {description[:20] + '...' if len(description) > 20 else description}\n\n"            
+            else:
+                mensagem_codigos += f"{i}. {code[:18] + '...' if len(code) > 18 else code} - {description[:20] + '...' if len(description) > 20 else description}\n\n"
+            i += 1
+        exibir_mensagem(titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "info")
+        return False
+    else:
+        return True
+    
+
+def verificar_se_template_bom_esta_correto(dataframe):
+    # Quando o dataframe ter apenas uma linha não se aplica a regra de verificação de código filho errado, 
+    # pois é desenho de matéria-prima -> Template BOM SW BOM-P_NOVO.sldbomtbt
+    if dataframe.shape[0] > 1 and dataframe.shape[1] > 9: 
+        return True, "montagem"
+    elif dataframe.shape[0] == 1 and dataframe.shape[1] >= 8:
+        return True, "peca"
+    else:
+        exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
+        return False, ""
+
+
+def validacao_de_dados_bom(excel_file_path):  
+    df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
+    
+    # Encontra o índice da linha que contém "Pos." na segunda coluna
+    pos_index = df_excel[df_excel.iloc[:, 0] == "Pos."].index[0]
+    
+    # Mantém todas as linhas até o índice encontrado
+    df_excel = df_excel.iloc[:pos_index]
+
+    bom_esta_correta, tipo_da_bom = verificar_se_template_bom_esta_correto(df_excel)
+    validar_codigos = validar_formato_codigos_filho(df_excel)
+    validar_quantidades = validacao_quantidades(df_excel)    
+    validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
+    validar_pesos = validacao_pesos(df_excel)
+    validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
+    
+    if bom_esta_correta:
+        if tipo_da_bom == "montagem":     
+            validar_codigo_filho_com_nome_desenho = verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)
+        elif tipo_da_bom == "peca":
+            validar_codigo_filho_com_nome_desenho = True
+        else:
+            validar_codigo_filho_com_nome_desenho = False
+    else:
+        validar_codigo_filho_com_nome_desenho = False
+    
+    if validar_codigo_filho_com_nome_desenho:
+        if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_filho_com_nome_desenho:
+            codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())      
+            if codigos_filho_tem_cadastro:          
+                df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
+                bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
+                bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()     
+                existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
+                nao_existe_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)          
+                codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
+                pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)       
+                if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
+                    return bom_excel_sem_duplicatas
     #excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
 
 def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
-    query_atualizar_campo_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' WHERE B1_COD = N'{codigo_pai}';"""
+    query_atualizar_campo_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
     try:
         # Uso do Context Manager para garantir o fechamento adequado da conexão
         with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
@@ -412,9 +491,22 @@ def atualizar_campo_revisao_do_codigo_pai(codigo_pai, numero_revisao):
             return True
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar o campo revisão do código pai", 16 | 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar o campo REV. do código pai", 16 | 0)
         return False
-    
+
+
+def atualizar_campo_data_ultima_revisao_do_codigo_pai(codigo_pai):
+    data_atual = formatar_data_atual()
+    query_atualizar_data_ultima_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_UREV = N'{data_atual}' WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
+    try:
+        with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            cursor = conn.cursor()
+            cursor.execute(query_atualizar_data_ultima_revisao)
+            return True
+    except Exception as ex:
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao atualizar o campo DATA ULT. REV. do código pai", 16 | 0)
+        return False
+
 
 def verificar_se_existe_estrutura_codigo_pai(codigo_pai):
     try:
@@ -503,7 +595,7 @@ def obter_unidade_medida_codigo_filho(codigo_filho):
             return valor_unidade_medida
 
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar Unidade de Medida de código-filho", 16 | 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar Unidade de Medida de código filho", 16 | 0)
         return None
     
             
@@ -529,7 +621,7 @@ def verificar_cadastro_codigo_pai(codigo_pai):
                 return False
         
     except Exception as ex:
-        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar cadastro do código-pai", 16 | 0)
+        ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro ao consultar cadastro do código pai", 16 | 0)
         return None
     
             
@@ -572,7 +664,7 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
             
         conn.commit()
         
-        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®", "info")
+        exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®", "info")
         return True, revisao_inicial
         
     except Exception as ex:
@@ -585,10 +677,21 @@ def criar_nova_estrutura_totvs(codigo_pai, bom_excel_sem_duplicatas):
 
 
 def janela_mensagem_alterar_estrutura(codigo_pai):
+    root = tk.Tk()
+    root.withdraw()  # Esconde a janela principal
+    root.attributes('-topmost', True)  # Garante que a janela estará sempre no topo
+    root.lift()  # Traz a janela para frente
+    root.focus_force()  # Força o foco na janela
+
+    # Mostrar a mensagem
     user_choice = messagebox.askquestion(
-        titulo_janela,
-        f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?"
+        "Alterar Estrutura",
+        f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!\n\n{codigo_pai}\n\nDeseja realizar a alteração da estrutura?",
+        parent=root  # Define a janela principal como pai da mensagem
     )
+
+    # Fechar a janela principal após a escolha do usuário
+    root.destroy()
 
     if user_choice == "yes":
         return True
@@ -789,6 +892,7 @@ def exibir_mensagem(title, message, icon_type):
     root.withdraw()
     root.lift()  # Garante que a janela esteja na frente
     root.title(title)
+    root.attributes('-topmost', True)
 
     if icon_type == 'info':
         messagebox.showinfo(title, message)
@@ -816,6 +920,7 @@ indice_coluna_descricao_excel = 2
 indice_coluna_quantidade_excel = 3
 indice_coluna_dimensao = 5
 indice_coluna_peso_excel = 6
+indice_coluna_nome_arquivo = 8
 
 formatos_codigo = [
         r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
@@ -826,7 +931,7 @@ formatos_codigo = [
 
 regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-nome_desenho = 'M-034-008-539'#ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'E7047-008-187' # ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None
@@ -846,7 +951,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
         atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
         
     if bom_excel_sem_duplicatas.empty and not nova_estrutura_cadastrada:
-        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ\n\nEMS®\n\nEngenharia ENAPLIC®","warning")
+        exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ\n\nSMARTPLIC®","warning")
 
     if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
         usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
@@ -873,9 +978,10 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                     
                 if itens_adicionados_sucesso or itens_removidos_sucesso:
                     atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
-                    atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)                    
-                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®", "info")
+                    atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
+                    atualizar_campo_data_ultima_revisao_do_codigo_pai(nome_desenho)
+                    exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®", "info")
             else:
-                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEMS®\n\nEngenharia ENAPLIC®","info")
+                exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®","info")
 #else:
     #excluir_arquivo_excel_bom(excel_file_path)
