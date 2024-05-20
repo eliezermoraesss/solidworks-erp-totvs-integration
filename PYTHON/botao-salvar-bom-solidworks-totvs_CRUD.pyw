@@ -448,6 +448,11 @@ def validacao_de_dados_bom(excel_file_path):
     df_excel = df_excel.iloc[:pos_index]
 
     bom_esta_correta, tipo_da_bom = verificar_se_template_bom_esta_correto(df_excel)
+    validar_codigos = validar_formato_codigos_filho(df_excel)
+    validar_quantidades = validacao_quantidades(df_excel)    
+    validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
+    validar_pesos = validacao_pesos(df_excel)
+    validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
     
     if bom_esta_correta:
         if tipo_da_bom == "montagem":     
@@ -460,12 +465,6 @@ def validacao_de_dados_bom(excel_file_path):
         validar_codigo_filho_com_nome_desenho = False
     
     if validar_codigo_filho_com_nome_desenho:
-        validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
-        validar_codigos = validar_formato_codigos_filho(df_excel)
-        validar_quantidades = validacao_quantidades(df_excel)    
-        validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
-        validar_pesos = validacao_pesos(df_excel)
-
         if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_filho_com_nome_desenho:
             codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())      
             if codigos_filho_tem_cadastro:          
