@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 import sys
 
 def setup_mssql():
-    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
+    caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_PROD.txt"
     try:
         with open(caminho_do_arquivo, 'r') as arquivo:
             string_lida = arquivo.read()
@@ -411,12 +411,15 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
     
     if codigos_diferentes:
         mensagem_codigos = ''
-        mensagem_fixa = f"ATENÇÃO!\n\nCÓDIGO FILHO ERRADO\n\nVerificar no formulário se o campo N° DA PEÇA dos componentes abaixo está correto:\n\n"
-        mensagem_final = "\n\nAPÓS A CORREÇÃO ATUALIZE O TEMPLATE DA BOM\n\nツ\n\nSMARTPLIC®"
-        
+        mensagem_fixa = f"ATENÇÃO\n\n O CÓDIGO FILHO PODE ESTAR ERRADO.\n\n> APÓS A CORREÇÃO ATUALIZE O TEMPLATE DA BOM <\nO nome do desenho deve ser igual ao campo nº da peça.\n\nVerificar:\n\n"
+        mensagem_final = "\nSMARTPLIC®"
+        i = 1
         for code, description in codigos_diferentes.items():
-            mensagem_codigos += f"{code[:24] + '...' if len(code) > 24 else code} - {description[:10] + '...' if len(description) > 10 else description}\n"            
-        
+            if code == 'nan':
+                mensagem_codigos += f"{i}. ALTERAR CONFIG. NOME USUÁRIO - {description[:20] + '...' if len(description) > 20 else description}\n\n"            
+            else:
+                mensagem_codigos += f"{i}. {code[:18] + '...' if len(code) > 18 else code} - {description[:20] + '...' if len(description) > 20 else description}\n\n"
+            i += 1
         exibir_mensagem(titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "info")
         return False
     else:
