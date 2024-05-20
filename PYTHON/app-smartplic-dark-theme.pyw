@@ -466,8 +466,7 @@ class ConsultaApp(QWidget):
  
     def executar_consulta(self):    
         select_query = self.selecionar_query_conforme_filtro()
-
-
+        
         if isinstance(select_query, bool) and select_query:
             self.btn_consultar.setEnabled(True)
             return
