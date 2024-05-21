@@ -378,7 +378,7 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
         elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == '_' and codigo_nome_desenho.startswith(('C', 'M','E')):
             codigo_nome_desenho_verificado = codigo_nome_desenho.split('_')[0] 
         elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == '-' and codigo_nome_desenho.startswith(('C', 'M','E')):
-            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
+            codigo_nome_desenho_verificado = codigo_nome_desenho[:13]
         elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[7] == '-':
             codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
         elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[9] == '-':

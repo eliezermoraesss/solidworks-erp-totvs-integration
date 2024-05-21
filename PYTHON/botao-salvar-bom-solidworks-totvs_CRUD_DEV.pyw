@@ -378,7 +378,7 @@ def verificar_codigo_filho_esta_correto_com_nome_do_desenho(dataframe):
         elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == '_' and codigo_nome_desenho.startswith(('C', 'M','E')):
             codigo_nome_desenho_verificado = codigo_nome_desenho.split('_')[0] 
         elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == '-' and codigo_nome_desenho.startswith(('C', 'M','E')):
-            codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
+            codigo_nome_desenho_verificado = codigo_nome_desenho[:13]
         elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[7] == '-':
             codigo_nome_desenho_verificado = codigo_nome_desenho.split('-')[0]
         elif len(codigo_nome_desenho) > 13 and codigo_nome_desenho[9] == '-':
@@ -931,7 +931,7 @@ formatos_codigo = [
 
 regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-nome_desenho = 'E7047-008-187' # ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'M-033-015-116' # ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None
