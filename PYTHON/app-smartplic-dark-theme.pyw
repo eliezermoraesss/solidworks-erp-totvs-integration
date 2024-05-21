@@ -429,7 +429,7 @@ class ConsultaApp(QWidget):
         root.destroy()
         
     def selecionar_query_conforme_filtro(self):
-        # Obter os valores dos campos de consulta
+    # Obter os valores dos campos de consulta
         codigo = self.codigo_var.text().upper().strip()
         descricao = self.descricao_var.text().upper().strip()
         descricao2 = self.descricao2_var.text().upper().strip()
@@ -439,30 +439,31 @@ class ConsultaApp(QWidget):
         grupo = self.grupo_var.text().upper().strip()
         desc_grupo = self.grupo_desc_var.text().upper().strip()
         status_checkbox = self.checkbox_bloqueado.isChecked()
-        
+
         if codigo == '' and descricao == '' and descricao2 == '' and tipo == '' and um == '' and armazem == '' and grupo == '' and desc_grupo == '':
             self.btn_consultar.setEnabled(False)
             self.exibir_mensagem("ATENÇÃO!", "Os campos de pesquisa estão vazios.\nPreencha algum campo e tente novamente.\n\nツ\n\nSMARTPLIC®", "info")
             return True
-        
-        if status_checkbox:
-            status_bloqueado = '1'
-            return f"""
-                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU, B1_DATREF, B1_UREV
-                FROM {database}.dbo.SB1010
-                WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
-                AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
-                AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND B1_MSBLQL = '{status_bloqueado}'
-                AND D_E_L_E_T_ <> '*'
-                ORDER BY B1_COD ASC"""
-        else:
-            return f"""
-                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU, B1_DATREF, B1_UREV
-                FROM {database}.dbo.SB1010
-                WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
-                AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
-                AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND D_E_L_E_T_ <> '*'
-                ORDER BY B1_COD ASC"""
+
+        # Dividir descricao2 em partes usando o delimitador *
+        descricao2_parts = descricao2.split('*')
+        # Construir cláusulas LIKE dinamicamente para descricao2
+        descricao2_clauses = " AND ".join([f"B1_DESC LIKE '%{part}%'" for part in descricao2_parts])
+
+        # Montar a query com base no status do checkbox
+        status_bloqueado = '1' if status_checkbox else ''
+        status_clause = f"AND B1_MSBLQL = '{status_bloqueado}'" if status_checkbox else ''
+
+        query = f"""
+        SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU, B1_DATREF, B1_UREV
+        FROM {database}.dbo.SB1010
+        WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND {descricao2_clauses}
+        AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
+        AND B1_ZZNOGRP LIKE '%{desc_grupo}%' {status_clause}
+        AND D_E_L_E_T_ <> '*'
+        ORDER BY B1_COD ASC
+        """
+        return query
  
     def executar_consulta(self):    
         select_query = self.selecionar_query_conforme_filtro()

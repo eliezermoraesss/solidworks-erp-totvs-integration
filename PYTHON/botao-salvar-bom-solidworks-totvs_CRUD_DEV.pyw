@@ -931,7 +931,7 @@ formatos_codigo = [
 
 regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-nome_desenho = 'M-033-015-116' # ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'E7047-008-187' # ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None
