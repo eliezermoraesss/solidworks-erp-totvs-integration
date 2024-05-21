@@ -789,10 +789,10 @@ class ConsultaApp(QWidget):
 
 if __name__ == "__main__":
     # Parâmetros de conexão com o banco de dados SQL Server
-    server = 'SVRERP,1433'
-    database = 'PROTHEUS12_R27' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
-    username = 'coognicao'
-    password = '0705@Abc'
+    server = ''
+    database = '' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
+    username = ''
+    password = ''
     driver = '{ODBC Driver 17 for SQL Server}'
 
     app = QApplication(sys.argv)
