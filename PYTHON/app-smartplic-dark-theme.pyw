@@ -21,7 +21,7 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.setWindowTitle("SMARTPLIC® v2.2.1 - Dark theme")
+        self.setWindowTitle("SMARTPLIC® v2.2.1 - Dark theme - TEST_DB")
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -255,6 +255,22 @@ class ConsultaApp(QWidget):
         
         self.guias_abertas = []
         self.guias_abertas_onde_usado = []
+        
+    def setup_mssql(self):
+        caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_PROD.txt"
+        try:
+            with open(caminho_do_arquivo, 'r') as arquivo:
+                string_lida = arquivo.read()
+                username, password, database, server = string_lida.split(';')
+                return username, password, database, server
+                
+        except FileNotFoundError:
+            ctypes.windll.user32.MessageBoxW(0, f"Erro ao ler credenciais de acesso ao banco de dados MSSQL.\n\nBase de dados ERP TOTVS PROTHEUS.\n\nPor favor, informe ao desenvolvedor/TI sobre o erro exibido.\n\nTenha um bom dia! ツ", "CADASTRO DE ESTRUTURA - TOTVS®", 16 | 0)
+            sys.exit()
+
+        except Exception as e:
+            ctypes.windll.user32.MessageBoxW(0, f"Ocorreu um erro ao ler o arquivo:", "CADASTRO DE ESTRUTURA - TOTVS®", 16 | 0)
+            sys.exit()
     
     def criar_botao_limpar(self, campo):
         botao_limpar = QToolButton(self)
@@ -417,7 +433,7 @@ class ConsultaApp(QWidget):
         root.withdraw()
         root.lift()  # Garante que a janela esteja na frente
         root.title(title)
-        root.attributes("-topmost", True)
+        root.attributes('-topmost', True)
 
         if icon_type == 'info':
             messagebox.showinfo(title, message)
@@ -464,10 +480,12 @@ class ConsultaApp(QWidget):
         ORDER BY B1_COD ASC
         """
         return query
+
  
     def executar_consulta(self):    
         select_query = self.selecionar_query_conforme_filtro()
-        
+
+
         if isinstance(select_query, bool) and select_query:
             self.btn_consultar.setEnabled(True)
             return
@@ -865,15 +883,11 @@ class ConsultaApp(QWidget):
 
 
 if __name__ == "__main__":
-    # Parâmetros de conexão com o banco de dados SQL Server
-    server = 'SVRERP,1433'
-    database = 'PROTHEUS12_R27' # PROTHEUS12_R27 (base de produção) PROTHEUS1233_HML (base de desenvolvimento/teste)
-    username = 'coognicao'
-    password = '0705@Abc'
-    driver = '{ODBC Driver 17 for SQL Server}'
 
     app = QApplication(sys.argv)
     window = ConsultaApp()
+    username, password, database, server = ConsultaApp().setup_mssql()
+    driver = '{ODBC Driver 17 for SQL Server}'
 
     largura_janela = 1400  # Substitua pelo valor desejado
     altura_janela = 700 # Substitua pelo valor desejado
