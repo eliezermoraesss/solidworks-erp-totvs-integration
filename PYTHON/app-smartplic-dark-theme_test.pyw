@@ -13,7 +13,7 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import messagebox
 
-class ConsultaApp(QWidget):
+class EngenhariaApp(QWidget):
     
     # Adicione este sinal à classe
     guia_fechada = pyqtSignal()
@@ -279,7 +279,6 @@ class ConsultaApp(QWidget):
         botao_limpar.clicked.connect(lambda: campo.clear())
         return botao_limpar
 
-    
     def exportar_excel(self):
         # Obter o caminho do arquivo para salvar
         file_path, _ = QFileDialog.getSaveFileName(self, 'Salvar como', '', 'Arquivos Excel (*.xlsx);;Todos os arquivos (*)')
@@ -444,7 +443,7 @@ class ConsultaApp(QWidget):
 
         root.destroy()
         
-    def selecionar_query_conforme_filtro(self):
+    def modificar_query_consulta_produto(self):
     # Obter os valores dos campos de consulta
         codigo = self.codigo_var.text().upper().strip()
         descricao = self.descricao_var.text().upper().strip()
@@ -483,7 +482,7 @@ class ConsultaApp(QWidget):
 
  
     def executar_consulta(self):    
-        select_query = self.selecionar_query_conforme_filtro()
+        select_query = self.modificar_query_consulta_produto()
 
 
         if isinstance(select_query, bool) and select_query:
@@ -508,9 +507,6 @@ class ConsultaApp(QWidget):
 
             # Limpar a tabela
             self.tree.setRowCount(0)
-            
-            # Definir cores alternadas
-            cores = [QColor("#FFFFFF"), QColor("#FFFFFF")]
             
             time.sleep(0.1)
 
@@ -576,7 +572,7 @@ class ConsultaApp(QWidget):
             
     def abrir_nova_janela(self):
         if not self.nova_janela or not self.nova_janela.isVisible():
-            self.nova_janela = ConsultaApp()
+            self.nova_janela = EngenhariaApp()
             self.nova_janela.setGeometry(self.x() + 50, self.y() + 50, self.width(), self.height())
             self.nova_janela.show()
             
@@ -677,14 +673,14 @@ class ConsultaApp(QWidget):
                                 valor_formatado = str(value).strip()
                             
                             item = QTableWidgetItem(valor_formatado)
-                            item.setForeground(QColor("#EEEEEE"))  # Definir cor do texto da coluna quantidade
+                            item.setForeground(QColor("#EEEEEE"))  # Definir cor de fundo da tabela estrutura
                             
                             if j != 0 and j != 1:
                                 item.setTextAlignment(Qt.AlignCenter)
                             
                             tree_estrutura.setItem(i, j, item)
 
-                    tree_estrutura.setSortingEnabled(True)
+                    tree_estrutura.setSortingEnabled(True) # Permitir ordenação das colunas
                     
                     # Ajustar automaticamente a largura da coluna "Descrição"
                     self.ajustar_largura_coluna_descricao(tree_estrutura)
@@ -739,7 +735,7 @@ class ConsultaApp(QWidget):
 
                 finally:
                     self.tabWidget.setCurrentIndex(self.tabWidget.indexOf(nova_guia_estrutura))
-                    tree_estrutura.itemChanged.connect(lambda item: self.handle_item_change(item, tree_estrutura, codigo))
+                    tree_estrutura.itemChanged.connect(lambda item: self.verifica_evento_quantidade_mudou(item, tree_estrutura, codigo))
                     self.guias_abertas.append(codigo)
                     conn_estrutura.close()
 
@@ -759,7 +755,7 @@ class ConsultaApp(QWidget):
             ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}", "Erro de execução", 16 | 0)
         
         
-    def handle_item_change(self, item, tree_estrutura, codigo_pai):
+    def verifica_evento_quantidade_mudou(self, item, tree_estrutura, codigo_pai):
         if item.column() == 2:    
             linha_selecionada = tree_estrutura.currentItem()
             
@@ -771,7 +767,7 @@ class ConsultaApp(QWidget):
                 self.alterar_quantidade_estrutura(codigo_pai, codigo_filho, float(nova_quantidade))
             else:
                 ctypes.windll.user32.MessageBoxW(
-            0, "QUANTIDADE INVÁLIDA\n\nOs valores devem ser números, não nulos, sem espaços em branco e maiores que zero.\nPor favor, corrija tente novamente!", "SMARTPLIC®", 48 | 0)
+            0, "QUANTIDADE INVÁLIDA\n\nOs valores devem ser números, não nulos, sem espaços em branco e maiores que zero.\nPor favor, corrija e tente novamente!", "SMARTPLIC®", 48 | 0)
     
     
     def executar_consulta_onde_usado(self):
@@ -875,7 +871,7 @@ class ConsultaApp(QWidget):
                     tree_estrutura.itemDoubleClicked.connect(self.copiar_linha)
 
                 except pyodbc.Error as ex:
-                    print(f"Falha na consulta de estrutura. Erro: {str(ex)}")
+                    print(f"Falha na consulta 'Onde é usado'. Erro: {str(ex)}")
 
                 finally:
                     self.tabWidget.setCurrentIndex(self.tabWidget.indexOf(nova_guia_estrutura))
@@ -885,8 +881,8 @@ class ConsultaApp(QWidget):
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)
-    window = ConsultaApp()
-    username, password, database, server = ConsultaApp().setup_mssql()
+    window = EngenhariaApp()
+    username, password, database, server = EngenhariaApp().setup_mssql()
     driver = '{ODBC Driver 17 for SQL Server}'
 
     largura_janela = 1400  # Substitua pelo valor desejado
