@@ -15,7 +15,7 @@ class CadastrarBomTOTVS:
     def __init__(self):
         # Leitura dos parâmetros de conexão com o banco de dados SQL Server
         self.username, self.password, self.database, self.server = self.setup_mssql()
-        driver = '{ODBC Driver 17 for SQL Server}'
+        self.driver = '{ODBC Driver 17 for SQL Server}'
 
         self.titulo_janela = "CADASTRO DE ESTRUTURA TOTVS®"
 
@@ -42,7 +42,7 @@ class CadastrarBomTOTVS:
 
         self.nome_desenho = 'E7047-008-187' # ler_variavel_ambiente_codigo_desenho()
         
-    def setup_mssql():
+    def setup_mssql(self):
         caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
         try:
             with open(caminho_do_arquivo, 'r') as arquivo:
@@ -76,16 +76,16 @@ class CadastrarBomTOTVS:
         return validacao_codigos
 
 
-    def ler_variavel_ambiente_codigo_desenho():
+    def ler_variavel_ambiente_codigo_desenho(self):
         return os.getenv('CODIGO_DESENHO')
 
 
-    def obter_caminho_arquivo_excel(codigo_desenho):
+    def obter_caminho_arquivo_excel(self, codigo_desenho):
         base_path = os.environ.get('TEMP')
         return os.path.join(base_path, codigo_desenho + '.xlsx')
 
 
-    def excluir_arquivo_excel_bom(excel_file_path):
+    def excluir_arquivo_excel_bom(self, excel_file_path):
         if os.path.exists(excel_file_path):
             os.remove(excel_file_path)
 
@@ -146,7 +146,7 @@ class CadastrarBomTOTVS:
             
             for codigo_produto in codigos_filho:
                 
-                query_consulta_tipo_produto = f"""SELECT B1_TIPO FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{self.codigo_produto}' AND B1_TIPO IN ('PI','PA');"""
+                query_consulta_tipo_produto = f"""SELECT B1_TIPO FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto}' AND B1_TIPO IN ('PI','PA');"""
                 
                 cursor.execute(query_consulta_tipo_produto)
                 resultado_tipo_produto = cursor.fetchone()
@@ -817,7 +817,7 @@ class CadastrarBomTOTVS:
 
 
     def remover_itens_estrutura_totvs(self, codigo_pai, codigos_removidos_bom_df, revisao_anterior):
-        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+        conn = pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
         
         try:
             
@@ -827,7 +827,7 @@ class CadastrarBomTOTVS:
                 codigo_filho = row.iloc[2]
                 
                 query_remover_itens_estrutura_totvs = f"""
-                UPDATE {database}.dbo.SG1010
+                UPDATE {self.database}.dbo.SG1010
                 SET
                     D_E_L_E_T_ = N'*',
                     R_E_C_D_E_L_ = R_E_C_N_O_
@@ -856,31 +856,31 @@ class CadastrarBomTOTVS:
     def resultado_comparacao(self):
         if self.codigos_em_comum:  
             ctypes.windll.user32.MessageBoxW(
-                0, f"Códigos em comuns: {codigos_em_comum}", "ITENS EM COMUM", 1)
+                0, f"Códigos em comuns: {self.codigos_em_comum}", "ITENS EM COMUM", 1)
             
-        if codigos_adicionados_bom:         
+        if self.codigos_adicionados_bom:         
             ctypes.windll.user32.MessageBoxW(
-                0, f"Itens adicionados: {codigos_adicionados_bom}", "ITENS ADICIONADOS", 1)
+                0, f"Itens adicionados: {self.codigos_adicionados_bom}", "ITENS ADICIONADOS", 1)
 
-        if codigos_removidos_bom:  
+        if self.codigos_removidos_bom:  
             ctypes.windll.user32.MessageBoxW(
-                0, f"Itens removidos: {codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
+                0, f"Itens removidos: {self.codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
 
 
     def comparar_bom_com_totvs(self, bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):   
         resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs['G1_COMP'].str.strip()
 
         # Códigos em comum
-        codigos_em_comum_df = bom_excel_sem_duplicatas[bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].isin(
+        codigos_em_comum_df = bom_excel_sem_duplicatas[bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel].isin(
             resultado_query_consulta_estrutura_totvs['G1_COMP'])].copy()
 
         # Códigos adicionados no BOM
-        codigos_adicionados_bom_df = bom_excel_sem_duplicatas[~bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].isin(
+        codigos_adicionados_bom_df = bom_excel_sem_duplicatas[~bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel].isin(
             resultado_query_consulta_estrutura_totvs['G1_COMP'])].copy()
 
         # Códigos removidos no BOM
         codigos_removidos_bom_df = resultado_query_consulta_estrutura_totvs[~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-            bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel])].copy()
+            bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel])].copy()
 
         return codigos_em_comum_df, codigos_adicionados_bom_df, codigos_removidos_bom_df
         
@@ -888,14 +888,14 @@ class CadastrarBomTOTVS:
         
 
     def atualizar_campo_revfim_codigos_existentes(self, codigo_pai, revisao_anterior, revisao_atualizada):
-        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') 
+        conn = pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}') 
         try:
             cursor = conn.cursor()
 
-            for index, row in codigos_em_comum_df.iterrows():
-                codigo_filho = row.iloc[indice_coluna_codigo_excel]
+            for index, row in self.codigos_em_comum_df.iterrows():
+                codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
                 
-                query_atualizar_campo_revfim_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_REVFIM = N'{revisao_atualizada}' WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
+                query_atualizar_campo_revfim_estrutura = f"""UPDATE {self.database}.dbo.SG1010 SET G1_REVFIM = N'{revisao_atualizada}' WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
                     AND G1_REVFIM = N'{revisao_anterior}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
                 """  
                     
@@ -914,13 +914,13 @@ class CadastrarBomTOTVS:
             conn.close()
             
 
-    def calculo_revisao_anterior(revisao_atualizada):
+    def calculo_revisao_anterior(self, revisao_atualizada):
         revisao_atualizada = int(revisao_atualizada) - 1
         revisao_anterior = str(revisao_atualizada).zfill(3)
         return revisao_anterior
 
 
-    def exibir_mensagem(title, message, icon_type):
+    def exibir_mensagem(self, title, message, icon_type):
         root = tk.Tk()
         root.withdraw()
         root.lift()  # Garante que a janela esteja na frente
@@ -938,57 +938,57 @@ class CadastrarBomTOTVS:
 
     def executar_logica(self):
         
-        excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
-        formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
+        excel_file_path = self.obter_caminho_arquivo_excel(self.nome_desenho)
+        formato_codigo_pai_correto = self.validar_formato_codigo_pai(self.nome_desenho)
         revisao_atualizada = None
         nova_estrutura_cadastrada = False
 
         if formato_codigo_pai_correto:
-            existe_cadastro_codigo_pai = verificar_cadastro_codigo_pai(nome_desenho)
+            existe_cadastro_codigo_pai = self.verificar_cadastro_codigo_pai(self.nome_desenho)
 
         if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
-            bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
-            resultado_estrutura_codigo_pai = verificar_se_existe_estrutura_codigo_pai(nome_desenho)
+            bom_excel_sem_duplicatas = self.validacao_de_dados_bom(excel_file_path)
+            resultado_estrutura_codigo_pai = self.verificar_se_existe_estrutura_codigo_pai(self.nome_desenho)
             
             #excluir_arquivo_excel_bom(excel_file_path)
 
             if not bom_excel_sem_duplicatas.empty and resultado_estrutura_codigo_pai.empty:
-                nova_estrutura_cadastrada, revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
-                atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
+                nova_estrutura_cadastrada, revisao_atualizada = self.criar_nova_estrutura_totvs(self.nome_desenho, bom_excel_sem_duplicatas)
+                self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
                 
             if bom_excel_sem_duplicatas.empty and not nova_estrutura_cadastrada:
-                exibir_mensagem(titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{nome_desenho}\n\nツ\n\nSMARTPLIC®","warning")
+                self.exibir_mensagem(self.titulo_janela,f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a BOM e tente novamente!\n\n{self.nome_desenho}\n\nツ\n\nSMARTPLIC®","warning")
 
             if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
-                usuario_quer_alterar = janela_mensagem_alterar_estrutura(nome_desenho)
+                usuario_quer_alterar = self.janela_mensagem_alterar_estrutura(self.nome_desenho)
 
                 if usuario_quer_alterar:
-                    resultado = comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_estrutura_codigo_pai)
+                    resultado = self.comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_estrutura_codigo_pai)
                     codigos_em_comum_df, codigos_adicionados_bom_df, codigos_removidos_bom_df = resultado
                     
                     if not codigos_em_comum_df.empty:
-                        atualizar_itens_estrutura_totvs(nome_desenho, codigos_em_comum_df)
+                        self.atualizar_itens_estrutura_totvs(self.nome_desenho, codigos_em_comum_df)
                         
                     if not codigos_adicionados_bom_df.empty or not codigos_removidos_bom_df.empty:
                         primeiro_cadastro = False
-                        revisao_atualizada = obter_revisao_codigo_pai(nome_desenho, primeiro_cadastro)
+                        revisao_atualizada = self.obter_revisao_codigo_pai(self.nome_desenho, primeiro_cadastro)
                         itens_adicionados_sucesso = False
                         itens_removidos_sucesso = False
-                        revisao_anterior = calculo_revisao_anterior(revisao_atualizada)
+                        revisao_anterior = self.calculo_revisao_anterior(revisao_atualizada)
                         
                         if not codigos_adicionados_bom_df.empty:         
-                            itens_adicionados_sucesso = inserir_itens_estrutura_totvs(nome_desenho, codigos_adicionados_bom_df, revisao_atualizada)
+                            itens_adicionados_sucesso = self.inserir_itens_estrutura_totvs(self.nome_desenho, codigos_adicionados_bom_df, revisao_atualizada)
 
                         if not codigos_removidos_bom_df.empty:  
-                            itens_removidos_sucesso = remover_itens_estrutura_totvs(nome_desenho, codigos_removidos_bom_df, revisao_anterior)
+                            itens_removidos_sucesso = self.remover_itens_estrutura_totvs(self.nome_desenho, codigos_removidos_bom_df, revisao_anterior)
                             
                         if itens_adicionados_sucesso or itens_removidos_sucesso:
-                            atualizar_campo_revfim_codigos_existentes(nome_desenho, revisao_anterior, revisao_atualizada)
-                            atualizar_campo_revisao_do_codigo_pai(nome_desenho, revisao_atualizada)
-                            atualizar_campo_data_ultima_revisao_do_codigo_pai(nome_desenho)
-                            exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®", "info")
+                            self.atualizar_campo_revfim_codigos_existentes(self.nome_desenho, revisao_anterior, revisao_atualizada)
+                            self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
+                            self.atualizar_campo_data_ultima_revisao_do_codigo_pai(self.nome_desenho)
+                            self.exibir_mensagem(self.titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{self.nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®", "info")
                     else:
-                        exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®","info")
+                        self.exibir_mensagem(self.titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{self.nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®","info")
         #else:
             #excluir_arquivo_excel_bom(excel_file_path)
 
