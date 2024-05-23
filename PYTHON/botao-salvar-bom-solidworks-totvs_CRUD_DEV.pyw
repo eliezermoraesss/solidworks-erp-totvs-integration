@@ -209,25 +209,25 @@ class CadastrarBomTOTVS:
     def validar_descricao(self, descricoes):
         validar_descricoes = descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
         if not validar_descricoes.all():
-            exibir_mensagem(titulo_janela, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ", "info")
+            self.exibir_mensagem(self.titulo_janela, "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ", "info")
         return validar_descricoes
 
     def verificar_codigo_filho_diferente_codigo_pai(self, nome_desenho, df_excel):
-        codigo_filho_diferente_codigo_pai = df_excel.iloc[:, indice_coluna_codigo_excel] != f"{nome_desenho}"
+        codigo_filho_diferente_codigo_pai = df_excel.iloc[:, self.indice_coluna_codigo_excel] != f"{nome_desenho}"
         if not codigo_filho_diferente_codigo_pai.all():
-            exibir_mensagem(titulo_janela, "EXISTE CÓDIGO FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
+            self.exibir_mensagem(self.titulo_janela, "EXISTE CÓDIGO FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e tente novamente!\n\nツ", "info")
         return codigo_filho_diferente_codigo_pai
 
     def validacao_quantidades(self, df_excel):
-        validar_quantidades = df_excel.iloc[:, indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, indice_coluna_quantidade_excel], errors='coerce') > 0)
+        validar_quantidades = df_excel.iloc[:, self.indice_coluna_quantidade_excel].notna() & (df_excel.iloc[:, self.indice_coluna_quantidade_excel] != '') & (pd.to_numeric(df_excel.iloc[:, self.indice_coluna_quantidade_excel], errors='coerce') > 0)
         if not validar_quantidades.all():
-            exibir_mensagem(titulo_janela, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\nツ", "info") 
+            self.exibir_mensagem(self.titulo_janela, "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente novamente!\n\nツ", "info") 
         return validar_quantidades
 
     def validacao_pesos(self, df_excel):
-        validar_pesos = df_excel.iloc[:, indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, indice_coluna_peso_excel], errors='coerce') > 0))
+        validar_pesos = df_excel.iloc[:, self.indice_coluna_peso_excel].notna() & ((df_excel.iloc[:, self.indice_coluna_peso_excel] == 0) | (pd.to_numeric(df_excel.iloc[:, self.indice_coluna_peso_excel], errors='coerce') > 0))
         if not validar_pesos.all():
-            exibir_mensagem(titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info") 
+            self.exibir_mensagem(self.titulo_janela, "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ", "info") 
         return validar_pesos
 
     def validacao_pesos_unidade_kg(self, df_excel):
@@ -235,16 +235,16 @@ class CadastrarBomTOTVS:
         try:
             
             for index, row in df_excel.iterrows():
-                codigo_filho = row.iloc[indice_coluna_codigo_excel]
-                unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+                codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
+                unidade_medida = self.obter_unidade_medida_codigo_filho(codigo_filho)
                 
                 if unidade_medida == 'KG':
-                    peso = row.iloc[indice_coluna_peso_excel]
+                    peso = row.iloc[self.indice_coluna_peso_excel]
                     if peso <= 0:
                         lista_codigos_peso_zero.append(codigo_filho)
             
             if lista_codigos_peso_zero:
-                exibir_mensagem(titulo_janela, f"PESO ZERO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO.\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o(s) e tente novamente!\n\nツ", "info")
+                self.exibir_mensagem(self.titulo_janela, f"PESO ZERO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO.\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o(s) e tente novamente!\n\nツ", "info")
                 return False
             else:
                 return True
@@ -258,7 +258,7 @@ class CadastrarBomTOTVS:
         
         dimensao_sem_espaco = dimensao.replace(' ', '')
         
-        if re.match(regex_campo_dimensao, dimensao_sem_espaco):
+        if re.match(self.regex_campo_dimensao, dimensao_sem_espaco):
             return True
         else:
             return False
@@ -276,25 +276,25 @@ class CadastrarBomTOTVS:
         unidade_de_medida_totvs = ''
         df_campo_dimensao_formatado = dataframe.copy()
 
-        for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, indice_coluna_dimensao]):
-            codigo_filho = df_campo_dimensao_formatado.iloc[i, indice_coluna_codigo_excel]
-            descricao = df_campo_dimensao_formatado.iloc[i, indice_coluna_descricao_excel]
-            unidade_de_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+        for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, self.indice_coluna_dimensao]):
+            codigo_filho = df_campo_dimensao_formatado.iloc[i, self.indice_coluna_codigo_excel]
+            descricao = df_campo_dimensao_formatado.iloc[i, self.indice_coluna_descricao_excel]
+            unidade_de_medida = self.obter_unidade_medida_codigo_filho(codigo_filho)
             
             if unidade_de_medida == 'M2':
                 unidade_de_medida_totvs = unidade_de_medida.replace('2','²').lower()
             elif unidade_de_medida == 'MT':
                 unidade_de_medida_totvs = unidade_de_medida.replace('T','').lower()
 
-            if unidade_de_medida in ('MT', 'M2') and validar_formato_campo_dimensao(str(dimensao)):
-                if unidade_de_medida_totvs != extrair_unidade_medida(str(dimensao).lower()):
+            if unidade_de_medida in ('MT', 'M2') and self.validar_formato_campo_dimensao(str(dimensao)):
+                if unidade_de_medida_totvs != self.extrair_unidade_medida(str(dimensao).lower()):
                     items_unidade_incorreta[codigo_filho] = descricao
                 else:           
                     dimensao_final = dimensao.lower().split('m')[0].replace(',','.')              
                     if float(dimensao_final) <= 0:
                         items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
                     else:            
-                        df_campo_dimensao_formatado.iloc[i, indice_coluna_dimensao] = float(dimensao_final)               
+                        df_campo_dimensao_formatado.iloc[i, self.indice_coluna_dimensao] = float(dimensao_final)               
             elif unidade_de_medida in ('MT', 'M2'):
                 items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
                 
@@ -323,7 +323,7 @@ class CadastrarBomTOTVS:
             for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
                 mensagem += f"""
             {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
-            exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")
+            self.exibir_mensagem(self.titulo_janela, mensagem_fixa + mensagem, "info")
         if items_unidade_incorreta:
             mensagem = ''
             mensagem_fixa = f"""
@@ -337,7 +337,7 @@ class CadastrarBomTOTVS:
             for codigo, descricao in items_unidade_incorreta.items():
                 mensagem += f"""
             {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
-            exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")      
+            self.exibir_mensagem(self.titulo_janela, mensagem_fixa + mensagem, "info")      
         if items_mt_m2_dimensao_incorreta or items_unidade_incorreta:
             #excluir_arquivo_excel_bom(excel_file_path)
             sys.exit()
@@ -347,16 +347,16 @@ class CadastrarBomTOTVS:
 
     def validacao_codigo_bloqueado(self, dataframe):
         try:
-            conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+            conn = pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
             cursor = conn.cursor()
             
             codigos_bloqueados = {}
             
             for i, row in dataframe.iterrows():
-                codigo = row.iloc[indice_coluna_codigo_excel]
-                descricao = row.iloc[indice_coluna_descricao_excel]
+                codigo = row.iloc[self.indice_coluna_codigo_excel]
+                descricao = row.iloc[self.indice_coluna_descricao_excel]
                 query_retorna_valor_campo_bloqueio = f"""
-                SELECT B1_MSBLQL FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo}' AND B1_REVATU <> 'ZZZ' AND D_E_L_E_T_ <> '*';
+                SELECT B1_MSBLQL FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo}' AND B1_REVATU <> 'ZZZ' AND D_E_L_E_T_ <> '*';
                 """
                 
                 cursor.execute(query_retorna_valor_campo_bloqueio)
@@ -377,7 +377,7 @@ class CadastrarBomTOTVS:
                 for codigo, descricao in codigos_bloqueados.items():
                     mensagem += f"""
         {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
-                exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, 'warning')
+                self.exibir_mensagem(self.titulo_janela, mensagem_fixa + mensagem, 'warning')
                 return False
             else:
                 return True
@@ -402,9 +402,9 @@ class CadastrarBomTOTVS:
         codigo_nome_desenho_verificado = ''
         
         for index, row in dataframe.iterrows():
-            codigo_filho = row.iloc[indice_coluna_codigo_excel]
-            codigo_nome_desenho = str(row.iloc[indice_coluna_nome_arquivo])
-            descricao = row.iloc[indice_coluna_descricao_excel]
+            codigo_filho = row.iloc[self.indice_coluna_codigo_excel].strip()
+            codigo_nome_desenho = str(row.iloc[self.indice_coluna_nome_arquivo])
+            descricao = row.iloc[self.indice_coluna_descricao_excel]
             
             if len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == ' ' and codigo_nome_desenho.startswith(('C', 'M','E')):
                 codigo_nome_desenho_verificado = codigo_nome_desenho.split(' ')[0]
@@ -422,7 +422,7 @@ class CadastrarBomTOTVS:
                 codigo_nome_desenho_verificado = codigo_nome_desenho
             
             if len(codigo_nome_desenho_verificado) <= 7:          
-                codigo_filho_formatado = extrair_numero(codigo_filho).lstrip("0")
+                codigo_filho_formatado = self.extrair_numero(codigo_filho).lstrip("0")
                 if codigo_filho_formatado != codigo_nome_desenho_verificado:
                     codigos_diferentes[codigo_nome_desenho] = descricao
             elif len(codigo_nome_desenho_verificado) == 8:
@@ -453,7 +453,7 @@ class CadastrarBomTOTVS:
                 else:
                     mensagem_codigos += f"{i}. {code[:18] + '...' if len(code) > 18 else code} - {description[:20] + '...' if len(description) > 20 else description}\n\n"
                 i += 1
-            exibir_mensagem(titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "info")
+            self.exibir_mensagem(self.titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "info")
             return False
         else:
             return True
@@ -467,7 +467,7 @@ class CadastrarBomTOTVS:
         elif dataframe.shape[0] == 1 and dataframe.shape[1] >= 8:
             return True, "peca"
         else:
-            exibir_mensagem(titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
+            self.exibir_mensagem(self.titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
             return False, ""
 
 
@@ -480,16 +480,16 @@ class CadastrarBomTOTVS:
         # Mantém todas as linhas até o índice encontrado
         df_excel = df_excel.iloc[:pos_index]
 
-        bom_esta_correta, tipo_da_bom = verificar_se_template_bom_esta_correto(df_excel)
-        validar_codigos = validar_formato_codigos_filho(df_excel)
-        validar_quantidades = validacao_quantidades(df_excel)    
-        validar_descricoes = validar_descricao(df_excel.iloc[:, indice_coluna_descricao_excel])
-        validar_pesos = validacao_pesos(df_excel)
-        validar_codigo_filho_diferente_codigo_pai = verificar_codigo_filho_diferente_codigo_pai(nome_desenho, df_excel)
+        bom_esta_correta, tipo_da_bom = self.verificar_se_template_bom_esta_correto(df_excel)
+        validar_codigos = self.validar_formato_codigos_filho(df_excel)
+        validar_quantidades = self.validacao_quantidades(df_excel)    
+        validar_descricoes = self.validar_descricao(df_excel.iloc[:, self.indice_coluna_descricao_excel])
+        validar_pesos = self.validacao_pesos(df_excel)
+        validar_codigo_filho_diferente_codigo_pai = self.verificar_codigo_filho_diferente_codigo_pai(self.nome_desenho, df_excel)
         
         if bom_esta_correta:
             if tipo_da_bom == "montagem":     
-                validar_codigo_filho_com_nome_desenho = verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)
+                validar_codigo_filho_com_nome_desenho = self.verificar_codigo_filho_esta_correto_com_nome_do_desenho(df_excel)
             elif tipo_da_bom == "peca":
                 validar_codigo_filho_com_nome_desenho = True
             else:
@@ -499,15 +499,15 @@ class CadastrarBomTOTVS:
         
         if validar_codigo_filho_com_nome_desenho:
             if validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and validar_codigo_filho_com_nome_desenho:
-                codigos_filho_tem_cadastro = verificar_cadastro_codigo_filho(df_excel.iloc[:, indice_coluna_codigo_excel].tolist())      
+                codigos_filho_tem_cadastro = self.verificar_cadastro_codigo_filho(df_excel.iloc[:, self.indice_coluna_codigo_excel].tolist())      
                 if codigos_filho_tem_cadastro:          
-                    df_excel_campo_dimensao_tratado = formatar_campos_dimensao(df_excel)
-                    bom_excel_sem_duplicatas = remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
-                    bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].str.strip()     
-                    existe_codigo_filho_repetido = verificar_codigo_repetido(bom_excel_sem_duplicatas)        
-                    nao_existe_codigo_bloqueado = validacao_codigo_bloqueado(df_excel)          
-                    codigos_filho_tem_estrutura = verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, indice_coluna_codigo_excel].tolist())
-                    pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)       
+                    df_excel_campo_dimensao_tratado = self.formatar_campos_dimensao(df_excel)
+                    bom_excel_sem_duplicatas = self.remover_linhas_duplicadas_e_consolidar_quantidade(df_excel_campo_dimensao_tratado)
+                    bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel] = bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel].str.strip()     
+                    existe_codigo_filho_repetido = self.verificar_codigo_repetido(bom_excel_sem_duplicatas)        
+                    nao_existe_codigo_bloqueado = self.validacao_codigo_bloqueado(df_excel)          
+                    codigos_filho_tem_estrutura = self.verificar_se_existe_estrutura_codigos_filho(bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel].tolist())
+                    pesos_maiores_que_zero_kg = self.validacao_pesos_unidade_kg(df_excel)       
                     if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
                         return bom_excel_sem_duplicatas
         #excluir_arquivo_excel_bom(excel_file_path)
@@ -515,10 +515,10 @@ class CadastrarBomTOTVS:
 
 
     def atualizar_campo_revisao_do_codigo_pai(self, codigo_pai, numero_revisao):
-        query_atualizar_campo_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
+        query_atualizar_campo_revisao = f"""UPDATE {self.database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
         try:
             # Uso do Context Manager para garantir o fechamento adequado da conexão
-            with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            with pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}') as conn:
                 cursor = conn.cursor()
                 cursor.execute(query_atualizar_campo_revisao)
                 return True
@@ -529,10 +529,10 @@ class CadastrarBomTOTVS:
 
 
     def atualizar_campo_data_ultima_revisao_do_codigo_pai(self, codigo_pai):
-        data_atual = formatar_data_atual()
-        query_atualizar_data_ultima_revisao = f"""UPDATE {database}.dbo.SB1010 SET B1_UREV = N'{data_atual}' WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
+        data_atual = self.formatar_data_atual()
+        query_atualizar_data_ultima_revisao = f"""UPDATE {self.database}.dbo.SB1010 SET B1_UREV = N'{data_atual}' WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
         try:
-            with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            with pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}') as conn:
                 cursor = conn.cursor()
                 cursor.execute(query_atualizar_data_ultima_revisao)
                 return True
@@ -544,15 +544,15 @@ class CadastrarBomTOTVS:
     def verificar_se_existe_estrutura_codigo_pai(self, codigo_pai):
         try:
             # Tente estabelecer a conexão com o banco de dados
-            conn_str = f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+            conn_str = f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}'
             engine = create_engine(f'mssql+pyodbc:///?odbc_connect={conn_str}')
 
             query_consulta_estrutura_totvs = f"""
-                SELECT * FROM {database}.dbo.SG1010
+                SELECT * FROM {self.database}.dbo.SG1010
                 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
                     AND G1_REVFIM = (
                         SELECT MAX(G1_REVFIM)
-                        FROM {database}.dbo.SG1010
+                        FROM {self.database}.dbo.SG1010
                         WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
                     );
             """
@@ -572,11 +572,11 @@ class CadastrarBomTOTVS:
                 engine.dispose()
 
                 
-    def obter_ultima_pk_tabela_estrutura():
-        query_ultima_pk_tabela_estrutura = f"""SELECT TOP 1 R_E_C_N_O_ FROM {database}.dbo.SG1010 ORDER BY R_E_C_N_O_ DESC;"""
+    def obter_ultima_pk_tabela_estrutura(self):
+        query_ultima_pk_tabela_estrutura = f"""SELECT TOP 1 R_E_C_N_O_ FROM {self.database}.dbo.SG1010 ORDER BY R_E_C_N_O_ DESC;"""
         try:
             # Uso do Context Manager para garantir o fechamento adequado da conexão
-            with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            with pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}') as conn:
                 cursor = conn.cursor()
                 cursor.execute(query_ultima_pk_tabela_estrutura)
                 resultado_ultima_pk_tabela_estrutura = cursor.fetchone()
@@ -590,10 +590,10 @@ class CadastrarBomTOTVS:
         
         
     def obter_revisao_codigo_pai(self, codigo_pai, primeiro_cadastro):
-        query_revisao_inicial = f"""SELECT B1_REVATU FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""   
+        query_revisao_inicial = f"""SELECT B1_REVATU FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""   
         try:
             # Uso do Context Manager para garantir o fechamento adequado da conexão
-            with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            with pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}') as conn:
                 cursor = conn.cursor()
                 cursor.execute(query_revisao_inicial)
                 revisao_inicial = cursor.fetchone()
@@ -616,9 +616,9 @@ class CadastrarBomTOTVS:
         
         
     def obter_unidade_medida_codigo_filho(self, codigo_filho):
-        query_unidade_medida_codigo_filho = f"""SELECT B1_UM FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_filho}'"""
+        query_unidade_medida_codigo_filho = f"""SELECT B1_UM FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_filho}'"""
         try:
-            with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            with pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}') as conn:
                 cursor = conn.cursor()
                 cursor.execute(query_unidade_medida_codigo_filho)
                 
@@ -639,9 +639,9 @@ class CadastrarBomTOTVS:
 
 
     def verificar_cadastro_codigo_pai(self, codigo_pai):
-        query_consulta_produto_codigo_pai = f"""SELECT B1_COD FROM {database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""  
+        query_consulta_produto_codigo_pai = f"""SELECT B1_COD FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""  
         try:
-            with pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}') as conn:
+            with pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}') as conn:
                 cursor = conn.cursor()
                 cursor.execute(query_consulta_produto_codigo_pai)
                     
@@ -650,7 +650,7 @@ class CadastrarBomTOTVS:
                 if resultado:
                     return True
                 else:
-                    exibir_mensagem(titulo_janela, f"O cadastro do item pai não foi encontrado!\n\nEfetue o cadastro do código {codigo_pai} e, em seguida, tente novamente.\n\nツ", "warning") 
+                    self.exibir_mensagem(self.titulo_janela, f"O cadastro do item pai não foi encontrado!\n\nEfetue o cadastro do código {codigo_pai} e, em seguida, tente novamente.\n\nツ", "warning") 
                     return False
             
         except Exception as ex:
@@ -660,11 +660,11 @@ class CadastrarBomTOTVS:
                 
     def criar_nova_estrutura_totvs(self, codigo_pai, bom_excel_sem_duplicatas): 
         primeiro_cadastro = True
-        ultima_pk_tabela_estrutura = obter_ultima_pk_tabela_estrutura()
-        revisao_inicial = obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
-        data_atual_formatada = formatar_data_atual()
+        ultima_pk_tabela_estrutura = self.obter_ultima_pk_tabela_estrutura()
+        revisao_inicial = self.obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
+        data_atual_formatada = self.formatar_data_atual()
         
-        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+        conn = pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
         
         try:
             
@@ -672,19 +672,19 @@ class CadastrarBomTOTVS:
                 
             for index, row in bom_excel_sem_duplicatas.iterrows():
                 ultima_pk_tabela_estrutura += 1
-                codigo_filho = row.iloc[indice_coluna_codigo_excel]
-                quantidade = row.iloc[indice_coluna_quantidade_excel]
-                unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+                codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
+                quantidade = row.iloc[self.indice_coluna_quantidade_excel]
+                unidade_medida = self.obter_unidade_medida_codigo_filho(codigo_filho)
                 
                 if unidade_medida == 'KG':
-                    quantidade = row.iloc[indice_coluna_peso_excel]
+                    quantidade = row.iloc[self.indice_coluna_peso_excel]
                 elif unidade_medida in ('MT', 'M2'):
-                    quantidade = row.iloc[indice_coluna_dimensao]
+                    quantidade = row.iloc[self.indice_coluna_dimensao]
                     
                 quantidade_formatada = "{:.2f}".format(float(quantidade))
                 
                 query_criar_nova_estrutura_totvs = f"""
-                    INSERT INTO {database}.dbo.SG1010 
+                    INSERT INTO {self.database}.dbo.SG1010 
                     (G1_FILIAL, G1_COD, G1_COMP, G1_TRT, G1_XUM, G1_QUANT, G1_PERDA, G1_INI, G1_FIM, G1_OBSERV, G1_FIXVAR, G1_GROPC, G1_OPC, G1_REVINI, G1_NIV, G1_NIVINV, G1_REVFIM, 
                     G1_OK, G1_POTENCI, G1_TIPVEC, G1_VECTOR, G1_VLCOMPE, G1_LOCCONS, G1_USAALT, G1_FANTASM, G1_LISTA, D_E_L_E_T_, R_E_C_N_O_, R_E_C_D_E_L_) 
                     VALUES (N'0101', N'{codigo_pai}  ', N'{codigo_filho}  ', N'   ', N'{unidade_medida}', {quantidade_formatada}, 0.0, N'{data_atual_formatada}', N'20491231', 
@@ -697,7 +697,7 @@ class CadastrarBomTOTVS:
                 
             conn.commit()
             
-            exibir_mensagem(titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®", "info")
+            self.exibir_mensagem(self.titulo_janela, f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®", "info")
             return True, revisao_inicial
             
         except Exception as ex:
@@ -733,27 +733,27 @@ class CadastrarBomTOTVS:
         
         
     def atualizar_itens_estrutura_totvs(self, codigo_pai, dataframe_codigos_em_comum):
-        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+        conn = pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
         
         try:
             
             cursor = conn.cursor()
                 
             for index, row in dataframe_codigos_em_comum.iterrows():
-                codigo_filho = row.iloc[indice_coluna_codigo_excel]
-                quantidade = row.iloc[indice_coluna_quantidade_excel]
-                unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+                codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
+                quantidade = row.iloc[self.indice_coluna_quantidade_excel]
+                unidade_medida = self.obter_unidade_medida_codigo_filho(codigo_filho)
                 
                 if unidade_medida == 'KG':
-                    quantidade = row.iloc[indice_coluna_peso_excel]
+                    quantidade = row.iloc[self.indice_coluna_peso_excel]
                 elif unidade_medida in ('MT', 'M2'):
-                    quantidade = row.iloc[indice_coluna_dimensao]
+                    quantidade = row.iloc[self.indice_coluna_dimensao]
                     
                 quantidade_formatada = "{:.2f}".format(float(quantidade))
                 
-                query_alterar_quantidade_estrutura = f"""UPDATE {database}.dbo.SG1010 SET G1_QUANT = {quantidade_formatada} WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
+                query_alterar_quantidade_estrutura = f"""UPDATE {self.database}.dbo.SG1010 SET G1_QUANT = {quantidade_formatada} WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
                     AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {self.database}.dbo.SG1010 WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
                 """  
                 
                 cursor.execute(query_alterar_quantidade_estrutura)
@@ -769,10 +769,10 @@ class CadastrarBomTOTVS:
 
 
     def inserir_itens_estrutura_totvs(self, codigo_pai, dataframe_codigos_adicionados_bom, revisao_atualizada_estrutura):
-        ultima_pk_tabela_estrutura = obter_ultima_pk_tabela_estrutura()
-        data_atual_formatada = formatar_data_atual()
+        ultima_pk_tabela_estrutura = self.obter_ultima_pk_tabela_estrutura()
+        data_atual_formatada = self.formatar_data_atual()
         revisao_inicial = revisao_atualizada_estrutura
-        conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+        conn = pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
         
         try:
             
@@ -780,19 +780,19 @@ class CadastrarBomTOTVS:
                 
             for index, row in dataframe_codigos_adicionados_bom.iterrows():
                 ultima_pk_tabela_estrutura += 1
-                codigo_filho = row.iloc[indice_coluna_codigo_excel]
-                quantidade = row.iloc[indice_coluna_quantidade_excel]
-                unidade_medida = obter_unidade_medida_codigo_filho(codigo_filho)
+                codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
+                quantidade = row.iloc[self.indice_coluna_quantidade_excel]
+                unidade_medida = self.obter_unidade_medida_codigo_filho(codigo_filho)
                 
                 if unidade_medida == 'KG':
-                    quantidade = row.iloc[indice_coluna_peso_excel]
+                    quantidade = row.iloc[self.indice_coluna_peso_excel]
                 elif unidade_medida in ('MT', 'M2'):
-                    quantidade = row.iloc[indice_coluna_dimensao]
+                    quantidade = row.iloc[self.indice_coluna_dimensao]
                 
                 quantidade_formatada = "{:.2f}".format(float(quantidade))
                 
                 query_criar_nova_estrutura_totvs = f"""
-                    INSERT INTO {database}.dbo.SG1010 
+                    INSERT INTO {self.database}.dbo.SG1010 
                     (G1_FILIAL, G1_COD, G1_COMP, G1_TRT, G1_XUM, G1_QUANT, G1_PERDA, G1_INI, G1_FIM, G1_OBSERV, G1_FIXVAR, G1_GROPC, G1_OPC, G1_REVINI, G1_NIV, G1_NIVINV, G1_REVFIM, 
                     G1_OK, G1_POTENCI, G1_TIPVEC, G1_VECTOR, G1_VLCOMPE, G1_LOCCONS, G1_USAALT, G1_FANTASM, G1_LISTA, D_E_L_E_T_, R_E_C_N_O_, R_E_C_D_E_L_) 
                     VALUES (N'0101', N'{codigo_pai}  ', N'{codigo_filho}  ', N'   ', N'{unidade_medida}', {quantidade_formatada}, 0.0, N'{data_atual_formatada}', N'20491231', 

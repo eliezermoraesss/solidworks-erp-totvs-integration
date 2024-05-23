@@ -306,7 +306,7 @@ def formatar_campos_dimensao(dataframe):
         {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
         exibir_mensagem(titulo_janela, mensagem_fixa + mensagem, "info")      
     if items_mt_m2_dimensao_incorreta or items_unidade_incorreta:
-        excluir_arquivo_excel_bom(excel_file_path)
+        #excluir_arquivo_excel_bom(excel_file_path)
         sys.exit()
 
     return df_campo_dimensao_formatado
@@ -477,7 +477,7 @@ def validacao_de_dados_bom(excel_file_path):
                 pesos_maiores_que_zero_kg = validacao_pesos_unidade_kg(df_excel)       
                 if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
                     return bom_excel_sem_duplicatas
-    excluir_arquivo_excel_bom(excel_file_path)
+    #excluir_arquivo_excel_bom(excel_file_path)
     sys.exit()
 
 
@@ -931,7 +931,7 @@ formatos_codigo = [
 
 regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-nome_desenho = ler_variavel_ambiente_codigo_desenho()
+nome_desenho = 'M-033-015-142' # ler_variavel_ambiente_codigo_desenho()
 excel_file_path = obter_caminho_arquivo_excel(nome_desenho)
 formato_codigo_pai_correto = validar_formato_codigo_pai(nome_desenho)
 revisao_atualizada = None
@@ -944,7 +944,7 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
     bom_excel_sem_duplicatas = validacao_de_dados_bom(excel_file_path)
     resultado_estrutura_codigo_pai = verificar_se_existe_estrutura_codigo_pai(nome_desenho)
     
-    excluir_arquivo_excel_bom(excel_file_path)
+    #excluir_arquivo_excel_bom(excel_file_path)
 
     if not bom_excel_sem_duplicatas.empty and resultado_estrutura_codigo_pai.empty:
         nova_estrutura_cadastrada, revisao_atualizada = criar_nova_estrutura_totvs(nome_desenho, bom_excel_sem_duplicatas)
@@ -983,5 +983,5 @@ if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                     exibir_mensagem(titulo_janela, f"Atualização da estrutura realizada com sucesso!\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®", "info")
             else:
                 exibir_mensagem(titulo_janela,f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou removido itens da estrutura.\n\n{nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®","info")
-else:
-    excluir_arquivo_excel_bom(excel_file_path)
+#else:
+    #excluir_arquivo_excel_bom(excel_file_path)
