@@ -10,7 +10,6 @@ import threading
 import time
 from sqlalchemy import create_engine
 import sys
-import inspect
 
 class CadastrarBomTOTVS:
     def __init__(self, root):
@@ -40,8 +39,6 @@ class CadastrarBomTOTVS:
         self.indice_coluna_dimensao = 5
         self.indice_coluna_peso_excel = 6
         self.indice_coluna_nome_arquivo = 8
-        
-        self.ultima_linha = 0
 
         self.formatos_codigo = [
                 r'^(C|M)\-\d{3}\-\d{3}\-\d{3}$',
@@ -52,10 +49,10 @@ class CadastrarBomTOTVS:
 
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-        self.nome_desenho = 'E7047-008-187' # ler_variavel_ambiente_codigo_desenho()
+        self.nome_desenho = self.ler_variavel_ambiente_codigo_desenho()
 
     def setup_mssql(self):
-        caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
+        caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_PROD.txt"
         try:
             with open(caminho_do_arquivo, 'r') as arquivo:
                 string_lida = arquivo.read()
@@ -351,7 +348,7 @@ class CadastrarBomTOTVS:
             {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
             self.exibir_mensagem(self.titulo_janela, mensagem_fixa + mensagem, "info")      
         if items_mt_m2_dimensao_incorreta or items_unidade_incorreta:
-            #self.excluir_arquivo_excel_bom(excel_file_path)
+            #self.excluir_arquivo_excel_bom(self.excel_file_path)
             sys.exit()
 
         return df_campo_dimensao_formatado
