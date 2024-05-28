@@ -559,7 +559,7 @@ class ConsultaApp(QWidget):
 
         if item_selecionado:
             codigo = self.tree.item(item_selecionado.row(), 0).text()
-            pdf_path = os.path.join("Y:/PDF-OFICIAL/", f"{codigo}.PDF")
+            pdf_path = os.path.join(r"\\192.175.175.4\dados\EMPRESA\PROJETOS\PDF-OFICIAL", f"{codigo}.PDF")
             pdf_path = os.path.normpath(pdf_path)
 
             if os.path.exists(pdf_path):

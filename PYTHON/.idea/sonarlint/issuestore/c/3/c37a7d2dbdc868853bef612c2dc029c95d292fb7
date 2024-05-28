@@ -1,17 +1,5 @@
 
-python:S1192Ğ"LDefine a constant instead of duplicating this literal "DESC. GRUPO" 3 times.(‰ñì¨şÿÿÿÿJ$57b6ca33-5479-4a0d-a385-3b7f7dbf587b
-Œpython:S1192Ğ"HDefine a constant instead of duplicating this literal "CÃ“DIGO" 3 times.(‰ñì¨şÿÿÿÿJ$b4d46fba-1ed7-4e6f-8e33-c249f4c39636
-python:S1192Ğ"LDefine a constant instead of duplicating this literal "DESCRIÃ‡ÃƒO" 3 times.(‰ñì¨şÿÿÿÿJ$8266e4ad-823c-4ad9-b69f-996efb191d71
-‡python:S1192p"IDefine a constant instead of duplicating this literal "Segoe UI" 4 times.(îÎñ¹J$dc5645ac-f492-4ef9-9b0a-595cc753674a
-python:S1192Ğ"LDefine a constant instead of duplicating this literal "DESC. COMP." 3 times.(‰ñì¨şÿÿÿÿJ$6fe22a9a-0c7f-4043-a069-f3de8ca9c4a6
-python:S1192Ğ"KDefine a constant instead of duplicating this literal "BLOQUEADO?" 3 times.(‰ñì¨şÿÿÿÿJ$d5e93d36-1c94-420f-9981-3324ca3a3f5b
-python:S1192Ğ"IDefine a constant instead of duplicating this literal "ARMAZÃ‰M" 3 times.(‰ñì¨şÿÿÿÿJ$91735aa5-f857-4c57-afb9-740930f71e34
-npython:S1066­"/Merge this if statement with the enclosing one.(Óó¿‹J$a8547fca-14f3-4e85-a7fc-f255abd4131c
-ipython:S1481»"%Remove the unused local variable "e".(¼–¯¸ÿÿÿÿÿJ$3485981d-62da-4258-a3c6-3ceac9645a6c
-„python:S3457¼"EAdd replacement fields or use a normal string instead of an f-string.(ÿ•ØèJ$bee4365e-846e-4b19-95ec-8ca8a58dadff
-–python:S117˜"XRename this parameter "logicalIndex" to match the regular expression ^[_a-z][a-z0-9_]*$.(àší®J$654d0c03-0a1a-4d8b-a6dd-e47df7f833ac
-hpython:S1481›")Remove the unused local variable "cores".(Á‰–ÊJ$8cb9bf3e-158a-4ea2-a769-5656385dbb7a
-˜python:S3776ÿ"TRefactor this function to reduce its Cognitive Complexity from 24 to the 15 allowed.(²ê‘úÿÿÿÿJ$bf8bbd48-5681-4d09-816a-161542386a2d
-„python:S3457Ó"EAdd replacement fields or use a normal string instead of an f-string.(ãÔşJ$d41c2a20-ee9d-4c99-82f9-3d8bf7df0000
-˜python:S3776…"TRefactor this function to reduce its Cognitive Complexity from 29 to the 15 allowed.(¼¸äÅúÿÿÿÿJ$32da49f8-2e15-458c-8068-59a659d38765
-’python:S3776£"TRefactor this function to reduce its Cognitive Complexity from 16 to the 15 allowed.(÷êLJ$278fbfe9-0160-46d4-9978-8af8255e308c
+upython:S1066Õ"/Merge this if statement with the enclosing one.(Óó¿‹8ÎÇ†„ü1J$b4eeeacd-df3a-44a1-9f0f-66b816be15f8
+ppython:S1481š"%Remove the unused local variable "e".(¼–¯¸ÿÿÿÿÿ8ÏÇ†„ü1J$13a08a8c-7afc-4c3c-aafe-2e6932a09af8
+python:S117à"XRename this parameter "logicalIndex" to match the regular expression ^[_a-z][a-z0-9_]*$.(àší®8ÏÇ†„ü1J$e83d9e83-2924-44d6-9a43-54a1ea137c40
+‹python:S3457ù"EAdd replacement fields or use a normal string instead of an f-string.(ãÔş8ÏÇ†„ü1J$57a94699-b7a3-44c9-902d-95b57302bcd9
