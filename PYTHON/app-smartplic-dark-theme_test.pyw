@@ -288,7 +288,7 @@ class EngenhariaApp(QWidget):
             data = self.obter_dados_tabela()
 
             # Criar um DataFrame pandas
-            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM","GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?", "REV.", ""])
+            df = pd.DataFrame(data, columns=["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?","REV.", "DATA CADASTRO", "DATA ULT. REV.",""])
 
             # Salvar o DataFrame como um arquivo Excel
             df.to_excel(file_path, index=False)

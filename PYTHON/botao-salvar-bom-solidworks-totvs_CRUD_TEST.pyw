@@ -49,7 +49,7 @@ class CadastrarBomTOTVS:
 
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-        self.nome_desenho = 'E7047-008-187' # self.ler_variavel_ambiente_codigo_desenho()
+        self.nome_desenho = 'E7047-001-303' # self.ler_variavel_ambiente_codigo_desenho()
 
     def setup_mssql(self):
         caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
@@ -466,15 +466,16 @@ class CadastrarBomTOTVS:
             return False
         else:
             return True
-        
+
 
     def verificar_se_template_bom_esta_correto(self, dataframe):
-        # Quando o dataframe ter apenas uma linha não se aplica a regra de verificação de código filho errado, 
-        # pois é desenho de matéria-prima -> Template BOM SW BOM-P_NOVO.sldbomtbt
-        if dataframe.shape[0] > 1 and dataframe.shape[1] > 9: 
+        if dataframe.shape[0] >= 1 and dataframe.shape[1] > 9: 
             return True, "montagem"
-        elif dataframe.shape[0] == 1 and dataframe.shape[1] >= 8:
+        elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 9:
             return True, "peca"
+        elif dataframe.shape[0] == 0:
+            self.exibir_mensagem(self.titulo_janela,f"ATENÇÃO!\n\nBOM VAZIA!\n\nツ\n\nSMARTPLIC®","info")
+            return False, ""
         else:
             self.exibir_mensagem(self.titulo_janela,f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®","info")
             return False, ""
