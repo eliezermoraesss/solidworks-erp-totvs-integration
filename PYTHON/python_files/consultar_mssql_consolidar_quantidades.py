@@ -7,11 +7,13 @@ username = 'coognicao'
 password = '0705@Abc'
 driver = '{ODBC Driver 17 for SQL Server}'
 
+codigo = 'M-059-005-610'
+
 conn = pyodbc.connect(f'DRIVER={driver};SERVER={server};DATABASE={database};UID={username};PWD={password}')
 
 # Definir a query
-query = """
-DECLARE @CodigoPai VARCHAR(50) = 'M-059-005-610'; -- Substitua pelo código pai que deseja consultar
+query = f"""
+DECLARE @CodigoPai VARCHAR(50) = '{codigo}'; -- Substitua pelo código pai que deseja consultar
 
 -- CTE para selecionar os itens pai e seus subitens recursivamente
 WITH ListMP AS (
@@ -35,11 +37,8 @@ WITH ListMP AS (
 )
 
 -- Selecione todas as matérias-primas (tipo = 'MP') que correspondem aos itens encontrados
-SELECT DISTINCT 
-    pai."CÓDIGO" AS "CÓDIGO PAI",
-    mat.D_E_L_E_T_, 
-    mat.R_E_C_N_O_, 
-    mat.G1_REVFIM, 
+SELECT DISTINCT
+    mat.G1_COD AS "CODIGO PAI",
     mat.G1_COMP AS "CÓDIGO", 
     prod.B1_DESC AS "DESCRIÇÃO", 
     mat.G1_QUANT AS "QUANT.", 
@@ -47,11 +46,13 @@ SELECT DISTINCT
     prod.B1_UCOM AS "ULT. ATUALIZ.",
     prod.B1_TIPO AS "TIPO", 
     prod.B1_LOCPAD AS "ARMAZÉM", 
-    prod.B1_UPRC AS "VALOR UNIT. (R$)"
+    prod.B1_UPRC AS "VALOR UNIT. (R$)",
+    (G1_QUANT * B1_UPRC) AS "VALOR TOTAL (R$)"
 FROM SG1010 AS mat
 INNER JOIN ListMP AS pai ON mat.G1_COD = pai."CÓDIGO"
 INNER JOIN SB1010 AS prod ON mat.G1_COMP = prod.B1_COD
-WHERE prod.B1_TIPO = 'MP' 
+WHERE prod.B1_TIPO = 'MP'
+AND prod.B1_LOCPAD IN ('01','03')
 AND mat.G1_REVFIM <> 'ZZZ' 
 AND mat.D_E_L_E_T_ <> '*'
 ORDER BY mat.G1_COMP ASC;
@@ -62,19 +63,23 @@ df = pd.read_sql(query, conn)
 
 # Consolidar a quantidade conforme os códigos duplicados
 consolidated_df = df.groupby('CÓDIGO').agg({
-    'CÓDIGO PAI': 'first',
-    'QUANT.': 'sum',
     'DESCRIÇÃO': 'first',
+    'QUANT.': 'sum',
     'UNID. MED.': 'first',
-    'VALOR UNIT. (R$)': 'first'
+    'ULT. ATUALIZ.': 'first',
+    'TIPO': 'first',
+    'ARMAZÉM': 'first',
+    'VALOR UNIT. (R$)': 'first',
+    'VALOR TOTAL (R$)': 'sum'
 }).reset_index()
 
 # Fechar a conexão com o banco de dados
 conn.close()
 
 # Salvar o DataFrame consolidado em um arquivo Excel
-output_file = 'MP_POR_ESTRUTURA.xlsx'
+output_file = f'{codigo}_MP_POR_ESTRUTURA.xlsx'
 consolidated_df.to_excel(output_file, index=False, engine='openpyxl')
 
 # Mostrar o DataFrame consolidado
 print(consolidated_df)
+''

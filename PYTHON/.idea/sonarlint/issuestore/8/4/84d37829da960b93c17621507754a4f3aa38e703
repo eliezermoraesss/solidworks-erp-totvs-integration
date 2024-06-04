@@ -1,18 +1,0 @@
-
-python:S1192}"IDefine a constant instead of duplicating this literal "Segoe UI" 4 times.(îÎñ¹8èÌÅ€ü1J$43c56cbd-30b5-455e-bce9-3e0fdff92adc
-–python:S1192«"KDefine a constant instead of duplicating this literal "BLOQUEADO?" 3 times.(úÑÜ¶ùÿÿÿÿ8éÌÅ€ü1J$fc6efe17-cbce-462b-b0bc-559f0adce50c
-python:S1192ª"IDefine a constant instead of duplicating this literal "ARMAZÃ‰M" 3 times.(ØšĞö8éÌÅ€ü1J$a5f18677-3de3-480e-bbdc-d4e40bcfd132
-—python:S1192«"LDefine a constant instead of duplicating this literal "DESC. GRUPO" 3 times.(úÑÜ¶ùÿÿÿÿ8éÌÅ€ü1J$f02058fa-8a0f-43ed-93d3-b1d426994d46
-python:S1192ª"HDefine a constant instead of duplicating this literal "CÃ“DIGO" 3 times.(ØšĞö8éÌÅ€ü1J$8d5be8a0-7b40-4732-824d-88a4b7e5bbf4
-’python:S1192ª"LDefine a constant instead of duplicating this literal "DESCRIÃ‡ÃƒO" 3 times.(ØšĞö8éÌÅ€ü1J$1006247c-e55a-419c-afe5-ecf9312749c7
-’python:S1192ª"LDefine a constant instead of duplicating this literal "DESC. COMP." 3 times.(ØšĞö8éÌÅ€ü1J$6c48f378-ff7c-4c5c-9891-49fb1b6ba81c
-upython:S1066œ"/Merge this if statement with the enclosing one.(Óó¿‹8éÌÅ€ü1J$0dfb45e8-a73a-49f8-a742-2897b390f571
-ppython:S1481”"%Remove the unused local variable "e".(¼–¯¸ÿÿÿÿÿ8éÌÅ€ü1J$10a2fbe3-b5ea-418a-8a0b-efaecc871d6c
-Špython:S3457"EAdd replacement fields or use a normal string instead of an f-string.(¤‹³"8éÌÅ€ü1J$40ea395d-7d58-4757-9928-5aa7038478ea
-‹python:S3457•"EAdd replacement fields or use a normal string instead of an f-string.(Ÿø«µ8éÌÅ€ü1J$37bc85fc-4bc5-489b-a400-0cbc4550ffa3
-python:S117€"XRename this parameter "logicalIndex" to match the regular expression ^[_a-z][a-z0-9_]*$.(àší®8éÌÅ€ü1J$b40c3b0c-2e97-4dc8-b806-6e0c47ef4a8b
-opython:S1481Š")Remove the unused local variable "cores".(Á‰–Ê8éÌÅ€ü1J$61be46ff-14da-4a89-8230-b636e5385193
-Ÿpython:S3776ï"TRefactor this function to reduce its Cognitive Complexity from 24 to the 15 allowed.(²ê‘úÿÿÿÿ8éÌÅ€ü1J$4064b0d9-6f6f-46b9-9210-fb88f4186972
-‹python:S3457Á"EAdd replacement fields or use a normal string instead of an f-string.(ãÔş8éÌÅ€ü1J$c5747143-6571-4516-8450-3a2bdc2a1baf
-Ÿpython:S3776ì"TRefactor this function to reduce its Cognitive Complexity from 29 to the 15 allowed.(¼¸äÅúÿÿÿÿ8êÌÅ€ü1J$a96432ee-d03e-43f0-9edd-923e47a25c4e
-™python:S3776"TRefactor this function to reduce its Cognitive Complexity from 16 to the 15 allowed.(÷êL8êÌÅ€ü1J$56e55e80-99ee-4b67-9270-30e59448bfb2
