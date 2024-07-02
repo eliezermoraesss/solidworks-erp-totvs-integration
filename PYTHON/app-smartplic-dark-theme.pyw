@@ -893,7 +893,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
     username, password, database, server = ConsultaApp().setup_mssql()
-    driver = '{ODBC Driver 17 for SQL Server}'
+    driver = '{SQL Server}'
 
     largura_janela = 1400  # Substitua pelo valor desejado
     altura_janela = 700  # Substitua pelo valor desejado
