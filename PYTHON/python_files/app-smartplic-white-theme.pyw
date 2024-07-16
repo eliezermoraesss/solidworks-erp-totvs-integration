@@ -19,7 +19,11 @@ class ConsultaApp(QWidget):
     def __init__(self):
         super().__init__()
         
+<<<<<<< HEAD:PYTHON/app-smartplic-dark-theme DB_TEST.pyw
+        self.setWindowTitle("SMARTPLIC® v2.2.1 - Dark theme - TEST_DB")
+=======
         self.setWindowTitle("SMARTPLIC® v2.2 - White theme")
+>>>>>>> DEV:PYTHON/python_files/app-smartplic-white-theme.pyw
         
         # Configurar o ícone da janela
         icon_path = "010.png"
@@ -68,7 +72,12 @@ class ConsultaApp(QWidget):
             }
 
             QPushButton:hover {
+<<<<<<< HEAD:PYTHON/app-smartplic-dark-theme DB_TEST.pyw
+                background-color: #fff;
+                color: #0a79f8
+=======
                 background-color: #0c9af8;
+>>>>>>> DEV:PYTHON/python_files/app-smartplic-white-theme.pyw
             }
 
             QPushButton:pressed {
@@ -287,9 +296,9 @@ class ConsultaApp(QWidget):
 
     def configurar_tabela(self):
         self.tree = QTableWidget(self)
-        self.tree.setColumnCount(12)
+        self.tree.setColumnCount(14)
         self.tree.setHorizontalHeaderLabels(
-            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?","REV.", ""])
+            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?","REV.", "DATA CADASTRO", "DATA ULT. REV.",""])
         self.tree.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.tree.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tree.setSelectionBehavior(QTableWidget.SelectRows)
@@ -410,6 +419,41 @@ class ConsultaApp(QWidget):
         grupo = self.grupo_var.text().upper().strip()
         desc_grupo = self.grupo_desc_var.text().upper().strip()
         
+<<<<<<< HEAD:PYTHON/app-smartplic-dark-theme DB_TEST.pyw
+        if codigo == '' and descricao == '' and descricao2 == '' and tipo == '' and um == '' and armazem == '' and grupo == '' and desc_grupo == '':
+            self.btn_consultar.setEnabled(False)
+            self.exibir_mensagem("ATENÇÃO!", "Os campos de pesquisa estão vazios.\nPreencha algum campo e tente novamente.\n\nツ\n\nSMARTPLIC®", "info")
+            return True
+        
+        if status_checkbox:
+            status_bloqueado = '1'
+            return f"""
+                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU, B1_DATREF, B1_UREV
+                FROM {database}.dbo.SB1010
+                WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
+                AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
+                AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND B1_MSBLQL = '{status_bloqueado}'
+                AND D_E_L_E_T_ <> '*'
+                ORDER BY B1_COD ASC"""
+        else:
+            return f"""
+                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU, B1_DATREF, B1_UREV
+                FROM {database}.dbo.SB1010
+                WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
+                AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
+                AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND D_E_L_E_T_ <> '*'
+                ORDER BY B1_COD ASC"""
+ 
+    def executar_consulta(self):    
+        select_query = self.selecionar_query_conforme_filtro()
+
+
+        if isinstance(select_query, bool) and select_query:
+            self.btn_consultar.setEnabled(True)
+            return
+        
+        self.bloquear_campos_pesquisa()
+=======
         # Construir a query de consulta
         select_query = f"""
         SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU
@@ -418,6 +462,7 @@ class ConsultaApp(QWidget):
         AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' AND B1_ZZNOGRP LIKE '%{desc_grupo}%'
         AND D_E_L_E_T_ <> '*'
         ORDER BY B1_COD ASC"""
+>>>>>>> DEV:PYTHON/python_files/app-smartplic-white-theme.pyw
 
         try:
             # Estabelecer a conexão com o banco de dados
@@ -443,9 +488,6 @@ class ConsultaApp(QWidget):
 
             # Preencher a tabela com os resultados
             for i, row in enumerate(cursor.fetchall()):
-                # Calcular índice da cor alternada
-                indice_cor = i % 2
-                cor_fundo = cores[indice_cor]
 
                 self.tree.setSortingEnabled(False)  # Permitir ordenação
                 # Inserir os valores formatados na tabela
@@ -457,8 +499,16 @@ class ConsultaApp(QWidget):
                             value = 'Sim'
                         else:
                             value = 'Não'
+                    elif j == 11 or j == 12:
+                        if not value.isspace():
+                            data_obj = datetime.strptime(value, "%Y%m%d")   
+                            value = data_obj.strftime("%d/%m/%Y")
+                                
                     item = QTableWidgetItem(str(value).strip())
-                    item.setBackground(cor_fundo)  # Definir cor de fundo
+                    
+                    if j != 0 and j != 1:
+                        item.setTextAlignment(Qt.AlignCenter)
+                        
                     self.tree.setItem(i, j, item)
 
                 # Permitir que a interface gráfica seja atualizada
@@ -798,7 +848,11 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
 
+<<<<<<< HEAD:PYTHON/app-smartplic-dark-theme DB_TEST.pyw
+    largura_janela = 1400  # Substitua pelo valor desejado
+=======
     largura_janela = 1200  # Substitua pelo valor desejado
+>>>>>>> DEV:PYTHON/python_files/app-smartplic-white-theme.pyw
     altura_janela = 700 # Substitua pelo valor desejado
 
     largura_tela = app.primaryScreen().size().width()
