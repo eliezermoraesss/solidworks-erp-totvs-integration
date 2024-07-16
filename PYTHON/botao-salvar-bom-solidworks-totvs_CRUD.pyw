@@ -15,7 +15,7 @@ class CadastrarBomTOTVS:
     def __init__(self, root):
         # Leitura dos parâmetros de conexão com o banco de dados SQL Server
         self.username, self.password, self.database, self.server = self.setup_mssql()
-        self.driver = '{ODBC Driver 17 for SQL Server}'
+        self.driver = '{SQL Server}'
         
         root.title("Monitor de progresso")
         self.start_time = time.time()
