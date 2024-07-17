@@ -11,6 +11,7 @@ import time
 from sqlalchemy import create_engine
 import sys
 
+
 class CadastrarBomTOTVS:
     def __init__(self, root):
         # Leitura dos parâmetros de conexão com o banco de dados SQL Server
@@ -1061,4 +1062,3 @@ if __name__ == "__main__":
     root.attributes('-topmost', True)
     root.geometry("400x200")
     root.mainloop()
-    

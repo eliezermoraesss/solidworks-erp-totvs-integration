@@ -328,10 +328,16 @@ class ConsultaApp(QWidget):
 
     def configurar_tabela(self):
         self.tree = QTableWidget(self)
+<<<<<<< HEAD
+        self.tree.setColumnCount(14)
+        self.tree.setHorizontalHeaderLabels(
+            ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?","REV.", "DATA CADASTRO", "DATA ULT. REV.",""])
+=======
         self.tree.setColumnCount(15)
         self.tree.setHorizontalHeaderLabels(
             ["CÓDIGO", "DESCRIÇÃO", "DESC. COMP.", "TIPO", "UM", "ARMAZÉM", "GRUPO", "DESC. GRUPO", "CC", "BLOQUEADO?",
              "REV.", "DATA CADASTRO", "DATA ULT. REV.", "LOCALIZ." , ""])
+>>>>>>> DEV
         self.tree.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.tree.setEditTriggers(QTableWidget.NoEditTriggers)
         self.tree.setSelectionBehavior(QTableWidget.SelectRows)
@@ -402,7 +408,11 @@ class ConsultaApp(QWidget):
         self.grupo_var.clear()
         self.grupo_desc_var.clear()
         self.checkbox_bloqueado.setChecked(False)
+<<<<<<< HEAD
+        
+=======
 
+>>>>>>> DEV
     def bloquear_campos_pesquisa(self):
         # Bloquear campos de pesquisa
         self.codigo_var.setEnabled(False)
@@ -442,7 +452,7 @@ class ConsultaApp(QWidget):
         root.withdraw()
         root.lift()  # Garante que a janela esteja na frente
         root.title(title)
-        root.attributes('-topmost', True)
+        root.attributes("-topmost", True)
 
         if icon_type == 'info':
             messagebox.showinfo(title, message)
@@ -471,6 +481,29 @@ class ConsultaApp(QWidget):
                                  "Os campos de pesquisa estão vazios.\nPreencha algum campo e tente novamente.\n\nツ\n\nSMARTPLIC®",
                                  "info")
             return True
+<<<<<<< HEAD
+        
+        if status_checkbox:
+            status_bloqueado = '1'
+            return f"""
+                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU, B1_DATREF, B1_UREV
+                FROM {database}.dbo.SB1010
+                WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
+                AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
+                AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND B1_MSBLQL = '{status_bloqueado}'
+                AND D_E_L_E_T_ <> '*'
+                ORDER BY B1_COD ASC"""
+        else:
+            return f"""
+                SELECT B1_COD, B1_DESC, B1_XDESC2, B1_TIPO, B1_UM, B1_LOCPAD, B1_GRUPO, B1_ZZNOGRP, B1_CC, B1_MSBLQL, B1_REVATU, B1_DATREF, B1_UREV
+                FROM {database}.dbo.SB1010
+                WHERE B1_COD LIKE '{codigo}%' AND B1_DESC LIKE '{descricao}%' AND B1_DESC LIKE '%{descricao2}%'
+                AND B1_TIPO LIKE '{tipo}%' AND B1_UM LIKE '{um}%' AND B1_LOCPAD LIKE '{armazem}%' AND B1_GRUPO LIKE '{grupo}%' 
+                AND B1_ZZNOGRP LIKE '%{desc_grupo}%' AND D_E_L_E_T_ <> '*'
+                ORDER BY B1_COD ASC"""
+ 
+    def executar_consulta(self):    
+=======
 
         # Dividir descricao2 em partes usando o delimitador *
         descricao2_parts = descricao2.split('*')
@@ -493,8 +526,9 @@ class ConsultaApp(QWidget):
         return query
 
     def executar_consulta(self):
+>>>>>>> DEV
         select_query = self.selecionar_query_conforme_filtro()
-
+        
         if isinstance(select_query, bool) and select_query:
             self.btn_consultar.setEnabled(True)
             return
@@ -538,6 +572,16 @@ class ConsultaApp(QWidget):
                             value = 'Não'
                     elif j == 11 or j == 12:
                         if not value.isspace():
+<<<<<<< HEAD
+                            data_obj = datetime.strptime(value, "%Y%m%d")   
+                            value = data_obj.strftime("%d/%m/%Y")
+                                
+                    item = QTableWidgetItem(str(value).strip())
+                    
+                    if j != 0 and j != 1:
+                        item.setTextAlignment(Qt.AlignCenter)
+                        
+=======
                             data_obj = datetime.strptime(value, "%Y%m%d")
                             value = data_obj.strftime("%d/%m/%Y")
 
@@ -546,6 +590,7 @@ class ConsultaApp(QWidget):
                     if j != 0 and j != 1:
                         item.setTextAlignment(Qt.AlignCenter)
 
+>>>>>>> DEV
                     self.tree.setItem(i, j, item)
 
                 # Permitir que a interface gráfica seja atualizada
