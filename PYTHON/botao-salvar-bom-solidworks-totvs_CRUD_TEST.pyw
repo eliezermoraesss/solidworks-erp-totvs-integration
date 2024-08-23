@@ -11,6 +11,7 @@ import time
 from sqlalchemy import create_engine
 import sys
 
+
 class CadastrarBomTOTVS:
     def __init__(self, root):
         # Leitura dos parâmetros de conexão com o banco de dados SQL Server
@@ -49,7 +50,7 @@ class CadastrarBomTOTVS:
 
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
 
-        self.nome_desenho = 'E7047-001-303' # self.ler_variavel_ambiente_codigo_desenho()
+        self.nome_desenho = 'E3919-004-013' # self.ler_variavel_ambiente_codigo_desenho()
 
     def setup_mssql(self):
         caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_DEV.txt"
@@ -120,7 +121,7 @@ class CadastrarBomTOTVS:
             
             for codigo_produto in codigos_filho:
                 query_consulta_produto = f"""
-                SELECT B1_COD FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto}' AND D_E_L_E_T_ <> '*';
+                SELECT B1_COD FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto.strip()}' AND D_E_L_E_T_ <> '*';
                 """
                 
                 cursor.execute(query_consulta_produto)
@@ -489,6 +490,8 @@ class CadastrarBomTOTVS:
         
         # Mantém todas as linhas até o índice encontrado
         df_excel = df_excel.iloc[:pos_index]
+        
+        df_excel.loc[:, self.indice_coluna_codigo_excel] = df_excel.loc[:, self.indice_coluna_codigo_excel].apply(lambda x: x.strip())
 
         bom_esta_correta, tipo_da_bom = self.verificar_se_template_bom_esta_correto(df_excel)
         validar_codigos = self.validar_formato_codigos_filho(df_excel)
@@ -1061,3 +1064,4 @@ if __name__ == "__main__":
     root.attributes('-topmost', True)
     root.geometry("400x200")
     root.mainloop()
+    

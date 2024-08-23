@@ -490,6 +490,8 @@ class CadastrarBomTOTVS:
         
         # Mantém todas as linhas até o índice encontrado
         df_excel = df_excel.iloc[:pos_index]
+        
+        df_excel.loc[:, self.indice_coluna_codigo_excel] = df_excel.loc[:, self.indice_coluna_codigo_excel].apply(lambda x: x.strip())
 
         bom_esta_correta, tipo_da_bom = self.verificar_se_template_bom_esta_correto(df_excel)
         validar_codigos = self.validar_formato_codigos_filho(df_excel)
