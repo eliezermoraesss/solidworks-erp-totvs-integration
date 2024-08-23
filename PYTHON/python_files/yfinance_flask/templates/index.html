@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Ativo</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Consulta de Ativo</h1>
+    <form id="ticker-form">
+        <label for="ticker">Nome do Ativo:</label>
+        <input type="text" id="ticker" name="ticker" required>
+        <button type="submit">Consultar</button>
+    </form>
+    <div id="graph-container"></div>
+    <script>
+        document.getElementById('ticker-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            const ticker = document.getElementById('ticker').value;
+    
+            // Criar um objeto FormData para enviar os dados corretamente
+            const formData = new FormData();
+            formData.append('ticker', ticker);
+    
+            // Enviar os dados como FormData
+            axios.post('/get_data', formData)
+                .then(function(response) {
+                    if (response.data.error) {
+                        alert(response.data.error);
+                    } else {
+                        document.getElementById('graph-container').innerHTML = response.data.graph;
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Erro ao obter dados:', error);
+                });
+        });
+    </script>    
+</body>
+</html>

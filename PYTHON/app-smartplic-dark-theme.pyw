@@ -15,6 +15,8 @@ from datetime import datetime
 import tkinter as tk
 from tkinter import messagebox
 
+from src.app.utils.tabela_auxiliar import setup_mssql
+
 
 class ConsultaApp(QWidget):
     # Adicione este sinal à classe
@@ -937,7 +939,7 @@ class ConsultaApp(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ConsultaApp()
-    username, password, database, server = ConsultaApp().setup_mssql()
+    username, password, database, server = setup_mssql()
     driver = '{SQL Server}'
 
     largura_janela = 1400  # Substitua pelo valor desejado
