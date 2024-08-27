@@ -48,7 +48,7 @@ class CadastrarBomTOTVS:
                 r'^(E\d{12})$',
             ]
 
-        self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2)?$'
+        self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2|³|3)?(\s*\(.*\))?$'
 
         self.nome_desenho = self.ler_variavel_ambiente_codigo_desenho()
 
@@ -121,7 +121,7 @@ class CadastrarBomTOTVS:
             
             for codigo_produto in codigos_filho:
                 query_consulta_produto = f"""
-                SELECT B1_COD FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto}' AND D_E_L_E_T_ <> '*';
+                SELECT B1_COD FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto.strip()}' AND D_E_L_E_T_ <> '*';
                 """
                 
                 cursor.execute(query_consulta_produto)
@@ -275,7 +275,7 @@ class CadastrarBomTOTVS:
         
         
     def extrair_unidade_medida(self, valor_dimensao):
-        padrao = r'[0-9.]+\s*(m²|m)'
+        padrao = r'[0-9.]+\s*(m³|m²|m)'
         unidade_extraida = re.findall(padrao, valor_dimensao, re.IGNORECASE)
         return unidade_extraida[0]
         
@@ -290,13 +290,9 @@ class CadastrarBomTOTVS:
             codigo_filho = df_campo_dimensao_formatado.iloc[i, self.indice_coluna_codigo_excel]
             descricao = df_campo_dimensao_formatado.iloc[i, self.indice_coluna_descricao_excel]
             unidade_de_medida = self.obter_unidade_medida_codigo_filho(codigo_filho)
-            
-            if unidade_de_medida == 'M2':
-                unidade_de_medida_totvs = unidade_de_medida.replace('2','²').lower()
-            elif unidade_de_medida == 'MT':
-                unidade_de_medida_totvs = unidade_de_medida.replace('T','').lower()
 
-            if unidade_de_medida in ('MT', 'M2') and self.validar_formato_campo_dimensao(str(dimensao)):
+            if unidade_de_medida in ('MT', 'M2', 'M3') and self.validar_formato_campo_dimensao(str(dimensao)):
+                unidade_de_medida_totvs = unidade_de_medida.replace('2','²').replace('3','³').replace('T','').lower()
                 if unidade_de_medida_totvs != self.extrair_unidade_medida(str(dimensao).lower()):
                     items_unidade_incorreta[codigo_filho] = descricao
                 else:           
@@ -305,7 +301,7 @@ class CadastrarBomTOTVS:
                         items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
                     else:            
                         df_campo_dimensao_formatado.iloc[i, self.indice_coluna_dimensao] = float(dimensao_final)               
-            elif unidade_de_medida in ('MT', 'M2'):
+            elif unidade_de_medida in ('MT', 'M2', 'M3'):
                 items_mt_m2_dimensao_incorreta[codigo_filho] = descricao
                 
         if items_mt_m2_dimensao_incorreta:
@@ -322,6 +318,9 @@ class CadastrarBomTOTVS:
                 
             2. Quando a unidade for METRO QUADRADO 'm²':     
             X.XXX m² ou X m²
+            
+            3. Quando a unidade for METRO CÚBICO 'm³':     
+            X.XXX m³ ou X m³
                 
             3. É permitido usar tanto ponto '.'
             quanto vírgula ','         
@@ -337,7 +336,7 @@ class CadastrarBomTOTVS:
         if items_unidade_incorreta:
             mensagem = ''
             mensagem_fixa = f"""
-            OPS... Unidade de medida errada (m ou m²)
+            OPS... Unidade de medida errada (m, m² ou m³)
             
             Provavelmente houve um erro de digitação.        
             Por favor verifique a unidade de medida do(s)
@@ -467,7 +466,7 @@ class CadastrarBomTOTVS:
             return False
         else:
             return True
-        
+
 
     def verificar_se_template_bom_esta_correto(self, dataframe):
         if dataframe.shape[0] >= 1 and dataframe.shape[1] > 9: 
@@ -691,7 +690,7 @@ class CadastrarBomTOTVS:
                 
                 if unidade_medida == 'KG':
                     quantidade = row.iloc[self.indice_coluna_peso_excel]
-                elif unidade_medida in ('MT', 'M2'):
+                elif unidade_medida in ('MT', 'M2', 'M3'):
                     quantidade = row.iloc[self.indice_coluna_dimensao]
                     
                 quantidade_formatada = "{:.2f}".format(float(quantidade))
@@ -759,7 +758,7 @@ class CadastrarBomTOTVS:
                 
                 if unidade_medida == 'KG':
                     quantidade = row.iloc[self.indice_coluna_peso_excel]
-                elif unidade_medida in ('MT', 'M2'):
+                elif unidade_medida in ('MT', 'M2', 'M3'):
                     quantidade = row.iloc[self.indice_coluna_dimensao]
                     
                 quantidade_formatada = "{:.2f}".format(float(quantidade))
@@ -799,7 +798,7 @@ class CadastrarBomTOTVS:
                 
                 if unidade_medida == 'KG':
                     quantidade = row.iloc[self.indice_coluna_peso_excel]
-                elif unidade_medida in ('MT', 'M2'):
+                elif unidade_medida in ('MT', 'M2', 'M3'):
                     quantidade = row.iloc[self.indice_coluna_dimensao]
                 
                 quantidade_formatada = "{:.2f}".format(float(quantidade))
@@ -1064,3 +1063,4 @@ if __name__ == "__main__":
     root.attributes('-topmost', True)
     root.geometry("400x200")
     root.mainloop()
+    
