@@ -311,7 +311,7 @@ class CadastrarBomTOTVS:
             VALOR DA DIMENSÃO FORA DO FORMATO PADRÃO
             
             Insira na coluna DIMENSÃO o valor
-            conforme o padrão informado abaixo:
+            conforme os padrões abaixo:
             
             1. Quando a unidade for METRO 'm':   
             X.XXX m ou X m
@@ -323,10 +323,17 @@ class CadastrarBomTOTVS:
             X.XXX m³ ou X m³
                 
             3. É permitido usar tanto ponto '.'
-            quanto vírgula ','         
+            quanto vírgula ','
+                    
             4. O valor deve ser sempre maior que zero.
             
-            Verificar o campo dimensão do(s) código(s)
+            5. (Opcional) Se precisar indicar qualquer
+            informação adicional, insira entre PARÊNTESES,
+            conforme o exemplo abaixo:
+            
+            1 m² (400x500x2)
+            
+            Verifique o campo DIMENSÃO do(s) código(s)
             abaixo:\n"""
             
             for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
