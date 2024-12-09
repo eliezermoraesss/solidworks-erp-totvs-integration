@@ -50,7 +50,7 @@ class CadastrarBomTOTVS:
 
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2|³|3)?(\s*\(.*\))?$'
 
-        self.nome_desenho = 'E3919-004-013'  # self.ler_variavel_ambiente_codigo_desenho()
+        self.nome_desenho = 'E1111-111-111'  # self.ler_variavel_ambiente_codigo_desenho()
 
     def setup_mssql(self):
         caminho_do_arquivo = r"\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\libs-python\user-password-mssql\USER_PASSWORD_MSSQL_PROD.txt"
@@ -303,7 +303,6 @@ class CadastrarBomTOTVS:
     def formatar_campos_dimensao(self, dataframe):
         items_mt_m2_dimensao_incorreta = {}
         items_unidade_incorreta = {}
-        unidade_de_medida_totvs = ''
         df_campo_dimensao_formatado = dataframe.copy()
 
         for i, dimensao in enumerate(df_campo_dimensao_formatado.iloc[:, self.indice_coluna_dimensao]):
@@ -502,6 +501,8 @@ class CadastrarBomTOTVS:
             return True, "montagem"
         elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 9:
             return True, "peca"
+        elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 7:
+            return True, "corte_soldagem"
         elif dataframe.shape[0] == 0:
             self.exibir_mensagem(self.titulo_janela, f"ATENÇÃO!\n\nBOM VAZIA!\n\nツ\n\nSMARTPLIC®", "info")
             return False, ""
@@ -535,7 +536,7 @@ class CadastrarBomTOTVS:
             if tipo_da_bom == "montagem":
                 validar_codigo_filho_com_nome_desenho = self.verificar_codigo_filho_esta_correto_com_nome_do_desenho(
                     df_excel)
-            elif tipo_da_bom == "peca":
+            elif tipo_da_bom in ['peca', 'corte_soldagem']:
                 validar_codigo_filho_com_nome_desenho = True
             else:
                 validar_codigo_filho_com_nome_desenho = False
@@ -559,8 +560,9 @@ class CadastrarBomTOTVS:
                     pesos_maiores_que_zero_kg = self.validacao_pesos_unidade_kg(df_excel)
                     if codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg:
                         return bom_excel_sem_duplicatas
-        # self.excluir_arquivo_excel_bom(excel_file_path)
-        sys.exit()
+        else:
+            # self.excluir_arquivo_excel_bom(excel_file_path)
+            sys.exit()
 
     def atualizar_campo_revisao_do_codigo_pai(self, codigo_pai, numero_revisao):
         query_atualizar_campo_revisao = f"""UPDATE {self.database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
@@ -915,19 +917,6 @@ class CadastrarBomTOTVS:
             cursor.close()
             conn.close()
 
-    def resultado_comparacao(self):
-        if self.codigos_em_comum:
-            ctypes.windll.user32.MessageBoxW(
-                0, f"Códigos em comuns: {self.codigos_em_comum}", "ITENS EM COMUM", 1)
-
-        if self.codigos_adicionados_bom:
-            ctypes.windll.user32.MessageBoxW(
-                0, f"Itens adicionados: {self.codigos_adicionados_bom}", "ITENS ADICIONADOS", 1)
-
-        if self.codigos_removidos_bom:
-            ctypes.windll.user32.MessageBoxW(
-                0, f"Itens removidos: {self.codigos_removidos_bom}", "ITENS REMOVIDOS", 1)
-
     def comparar_bom_com_totvs(self, bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
         resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs[
             'G1_COMP'].str.strip()
@@ -948,8 +937,6 @@ class CadastrarBomTOTVS:
                 bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel])].copy()
 
         return self.codigos_em_comum_df, self.codigos_adicionados_bom_df, self.codigos_removidos_bom_df
-
-        #resultado_comparacao()
 
     def atualizar_campo_revfim_codigos_existentes(self, codigo_pai, revisao_anterior, revisao_atualizada):
         conn = pyodbc.connect(
