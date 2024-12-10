@@ -310,7 +310,7 @@ class CadastrarBomTOTVS:
                             "info")
         return validar_descricoes
 
-    def verificar_codigo_filho_diferente_codigo_pai(self, nome_desenho, df_excel):
+    def validar_codigo_filho_igual_pai(self, nome_desenho, df_excel):
         codigo_filho_diferente_codigo_pai = df_excel.iloc[:, self.indice_coluna_codigo_excel] != f"{nome_desenho}"
         if not codigo_filho_diferente_codigo_pai.all():
             exibir_mensagem(self.titulo_janela,
@@ -507,7 +507,7 @@ class CadastrarBomTOTVS:
             if 'conn' in locals():
                 conn.close()
 
-    def verificar_codigo_filho_esta_correto_com_nome_do_desenho(self, dataframe):
+    def codigo_filho_igual_ao_campo_codigo(self, dataframe):
         codigos_diferentes = {}
         codigo_nome_desenho_verificado = ''
 
@@ -569,82 +569,74 @@ class CadastrarBomTOTVS:
                     mensagem_codigos += (f"{i}. {code[:18] + '...' if len(code) > 18 else code} "
                                          f"- {description[:20] + '...' if len(description) > 20 else description}\n\n")
                 i += 1
-            exibir_mensagem(self.titulo_janela, mensagem_fixa + mensagem_codigos + mensagem_final, "info")
-            return False
+            raise Exception(mensagem_fixa + mensagem_codigos + mensagem_final)
         else:
             return True
 
     def verificar_se_template_bom_esta_correto(self, dataframe):
         if dataframe.shape[0] >= 1 and dataframe.shape[1] > 9:
-            return True, "montagem"
+            return "montagem"
         elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 9:
-            return True, "peca"
+            return "peca"
         elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 7:
-            return True, "corte_soldagem"
+            return "corte_soldagem"
         elif dataframe.shape[0] == 0:
             exibir_mensagem(self.titulo_janela, f"ATENÇÃO!\n\nBOM VAZIA!\n\nツ\n\nSMARTPLIC®", "info")
-            return False, ""
+            return "template_incorreto"
         else:
             exibir_mensagem(self.titulo_janela,
                             f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO"
                             f"\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®",
                             "info")
-            return False, ""
+            return "template_incorreto"
 
     def validacao_de_dados_bom(self, excel_file_path):
-        df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
+        try:
+            df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
 
-        # Encontra o índice da linha que contém "Pos." na segunda coluna
-        pos_index = df_excel[df_excel.iloc[:, 0] == "Pos."].index[0]
+            # Encontra o índice da linha que contém "Pos." na segunda coluna
+            pos_index = df_excel[df_excel.iloc[:, 0] == "Pos."].index[0]
 
-        # Mantém todas as linhas até o índice encontrado
-        df_excel = df_excel.iloc[:pos_index]
+            # Mantém todas as linhas até o índice encontrado
+            df_excel = df_excel.iloc[:pos_index]
 
-        df_excel.loc[:, self.indice_coluna_codigo_excel] = df_excel.loc[:, self.indice_coluna_codigo_excel].apply(
-            lambda x: x.strip())
+            df_excel.loc[:, self.indice_coluna_codigo_excel] = df_excel.loc[:, self.indice_coluna_codigo_excel].apply(
+                lambda x: x.strip())
 
-        bom_esta_correta, tipo_da_bom = self.verificar_se_template_bom_esta_correto(df_excel)
-        validar_codigos = self.validar_formato_codigos_filho(df_excel)
-        validar_quantidades = self.validacao_quantidades(df_excel)
-        validar_descricoes = self.validar_descricao(df_excel.iloc[:, self.indice_coluna_descricao_excel])
-        validar_pesos = self.validacao_pesos(df_excel)
-        validar_codigo_filho_diferente_codigo_pai = self.verificar_codigo_filho_diferente_codigo_pai(self.nome_desenho,
-                                                                                                     df_excel)
+            tipo_da_bom = self.verificar_se_template_bom_esta_correto(df_excel)
+            validar_codigos = self.validar_formato_codigos_filho(df_excel)
+            validar_quantidades = self.validacao_quantidades(df_excel)
+            validar_descricoes = self.validar_descricao(df_excel.iloc[:, self.indice_coluna_descricao_excel])
+            validar_pesos = self.validacao_pesos(df_excel)
+            codigo_filho_igual_pai = self.validar_codigo_filho_igual_pai(self.nome_desenho, df_excel)
 
-        if bom_esta_correta:
             if tipo_da_bom == "montagem":
-                validar_codigo_filho_com_nome_desenho = self.verificar_codigo_filho_esta_correto_com_nome_do_desenho(
-                    df_excel)
-            elif tipo_da_bom in ['peca', 'corte_soldagem']:
-                validar_codigo_filho_com_nome_desenho = True
-            else:
-                validar_codigo_filho_com_nome_desenho = False
-        else:
-            validar_codigo_filho_com_nome_desenho = False
+                self.codigo_filho_igual_ao_campo_codigo(df_excel)
 
-        if validar_codigo_filho_com_nome_desenho:
-            if (validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and
-                    validar_codigo_filho_diferente_codigo_pai.all() and validar_pesos.all() and
-                    validar_codigo_filho_com_nome_desenho):
-                codigos_filho_tem_cadastro = self.verificar_cadastro_codigo_filho(
-                    df_excel.iloc[:, self.indice_coluna_codigo_excel].tolist())
-                if codigos_filho_tem_cadastro:
-                    df_excel_campo_dimensao_tratado = self.formatar_campos_dimensao(df_excel)
-                    bom_excel_sem_duplicatas = self.remover_linhas_duplicadas_e_consolidar_quantidade(
-                        df_excel_campo_dimensao_tratado)
-                    bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel] = (
-                        bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel].str.strip())
-                    existe_codigo_filho_repetido = self.verificar_codigo_repetido(bom_excel_sem_duplicatas)
-                    nao_existe_codigo_bloqueado = self.validacao_codigo_bloqueado(df_excel)
-                    codigos_filho_tem_estrutura = self.verificar_se_existe_estrutura_codigos_filho(
-                        bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel].tolist())
-                    pesos_maiores_que_zero_kg = self.validacao_pesos_unidade_kg(df_excel)
-                    if (codigos_filho_tem_cadastro and not existe_codigo_filho_repetido and nao_existe_codigo_bloqueado
-                            and codigos_filho_tem_estrutura and pesos_maiores_que_zero_kg):
-                        return bom_excel_sem_duplicatas
-        else:
-            # self.excluir_arquivo_excel_bom(excel_file_path)
-            sys.exit()
+            if tipo_da_bom in ['peca', 'corte_soldagem', 'montagem']:
+                if (validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and
+                        codigo_filho_igual_pai.all() and validar_pesos.all()):
+                    codigos_filho_tem_cadastro = self.verificar_cadastro_codigo_filho(
+                        df_excel.iloc[:, self.indice_coluna_codigo_excel].tolist())
+                    if codigos_filho_tem_cadastro:
+                        df_excel_campo_dimensao_tratado = self.formatar_campos_dimensao(df_excel)
+                        df_bom_excel = self.remover_linhas_duplicadas_e_consolidar_quantidade(
+                            df_excel_campo_dimensao_tratado)
+                        df_bom_excel.iloc[:, self.indice_coluna_codigo_excel] = (
+                            df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].str.strip())
+                        existe_codigo_filho_repetido = self.verificar_codigo_repetido(df_bom_excel)
+                        nao_existe_codigo_bloqueado = self.validacao_codigo_bloqueado(df_excel)
+                        codigos_filho_tem_estrutura = self.verificar_se_existe_estrutura_codigos_filho(
+                            df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].tolist())
+                        pesos_maiores_que_zero_kg = self.validacao_pesos_unidade_kg(df_excel)
+                        if (codigos_filho_tem_cadastro and not existe_codigo_filho_repetido
+                                and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura
+                                and pesos_maiores_que_zero_kg):
+                            return df_bom_excel
+            else:
+                raise Exception("A validação de dados da BOM não foi bem-sucedida.")
+        except Exception:
+            raise
 
     def atualizar_campo_revisao_do_codigo_pai(self, codigo_pai, numero_revisao):
         query_atualizar_campo_revisao = f"""UPDATE {self.database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' 
@@ -804,7 +796,7 @@ class CadastrarBomTOTVS:
                                              "Erro ao consultar cadastro do código pai", 16 | 0)
             return None
 
-    def criar_nova_estrutura_totvs(self, codigo_pai, bom_excel_sem_duplicatas):
+    def criar_nova_estrutura_totvs(self, codigo_pai, df_bom_excel):
         codigo_filho, quantidade, unidade_medida = '', '', ''
         primeiro_cadastro = True
         ultima_pk_tabela_estrutura = self.obter_ultima_pk_tabela_estrutura()
@@ -816,7 +808,7 @@ class CadastrarBomTOTVS:
             f'{self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
         cursor = conn.cursor()
         try:
-            for index, row in bom_excel_sem_duplicatas.iterrows():
+            for index, row in df_bom_excel.iterrows():
                 ultima_pk_tabela_estrutura += 1
                 codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
                 quantidade = row.iloc[self.indice_coluna_quantidade_excel]
@@ -981,24 +973,24 @@ class CadastrarBomTOTVS:
             cursor.close()
             conn.close()
 
-    def comparar_bom_com_totvs(self, bom_excel_sem_duplicatas, resultado_query_consulta_estrutura_totvs):
+    def comparar_bom_com_totvs(self, df_bom_excel, resultado_query_consulta_estrutura_totvs):
         resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs[
             'G1_COMP'].str.strip()
 
         # Códigos em comum
-        self.codigos_em_comum_df = bom_excel_sem_duplicatas[
-            bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel].isin(
+        self.codigos_em_comum_df = df_bom_excel[
+            df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].isin(
                 resultado_query_consulta_estrutura_totvs['G1_COMP'])].copy()
 
         # Códigos adicionados no BOM
-        self.codigos_adicionados_bom_df = bom_excel_sem_duplicatas[
-            ~bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel].isin(
+        self.codigos_adicionados_bom_df = df_bom_excel[
+            ~df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].isin(
                 resultado_query_consulta_estrutura_totvs['G1_COMP'])].copy()
 
         # Códigos removidos no BOM
         self.codigos_removidos_bom_df = resultado_query_consulta_estrutura_totvs[
             ~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
-                bom_excel_sem_duplicatas.iloc[:, self.indice_coluna_codigo_excel])].copy()
+                df_bom_excel.iloc[:, self.indice_coluna_codigo_excel])].copy()
 
         return self.codigos_em_comum_df, self.codigos_adicionados_bom_df, self.codigos_removidos_bom_df
 
@@ -1038,121 +1030,127 @@ class CadastrarBomTOTVS:
         root.update_idletasks()
 
     def executar_logica(self):
-        delay = 0.4
-        self.status_label.config(text="Iniciando cadastro...")
-        time.sleep(0.7)
-        excel_file_path = obter_caminho_arquivo_excel(self.nome_desenho)
-        self.update_progress(10)
+        status_processo = None
+        try:
+            delay = 0.4
+            self.status_label.config(text="Iniciando cadastro...")
+            time.sleep(0.7)
+            excel_file_path = obter_caminho_arquivo_excel(self.nome_desenho)
+            self.update_progress(10)
 
-        self.status_label.config(text="Validando formato do código pai...")
-        time.sleep(delay)
-        formato_codigo_pai_correto = self.validar_formato_codigo_pai(self.nome_desenho)
-        nova_estrutura_cadastrada = False
-        self.update_progress(20)
-
-        existe_cadastro_codigo_pai = False
-        if formato_codigo_pai_correto:
-            self.status_label.config(text="Verificando cadastro do código pai...")
+            self.status_label.config(text="Validando formato do código pai...")
             time.sleep(delay)
-            existe_cadastro_codigo_pai = self.verificar_cadastro_codigo_pai(self.nome_desenho)
-            self.status_label.config(text="")
-            self.update_progress(30)
+            formato_codigo_pai_correto = self.validar_formato_codigo_pai(self.nome_desenho)
+            nova_estrutura_cadastrada = False
+            self.update_progress(20)
 
-        if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
-            self.status_label.config(text="Validando dados da tabela de BOM...")
-            time.sleep(delay)
-            bom_excel_sem_duplicatas = self.validacao_de_dados_bom(excel_file_path)
-            self.update_progress(40)
-            self.status_label.config(text="Verificando se já existe estrutura cadastrada...")
-            time.sleep(delay)
-            resultado_estrutura_codigo_pai = self.verificar_se_existe_estrutura_codigo_pai(self.nome_desenho)
-            self.update_progress(50)
-
-            if not bom_excel_sem_duplicatas.empty and resultado_estrutura_codigo_pai.empty:
-                self.status_label.config(text="Cadastrando estrutura...")
+            existe_cadastro_codigo_pai = False
+            if formato_codigo_pai_correto:
+                self.status_label.config(text="Verificando cadastro do código pai...")
                 time.sleep(delay)
-                nova_estrutura_cadastrada, revisao_atualizada = self.criar_nova_estrutura_totvs(
-                    self.nome_desenho, bom_excel_sem_duplicatas)
-                self.status_label.config(text="Atualizando revisão da estrutura...")
+                existe_cadastro_codigo_pai = self.verificar_cadastro_codigo_pai(self.nome_desenho)
+                self.status_label.config(text="")
+                self.update_progress(30)
+
+            if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
+                self.status_label.config(text="Validando dados da tabela de BOM...")
                 time.sleep(delay)
-                self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
-                self.update_progress(60)
+                df_bom_excel = self.validacao_de_dados_bom(excel_file_path)
+                self.update_progress(40)
+                self.status_label.config(text="Verificando se já existe estrutura cadastrada...")
+                time.sleep(delay)
+                resultado_estrutura_codigo_pai = self.verificar_se_existe_estrutura_codigo_pai(self.nome_desenho)
+                self.update_progress(50)
 
-            if bom_excel_sem_duplicatas.empty and not nova_estrutura_cadastrada:
-                exibir_mensagem(self.titulo_janela,
-                                f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a "
-                                f"BOM e tente novamente!\n\n{self.nome_desenho}\n\nツ\n\nSMARTPLIC®",
-                                "warning")
-                self.update_progress(100)
-            if not bom_excel_sem_duplicatas.empty and not resultado_estrutura_codigo_pai.empty:
-                mensagem = (f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!"
-                            f"\n\n{self.nome_desenho}\n\nDeseja realizar a alteração da estrutura?")
-                usuario_quer_alterar = exibir_janela_mensagem_opcao(self.titulo_janela, mensagem)
-                self.update_progress(70)
+                if not df_bom_excel.empty and resultado_estrutura_codigo_pai.empty:
+                    self.status_label.config(text="Cadastrando estrutura...")
+                    time.sleep(delay)
+                    nova_estrutura_cadastrada, revisao_atualizada = self.criar_nova_estrutura_totvs(
+                        self.nome_desenho, df_bom_excel)
+                    self.status_label.config(text="Atualizando revisão da estrutura...")
+                    time.sleep(delay)
+                    self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
+                    self.update_progress(60)
 
-                if usuario_quer_alterar:
-                    resultado = self.comparar_bom_com_totvs(bom_excel_sem_duplicatas, resultado_estrutura_codigo_pai)
-                    codigos_em_comum_df, codigos_adicionados_bom_df, codigos_removidos_bom_df = resultado
-                    self.update_progress(80)
+                if df_bom_excel.empty and not nova_estrutura_cadastrada:
+                    exibir_mensagem(self.titulo_janela,
+                                    f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a "
+                                    f"BOM e tente novamente!\n\n{self.nome_desenho}\n\nツ\n\nSMARTPLIC®",
+                                    "warning")
+                    self.update_progress(100)
+                if not df_bom_excel.empty and not resultado_estrutura_codigo_pai.empty:
+                    mensagem = (f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!"
+                                f"\n\n{self.nome_desenho}\n\nDeseja realizar a alteração da estrutura?")
+                    usuario_quer_alterar = exibir_janela_mensagem_opcao(self.titulo_janela, mensagem)
+                    self.update_progress(70)
 
-                    if not codigos_em_comum_df.empty:
-                        self.status_label.config(text="Atualizando as quantidades da estrutura...")
-                        time.sleep(delay)
-                        self.atualizar_itens_estrutura_totvs(self.nome_desenho, codigos_em_comum_df)
-                        self.update_progress(100)
+                    if usuario_quer_alterar:
+                        resultado = self.comparar_bom_com_totvs(df_bom_excel, resultado_estrutura_codigo_pai)
+                        codigos_em_comum_df, codigos_adicionados_bom_df, codigos_removidos_bom_df = resultado
+                        self.update_progress(80)
 
-                    if not codigos_adicionados_bom_df.empty or not codigos_removidos_bom_df.empty:
-                        primeiro_cadastro = False
-                        revisao_atualizada = self.obter_revisao_codigo_pai(self.nome_desenho, primeiro_cadastro)
-                        itens_adicionados_sucesso = False
-                        itens_removidos_sucesso = False
-                        revisao_anterior = calculo_revisao_anterior(revisao_atualizada)
-                        self.update_progress(90)
-
-                        if not codigos_adicionados_bom_df.empty:
-                            self.status_label.config(text="Inserindo itens na estrutura...")
+                        if not codigos_em_comum_df.empty:
+                            self.status_label.config(text="Atualizando as quantidades da estrutura...")
                             time.sleep(delay)
-                            itens_adicionados_sucesso = self.inserir_itens_estrutura_totvs(self.nome_desenho,
-                                                                                           codigos_adicionados_bom_df,
-                                                                                           revisao_atualizada)
-                            self.update_progress(95)
-
-                        if not codigos_removidos_bom_df.empty:
-                            self.status_label.config(text="Removendo itens da estrutura...")
-                            time.sleep(delay)
-                            itens_removidos_sucesso = self.remover_itens_estrutura_totvs(self.nome_desenho,
-                                                                                         codigos_removidos_bom_df,
-                                                                                         revisao_anterior)
-                            self.update_progress(98)
-
-                        if itens_adicionados_sucesso or itens_removidos_sucesso:
-                            self.status_label.config(text="Atualizando revisão da estrutura...")
-                            time.sleep(delay)
-                            self.atualizar_campo_revfim_codigos_existentes(self.nome_desenho, revisao_anterior,
-                                                                           revisao_atualizada)
-                            self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
-                            self.atualizar_campo_data_ultima_revisao_do_codigo_pai(self.nome_desenho)
+                            self.atualizar_itens_estrutura_totvs(self.nome_desenho, codigos_em_comum_df)
                             self.update_progress(100)
-                            self.status_label.config(text="Alteração da estrutura finalizada!")
+
+                        if not codigos_adicionados_bom_df.empty or not codigos_removidos_bom_df.empty:
+                            primeiro_cadastro = False
+                            revisao_atualizada = self.obter_revisao_codigo_pai(self.nome_desenho, primeiro_cadastro)
+                            itens_adicionados_sucesso = False
+                            itens_removidos_sucesso = False
+                            revisao_anterior = calculo_revisao_anterior(revisao_atualizada)
+                            self.update_progress(90)
+
+                            if not codigos_adicionados_bom_df.empty:
+                                self.status_label.config(text="Inserindo itens na estrutura...")
+                                time.sleep(delay)
+                                itens_adicionados_sucesso = self.inserir_itens_estrutura_totvs(
+                                    self.nome_desenho, codigos_adicionados_bom_df, revisao_atualizada)
+                                self.update_progress(95)
+
+                            if not codigos_removidos_bom_df.empty:
+                                self.status_label.config(text="Removendo itens da estrutura...")
+                                time.sleep(delay)
+                                itens_removidos_sucesso = self.remover_itens_estrutura_totvs(self.nome_desenho,
+                                                                                             codigos_removidos_bom_df,
+                                                                                             revisao_anterior)
+                                self.update_progress(98)
+
+                            if itens_adicionados_sucesso or itens_removidos_sucesso:
+                                self.status_label.config(text="Atualizando revisão da estrutura...")
+                                time.sleep(delay)
+                                self.atualizar_campo_revfim_codigos_existentes(self.nome_desenho, revisao_anterior,
+                                                                               revisao_atualizada)
+                                self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
+                                self.atualizar_campo_data_ultima_revisao_do_codigo_pai(self.nome_desenho)
+                                self.update_progress(100)
+                                self.status_label.config(text="Alteração da estrutura finalizada!")
+                                time.sleep(delay)
+                                exibir_mensagem(self.titulo_janela,
+                                                f"Alteração da estrutura realizada com sucesso!"
+                                                f"\n\n{self.nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®",
+                                                "info")
+
+                        else:
+                            self.status_label.config(text="Atualização de quantidades finalizada!")
                             time.sleep(delay)
                             exibir_mensagem(self.titulo_janela,
-                                            f"Alteração da estrutura realizada com sucesso!"
-                                            f"\n\n{self.nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®",
+                                            f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou "
+                                            f"removido itens da estrutura.\n\n{self.nome_desenho}"
+                                            f"\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®",
                                             "info")
-
-                    else:
-                        self.status_label.config(text="Atualização de quantidades finalizada!")
-                        time.sleep(delay)
-                        exibir_mensagem(self.titulo_janela,
-                                        f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou "
-                                        f"removido itens da estrutura.\n\n{self.nome_desenho}"
-                                        f"\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®",
-                                        "info")
-        end_time = time.time()
-        elapsed = end_time - self.start_time
-        self.status_label.config(text=f"Processo finalizado!\n\n{elapsed:.3f} segundos\n\nEUREKA®")
-        self.update_progress(100)
-        # self.excluir_arquivo_excel_bom(excel_file_path)
+            status_processo = '✔️ Processo finalizado com sucesso!'
+        except Exception as e:
+            exibir_mensagem(self.titulo_janela, f'Falha ao cadastrar BOM: {e}', 'error')
+            status_processo = '❌ Processo cancelado!'
+        finally:
+            # self.excluir_arquivo_excel_bom(excel_file_path)
+            end_time = time.time()
+            elapsed = end_time - self.start_time
+            self.status_label.config(text=f"{status_processo}\n\n{elapsed:.3f} segundos\n\nEUREKA®")
+            self.update_progress(100)
 
 
 if __name__ == "__main__":
