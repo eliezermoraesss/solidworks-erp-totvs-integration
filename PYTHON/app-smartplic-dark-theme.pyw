@@ -479,7 +479,7 @@ class ConsultaApp(QWidget):
 
         if codigo == '' and descricao == '' and descricao2 == '' and tipo == '' and um == '' and armazem == '' and grupo == '' and desc_grupo == '':
             self.btn_consultar.setEnabled(False)
-            self.exibir_mensagem("ATENÇÃO!",
+            exibir_mensagem("ATENÇÃO!",
                                  "Os campos de pesquisa estão vazios.\nPreencha algum campo e tente novamente.\n\nツ\n\nSMARTPLIC®",
                                  "info")
             return True
