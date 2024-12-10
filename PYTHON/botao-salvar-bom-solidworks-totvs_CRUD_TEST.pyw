@@ -114,6 +114,27 @@ def setup_mssql():
         sys.exit()
 
 
+def verificar_se_template_bom_esta_correto(dataframe):
+    if dataframe.shape[0] >= 1 and dataframe.shape[1] == 10:
+        return "montagem"
+    elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 9:
+        return "peca"
+    elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 7:
+        return "corte_soldagem"
+    elif dataframe.shape[0] == 0:
+        raise Exception(f"\n\nATENÇÃO!\n\nBOM VAZIA!\n\nツ\n\nEUREKA®")
+    else:
+        raise Exception(f"\n\nATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO"
+                        f"\n\nPor favor, selecione o template ENAPLIC atual e tente novamente!\n\nツ\n\nEUREKA®")
+
+
+def validar_descricao(descricoes):
+    validar_descricoes = descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
+    if not validar_descricoes.all():
+        raise ValueError("DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou "
+                         "conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ")
+
+
 class CadastrarBomTOTVS:
     def __init__(self, window):
         # Leitura dos parâmetros de conexão com o banco de dados SQL Server
@@ -155,7 +176,7 @@ class CadastrarBomTOTVS:
 
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2|³|3)?(\s*\(.*\))?$'
 
-        self.nome_desenho = 'E1111-111-111'  # self.ler_variavel_ambiente_codigo_desenho()
+        self.nome_desenho = 'E1111-111-111'  # ler_variavel_ambiente_codigo_desenho()
 
     def validar_formato_codigo_pai(self, codigo_pai):
         codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in self.formatos_codigo)
@@ -173,11 +194,8 @@ class CadastrarBomTOTVS:
         validacao_codigos = df_excel.iloc[:, self.indice_coluna_codigo_excel].str.strip().apply(
             lambda x: any(re.match(formato, str(x)) for formato in self.formatos_codigo))
         if not validacao_codigos.all():
-            exibir_mensagem(self.titulo_janela,
-                            "CÓDIGO FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e "
-                            "tente novamente!\n\nツ",
-                            "info")
-        return validacao_codigos
+            raise ValueError("CÓDIGO FILHO FORA DO FORMATO PADRÃO ENAPLIC\n\nPor favor, corrija o código e "
+                             "tente novamente!\n\nツ")
 
     def verificar_codigo_repetido(self, df_excel):
 
@@ -186,14 +204,9 @@ class CadastrarBomTOTVS:
 
         # Exibe uma mensagem se houver códigos repetidos
         if not codigos_repetidos.empty:
-            exibir_mensagem(self.titulo_janela,
-                            f"PRODUTOS REPETIDOS NA BOM.\n\nOs códigos são iguais com descrições diferentes:"
-                            f"\n\n{codigos_repetidos.tolist()}\n\nCorrija-os ou exclue da tabela e tente novamente!"
-                            f"\n\nツ",
-                            "warning")
-            return True
-        else:
-            return False
+            raise ValueError(f"PRODUTOS REPETIDOS NA BOM.\n\nOs códigos são iguais com descrições diferentes:"
+                             f"\n\n{codigos_repetidos.tolist()}\n\nCorrija-os ou exclue da tabela e tente novamente!"
+                             f"\n\nツ")
 
     def verificar_cadastro_codigo_filho(self, codigos_filho):
         conn = pyodbc.connect(
@@ -215,12 +228,9 @@ class CadastrarBomTOTVS:
                     codigos_sem_cadastro.append(codigo_produto)
 
             if codigos_sem_cadastro:
-                mensagem = (f"CÓDIGOS FILHO SEM CADASTRO NO TOTVS:\n\n{', '.join(codigos_sem_cadastro)}"
-                            f"\n\nEfetue o cadastro e tente novamente!\n\nツ")
-                exibir_mensagem(self.titulo_janela, mensagem, "info")
-                return False
-            else:
-                return True
+                mensagem = (f"CÓDIGOS-FILHO SEM CADASTRO NO TOTVS:\n\n{', '.join(codigos_sem_cadastro)}"
+                            f"\n\nEfetue o cadastro e tente novamente!\n\nツ\n\nEUREKA®")
+                raise ValueError(mensagem)
 
         except Exception as ex:
             # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
@@ -261,10 +271,7 @@ class CadastrarBomTOTVS:
             if codigos_sem_estrutura:
                 mensagem = (f"CÓDIGOS FILHO SEM ESTRUTURA NO TOTVS:\n\n{', '.join(codigos_sem_estrutura)}"
                             f"\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!\n\nツ")
-                exibir_mensagem(self.titulo_janela, mensagem, "info")
-                return False
-            else:
-                return True
+                raise ValueError(mensagem)
 
         except Exception as ex:
             # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
@@ -301,23 +308,11 @@ class CadastrarBomTOTVS:
 
         return df_sem_duplicatas
 
-    def validar_descricao(self, descricoes):
-        validar_descricoes = descricoes.notna() & (descricoes != '') & (descricoes.astype(str).str.strip() != '')
-        if not validar_descricoes.all():
-            exibir_mensagem(self.titulo_janela,
-                            "DESCRIÇÃO INVÁLIDA ENCONTRADA\n\nAs descrições não podem ser nulas, vazias ou "
-                            "conter apenas espaços em branco.\nPor favor, corrija a descrição e tente novamente!\n\nツ",
-                            "info")
-        return validar_descricoes
-
     def validar_codigo_filho_igual_pai(self, nome_desenho, df_excel):
         codigo_filho_diferente_codigo_pai = df_excel.iloc[:, self.indice_coluna_codigo_excel] != f"{nome_desenho}"
         if not codigo_filho_diferente_codigo_pai.all():
-            exibir_mensagem(self.titulo_janela,
-                            "EXISTE CÓDIGO FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e "
-                            "tente novamente!\n\nツ",
-                            "info")
-        return codigo_filho_diferente_codigo_pai
+            ValueError("EXISTE CÓDIGO FILHO NA BOM IGUAL AO CÓDIGO PAI\n\nPor favor, corrija o código e "
+                       "tente novamente!\n\nツ")
 
     def validacao_quantidades(self, df_excel):
         validar_quantidades = df_excel.iloc[:, self.indice_coluna_quantidade_excel].notna() & (
@@ -325,23 +320,17 @@ class CadastrarBomTOTVS:
                                       pd.to_numeric(df_excel.iloc[:, self.indice_coluna_quantidade_excel],
                                                     errors='coerce') > 0)
         if not validar_quantidades.all():
-            exibir_mensagem(self.titulo_janela,
-                            "QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, "
-                            "sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente "
-                            "novamente!\n\nツ",
-                            "info")
-        return validar_quantidades
+            raise ValueError("QUANTIDADE INVÁLIDA ENCONTRADA\n\nAs quantidades devem ser números, não nulas, "
+                             "sem espaços em branco e maiores que zero.\nPor favor, corrija a quantidade e tente "
+                             "novamente!\n\nツ")
 
     def validacao_pesos(self, df_excel):
         validar_pesos = df_excel.iloc[:, self.indice_coluna_peso_excel].notna() & (
                 (df_excel.iloc[:, self.indice_coluna_peso_excel] == 0) |
                 (pd.to_numeric(df_excel.iloc[:, self.indice_coluna_peso_excel], errors='coerce') > 0))
         if not validar_pesos.all():
-            exibir_mensagem(self.titulo_janela,
-                            "PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços "
-                            "em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ",
-                            "info")
-        return validar_pesos
+            raise ValueError("PESO INVÁLIDO ENCONTRADO\n\nOs pesos devem ser números, não nulos, sem espaços "
+                             "em branco e maiores ou iguais à zero.\nPor favor, corrija-os e tente novamente!\n\nツ")
 
     def validacao_pesos_unidade_kg(self, df_excel):
         lista_codigos_peso_zero = []
@@ -357,19 +346,15 @@ class CadastrarBomTOTVS:
                         lista_codigos_peso_zero.append(codigo_filho)
 
             if lista_codigos_peso_zero:
-                exibir_mensagem(self.titulo_janela,
-                                f"PESO ZERO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com "
-                                f"unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO."
-                                f"\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o(s) e tente novamente!\n\nツ",
-                                "info")
-                return False
+                raise ValueError(f"PESO ZERO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com "
+                                 f"unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO."
+                                 f"\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o(s) e tente novamente!\n\nツ")
             else:
                 return True
 
         except Exception as ex:
             ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
                                              "Erro ao validar pesos em unidade KG", 16 | 0)
-            return False
 
     def validar_formato_campo_dimensao(self, dimensao):
 
@@ -438,7 +423,7 @@ class CadastrarBomTOTVS:
             for codigo, descricao in items_mt_m2_dimensao_incorreta.items():
                 mensagem += f"""
             {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
-            exibir_mensagem(self.titulo_janela, mensagem_fixa + mensagem, "info")
+            raise ValueError(mensagem_fixa + mensagem)
         if items_unidade_incorreta:
             mensagem = ''
             mensagem_fixa = f"""
@@ -452,10 +437,7 @@ class CadastrarBomTOTVS:
             for codigo, descricao in items_unidade_incorreta.items():
                 mensagem += f"""
             {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
-            exibir_mensagem(self.titulo_janela, mensagem_fixa + mensagem, "info")
-        if items_mt_m2_dimensao_incorreta or items_unidade_incorreta:
-            # self.excluir_arquivo_excel_bom(self.excel_file_path)
-            sys.exit()
+            raise ValueError(mensagem_fixa + mensagem)
 
         return df_campo_dimensao_formatado
 
@@ -493,10 +475,7 @@ class CadastrarBomTOTVS:
                 for codigo, descricao in codigos_bloqueados.items():
                     mensagem += f"""
         {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
-                exibir_mensagem(self.titulo_janela, mensagem_fixa + mensagem, 'warning')
-                return False
-            else:
-                return True
+                raise ValueError(mensagem_fixa + mensagem)
 
         except Exception as e:
             ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o banco de dados. Erro: {str(e)}",
@@ -513,7 +492,7 @@ class CadastrarBomTOTVS:
 
         for index, row in dataframe.iterrows():
             codigo_filho = row.iloc[self.indice_coluna_codigo_excel].strip()
-            codigo_nome_desenho = str(row.iloc[self.indice_coluna_nome_arquivo])
+            codigo_nome_desenho = str(row.iloc[self.indice_coluna_nome_arquivo]).replace('\n', '')
             descricao = row.iloc[self.indice_coluna_descricao_excel]
 
             if len(codigo_nome_desenho) > 13 and codigo_nome_desenho[13] == ' ' and codigo_nome_desenho.startswith(
@@ -557,86 +536,59 @@ class CadastrarBomTOTVS:
 
         if codigos_diferentes:
             mensagem_codigos = ''
-            mensagem_fixa = (f"ATENÇÃO\n\n O CÓDIGO FILHO PODE ESTAR ERRADO.\n\n> APÓS A CORREÇÃO ATUALIZE O TEMPLATE "
-                             f"DA BOM <\nO nome do desenho deve ser igual ao campo nº da peça.\n\nVerificar:\n\n")
-            mensagem_final = "\nSMARTPLIC®"
+            mensagem_fixa = (f"\n\nATENÇÃO\n\n O CÓDIGO FILHO PODE ESTAR ERRADO.\n\n"
+                             f"---> APÓS A CORREÇÃO ATUALIZE O TEMPLATE DA BOM <---\n\n"
+                             f"O nome do desenho deve ser igual ao campo Nº DA PEÇA do formulário\n\nVerificar:\n\n")
+            mensagem_final = "\nEUREKA®"
             i = 1
             for code, description in codigos_diferentes.items():
                 if code == 'nan':
-                    mensagem_codigos += (f"{i}. ALTERAR CONFIG. NOME USUÁRIO "
+                    mensagem_codigos += (f"{i}. Alterar CONFIG. NOME USUÁRIO nas propriedades da peça/montagem"
                                          f"- {description[:20] + '...' if len(description) > 20 else description}\n\n")
                 else:
                     mensagem_codigos += (f"{i}. {code[:18] + '...' if len(code) > 18 else code} "
                                          f"- {description[:20] + '...' if len(description) > 20 else description}\n\n")
                 i += 1
             raise Exception(mensagem_fixa + mensagem_codigos + mensagem_final)
-        else:
-            return True
-
-    def verificar_se_template_bom_esta_correto(self, dataframe):
-        if dataframe.shape[0] >= 1 and dataframe.shape[1] > 9:
-            return "montagem"
-        elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 9:
-            return "peca"
-        elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 7:
-            return "corte_soldagem"
-        elif dataframe.shape[0] == 0:
-            exibir_mensagem(self.titulo_janela, f"ATENÇÃO!\n\nBOM VAZIA!\n\nツ\n\nSMARTPLIC®", "info")
-            return "template_incorreto"
-        else:
-            exibir_mensagem(self.titulo_janela,
-                            f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO"
-                            f"\n\nAtualize-o e tente novamente.\n\nツ\n\nSMARTPLIC®",
-                            "info")
-            return "template_incorreto"
 
     def validacao_de_dados_bom(self, excel_file_path):
         try:
             df_excel = pd.read_excel(excel_file_path, sheet_name='Planilha1', header=None)
-
-            # Encontra o índice da linha que contém "Pos." na segunda coluna
             pos_index = df_excel[df_excel.iloc[:, 0] == "Pos."].index[0]
-
-            # Mantém todas as linhas até o índice encontrado
             df_excel = df_excel.iloc[:pos_index]
 
             df_excel.loc[:, self.indice_coluna_codigo_excel] = df_excel.loc[:, self.indice_coluna_codigo_excel].apply(
                 lambda x: x.strip())
 
-            tipo_da_bom = self.verificar_se_template_bom_esta_correto(df_excel)
-            validar_codigos = self.validar_formato_codigos_filho(df_excel)
-            validar_quantidades = self.validacao_quantidades(df_excel)
-            validar_descricoes = self.validar_descricao(df_excel.iloc[:, self.indice_coluna_descricao_excel])
-            validar_pesos = self.validacao_pesos(df_excel)
-            codigo_filho_igual_pai = self.validar_codigo_filho_igual_pai(self.nome_desenho, df_excel)
+            tipo_da_bom = verificar_se_template_bom_esta_correto(df_excel)
+            self.validar_formato_codigos_filho(df_excel)
+            self.validacao_quantidades(df_excel)
+            validar_descricao(df_excel.iloc[:, self.indice_coluna_descricao_excel])
+            self.validacao_pesos(df_excel)
+            self.validar_codigo_filho_igual_pai(self.nome_desenho, df_excel)
 
             if tipo_da_bom == "montagem":
                 self.codigo_filho_igual_ao_campo_codigo(df_excel)
 
-            if tipo_da_bom in ['peca', 'corte_soldagem', 'montagem']:
-                if (validar_codigos.all() and validar_descricoes.all() and validar_quantidades.all() and
-                        codigo_filho_igual_pai.all() and validar_pesos.all()):
-                    codigos_filho_tem_cadastro = self.verificar_cadastro_codigo_filho(
-                        df_excel.iloc[:, self.indice_coluna_codigo_excel].tolist())
-                    if codigos_filho_tem_cadastro:
-                        df_excel_campo_dimensao_tratado = self.formatar_campos_dimensao(df_excel)
-                        df_bom_excel = self.remover_linhas_duplicadas_e_consolidar_quantidade(
-                            df_excel_campo_dimensao_tratado)
-                        df_bom_excel.iloc[:, self.indice_coluna_codigo_excel] = (
-                            df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].str.strip())
-                        existe_codigo_filho_repetido = self.verificar_codigo_repetido(df_bom_excel)
-                        nao_existe_codigo_bloqueado = self.validacao_codigo_bloqueado(df_excel)
-                        codigos_filho_tem_estrutura = self.verificar_se_existe_estrutura_codigos_filho(
-                            df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].tolist())
-                        pesos_maiores_que_zero_kg = self.validacao_pesos_unidade_kg(df_excel)
-                        if (codigos_filho_tem_cadastro and not existe_codigo_filho_repetido
-                                and nao_existe_codigo_bloqueado and codigos_filho_tem_estrutura
-                                and pesos_maiores_que_zero_kg):
-                            return df_bom_excel
-            else:
-                raise Exception("A validação de dados da BOM não foi bem-sucedida.")
-        except Exception:
-            raise
+            self.verificar_cadastro_codigo_filho(df_excel.iloc[:, self.indice_coluna_codigo_excel].tolist())
+
+            df_excel_campo_dimensao_tratado = self.formatar_campos_dimensao(df_excel)
+
+            df_bom_excel = self.remover_linhas_duplicadas_e_consolidar_quantidade(
+                df_excel_campo_dimensao_tratado)
+            df_bom_excel.iloc[:, self.indice_coluna_codigo_excel] = (
+                df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].str.strip())
+
+            self.verificar_codigo_repetido(df_bom_excel)
+            self.validacao_codigo_bloqueado(df_excel)
+            self.verificar_se_existe_estrutura_codigos_filho(
+                df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].tolist())
+            self.validacao_pesos_unidade_kg(df_excel)
+
+            return df_bom_excel
+
+        except Exception as e:
+            raise Exception(f"Erro durante a validação da BOM: {str(e)}")
 
     def atualizar_campo_revisao_do_codigo_pai(self, codigo_pai, numero_revisao):
         query_atualizar_campo_revisao = f"""UPDATE {self.database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' 
@@ -671,7 +623,7 @@ class CadastrarBomTOTVS:
                                              "Erro ao atualizar o campo DATA ULT. REV. do código pai", 16 | 0)
             return False
 
-    def verificar_se_existe_estrutura_codigo_pai(self, codigo_pai):
+    def verificar_estrutura_codigo_pai(self, codigo_pai):
         # Tente estabelecer a conexão com o banco de dados
         conn_str = (f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};'
                     f'PWD={self.password}')
@@ -839,7 +791,7 @@ class CadastrarBomTOTVS:
             conn.commit()
 
             exibir_mensagem(self.titulo_janela,
-                            f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®",
+                            f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nEUREKA®",
                             "info")
             return True, revisao_inicial
 
@@ -1031,11 +983,11 @@ class CadastrarBomTOTVS:
 
     def executar_logica(self):
         status_processo = None
+        excel_file_path = obter_caminho_arquivo_excel(self.nome_desenho)
         try:
             delay = 0.4
             self.status_label.config(text="Iniciando cadastro...")
             time.sleep(0.7)
-            excel_file_path = obter_caminho_arquivo_excel(self.nome_desenho)
             self.update_progress(10)
 
             self.status_label.config(text="Validando formato do código pai...")
@@ -1059,7 +1011,7 @@ class CadastrarBomTOTVS:
                 self.update_progress(40)
                 self.status_label.config(text="Verificando se já existe estrutura cadastrada...")
                 time.sleep(delay)
-                resultado_estrutura_codigo_pai = self.verificar_se_existe_estrutura_codigo_pai(self.nome_desenho)
+                resultado_estrutura_codigo_pai = self.verificar_estrutura_codigo_pai(self.nome_desenho)
                 self.update_progress(50)
 
                 if not df_bom_excel.empty and resultado_estrutura_codigo_pai.empty:
@@ -1075,7 +1027,7 @@ class CadastrarBomTOTVS:
                 if df_bom_excel.empty and not nova_estrutura_cadastrada:
                     exibir_mensagem(self.titulo_janela,
                                     f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a "
-                                    f"BOM e tente novamente!\n\n{self.nome_desenho}\n\nツ\n\nSMARTPLIC®",
+                                    f"BOM e tente novamente!\n\n{self.nome_desenho}\n\nツ\n\nEUREKA®",
                                     "warning")
                     self.update_progress(100)
                 if not df_bom_excel.empty and not resultado_estrutura_codigo_pai.empty:
@@ -1130,7 +1082,7 @@ class CadastrarBomTOTVS:
                                 time.sleep(delay)
                                 exibir_mensagem(self.titulo_janela,
                                                 f"Alteração da estrutura realizada com sucesso!"
-                                                f"\n\n{self.nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®",
+                                                f"\n\n{self.nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEUREKA®",
                                                 "info")
 
                         else:
@@ -1139,14 +1091,14 @@ class CadastrarBomTOTVS:
                             exibir_mensagem(self.titulo_janela,
                                             f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou "
                                             f"removido itens da estrutura.\n\n{self.nome_desenho}"
-                                            f"\n\n( ͡° ͜ʖ ͡°)\n\nSMARTPLIC®",
+                                            f"\n\n( ͡° ͜ʖ ͡°)\n\nEUREKA®",
                                             "info")
             status_processo = '✔️ Processo finalizado com sucesso!'
         except Exception as e:
-            exibir_mensagem(self.titulo_janela, f'Falha ao cadastrar BOM: {e}', 'error')
+            exibir_mensagem(self.titulo_janela, f'Falha ao cadastrar BOM {e}', 'error')
             status_processo = '❌ Processo cancelado!'
         finally:
-            # self.excluir_arquivo_excel_bom(excel_file_path)
+            excluir_arquivo_excel_bom(excel_file_path)
             end_time = time.time()
             elapsed = end_time - self.start_time
             self.status_label.config(text=f"{status_processo}\n\n{elapsed:.3f} segundos\n\nEUREKA®")
