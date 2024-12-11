@@ -124,9 +124,9 @@ def verificar_se_template_bom_esta_correto(dataframe):
     elif dataframe.shape[0] >= 1 and dataframe.shape[1] == 7:
         return "corte_soldagem"
     elif dataframe.shape[0] == 0:
-        raise Exception(f"\n\nATENÇÃO!\n\nBOM VAZIA!\n\nツ\n\nEUREKA®")
+        raise Exception(f"ATENÇÃO!\n\nBOM VAZIA!\n\nツ\n\nEUREKA®")
     else:
-        raise Exception(f"\n\nATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO"
+        raise Exception(f"ATENÇÃO!\n\nO TEMPLATE DA BOM FOI ATUALIZADO"
                         f"\n\nPor favor, selecione o template ENAPLIC atual e tente novamente!\n\nツ\n\nEUREKA®")
 
 
@@ -178,7 +178,7 @@ class CadastrarBomTOTVS:
 
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2|³|3)?(\s*\(.*\))?$'
 
-        self.nome_desenho = ler_variavel_ambiente_codigo_desenho()  # 'E1111-111-111'
+        self.nome_desenho = ler_variavel_ambiente_codigo_desenho()
 
     def validar_formato_codigo_pai(self, codigo_pai):
         codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in self.formatos_codigo)
@@ -1166,7 +1166,7 @@ class CadastrarBomTOTVS:
             exibir_mensagem(self.titulo_janela, f'Falha ao cadastrar BOM\n\n{e}', 'warning')
             status_processo = mensagem_processo['cancelado']
         finally:
-            # excluir_arquivo_excel_bom(excel_file_path)
+            excluir_arquivo_excel_bom(excel_file_path)
             end_time = time.time()
             elapsed = end_time - self.start_time
             self.status_label.config(text=f"{status_processo}\n\n{elapsed:.3f} segundos\n\nEUREKA®")
