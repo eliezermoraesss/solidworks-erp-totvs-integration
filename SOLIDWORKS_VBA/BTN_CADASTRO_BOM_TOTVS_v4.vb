@@ -51,18 +51,22 @@ Public Sub Main()
     
     If TypeOf swTable Is IWeldmentCutListAnnotation Then
         status = SaveAsExcelBOMListaCorteSoldagem(bomPath)
-    Else
+    ElseIf TypeOf swTable Is IBomTableAnnotation Then
         ' Save the selected BOM table to Microsoft Excel, including hidden cells and images (path, cells, images)
         status = swSpecTable.SaveAsExcel(bomPath, True, False)
+    Else
+        status = False
     End If
 
     ' Release the reference to the TableAnnotation object
     Set swTable = Nothing
     
-    If status = True Then
+    If status <> False Then
         Call ExecutarScriptPython
-    Else
-        MsgBox "Falha ao salvar BOM no formato Excel.", vbCritical, "Erro"
+    ElseIf status = False Then
+        MsgBox "Os tipos de BOM aceitáveis são: " & vbNewLine & vbNewLine & _
+       "1. Lista de materiais" & vbNewLine & _
+       "2. Lista de corte de soldagem", vbInformation, "ATENÇÃO"
     End If
 
 End Sub
@@ -121,7 +125,7 @@ Sub ExecutarScriptPython()
     Dim CaminhoArquivo As String
     
     ' Substitua o caminho abaixo pelo caminho do seu arquivo botao-salvar-bom-solidworks-totvs
-    CaminhoArquivo = "\\192.175.175.4\f\INTEGRANTES\ELIEZER\PROJETO SOLIDWORKS TOTVS\VBA\PYTHON\botao-salvar-bom-solidworks-totvs_CRUD_TEST.pyw"
+    CaminhoArquivo = "\\192.175.175.4\desenvolvimento\SOLIDWORKS_VBA\script-python\botao-salvar-bom-solidworks-totvs_CRUD.pyw"
     
     ' Use a função Shell para abrir o arquivo com a aplicação padrão
     Shell "explorer.exe """ & CaminhoArquivo & """", vbNormalFocus
