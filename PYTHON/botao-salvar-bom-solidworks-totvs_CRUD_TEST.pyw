@@ -11,6 +11,8 @@ import time
 from sqlalchemy import create_engine
 import sys
 
+from sqlalchemy.exc import SQLAlchemyError
+
 
 def exibir_mensagem(title, message, icon_type):
     tk_window = tk.Tk()
@@ -176,17 +178,15 @@ class CadastrarBomTOTVS:
 
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2|³|3)?(\s*\(.*\))?$'
 
-        self.nome_desenho = 'E1111-111-111'  # ler_variavel_ambiente_codigo_desenho()
+        self.nome_desenho = ler_variavel_ambiente_codigo_desenho()  # 'E1111-111-111'
 
     def validar_formato_codigo_pai(self, codigo_pai):
         codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in self.formatos_codigo)
 
         if not codigo_pai_validado:
-            exibir_mensagem(self.titulo_janela,
-                            f"Este desenho foi salvo com o código fora do formato padrão ENAPLIC."
-                            f"\n\n{codigo_pai}\n\nPor favor renomear e salvar o desenho com o código no formato "
-                            f"padrão.\n\nツ",
-                            "info")
+            raise ValueError(f"Este desenho foi salvo com o código fora do formato padrão ENAPLIC."
+                             f"\n\n{codigo_pai}\n\nPor favor renomear e salvar o desenho com o código no formato "
+                             f"padrão.\n\nツ")
 
         return codigo_pai_validado
 
@@ -232,10 +232,18 @@ class CadastrarBomTOTVS:
                             f"\n\nEfetue o cadastro e tente novamente!\n\nツ\n\nEUREKA®")
                 raise ValueError(mensagem)
 
-        except Exception as ex:
+        except pyodbc.Error as sql_ex:
             # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao consultar o cadastro de produtos", 16 | 0)
+            raise
+        except ValueError:
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao consultar o cadastro de produtos", 16 | 0)
+            raise
 
         finally:
             # Fecha a conexão com o banco de dados se estiver aberta
@@ -273,11 +281,18 @@ class CadastrarBomTOTVS:
                             f"\n\nEfetue o cadastro da estrutura de cada um deles e tente novamente!\n\nツ")
                 raise ValueError(mensagem)
 
-        except Exception as ex:
+        except pyodbc.Error as sql_ex:
             # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao consultar o cadastro de estrutura dos itens filho", 16 | 0)
-
+            raise
+        except ValueError:
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao consultar o cadastro de estrutura dos itens filho", 16 | 0)
+            raise
         finally:
             # Fecha a conexão com o banco de dados se estiver aberta
             if 'conn' in locals():
@@ -349,12 +364,8 @@ class CadastrarBomTOTVS:
                 raise ValueError(f"PESO ZERO ENCONTRADO\n\nCertifique-se de que TODOS os pesos dos itens com "
                                  f"unidade de medida em 'kg' (kilograma) sejam MAIORES QUE ZERO."
                                  f"\n\n{lista_codigos_peso_zero}\n\nPor favor, corrija-o(s) e tente novamente!\n\nツ")
-            else:
-                return True
-
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
-                                             "Erro ao validar pesos em unidade KG", 16 | 0)
+        except Exception:
+            raise
 
     def validar_formato_campo_dimensao(self, dimensao):
 
@@ -477,11 +488,18 @@ class CadastrarBomTOTVS:
         {codigo} - {descricao[:18] + '...' if len(descricao) > 18 else descricao}"""
                 raise ValueError(mensagem_fixa + mensagem)
 
-        except Exception as e:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o banco de dados. Erro: {str(e)}",
-                                             "Erro ao consultar campo BLOQUEIO (B1_MSBLQL) na tabela produtos SG1010 "
-                                             "do TOTVS",
+        except pyodbc.Error as sql_ex:
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o banco de dados. Erro: {str(sql_ex)}",
+                                             "Erro ao consultar campo BLOQUEIO (B1_MSBLQL) na tabela produtos",
                                              16 | 0)
+            raise
+        except ValueError:
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao consultar campo BLOQUEIO (B1_MSBLQL) na tabela produtos", 16 | 0)
+            raise
         finally:
             if 'conn' in locals():
                 conn.close()
@@ -588,7 +606,7 @@ class CadastrarBomTOTVS:
             return df_bom_excel
 
         except Exception as e:
-            raise Exception(f"Erro durante a validação da BOM: {str(e)}")
+            raise Exception(f"Erro durante a validação da BOM\n\n{str(e)}")
 
     def atualizar_campo_revisao_do_codigo_pai(self, codigo_pai, numero_revisao):
         query_atualizar_campo_revisao = f"""UPDATE {self.database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' 
@@ -600,12 +618,17 @@ class CadastrarBomTOTVS:
                     f'PWD={self.password}') as conn:
                 cursor = conn.cursor()
                 cursor.execute(query_atualizar_campo_revisao)
-                return True
 
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
+        except pyodbc.Error as sql_ex:
+            # Trata erros relacionados ao SQL
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao atualizar o campo REV. do código pai", 16 | 0)
-            return False
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao atualizar o campo REV. do código pai", 16 | 0)
+            raise
 
     def atualizar_campo_data_ultima_revisao_do_codigo_pai(self, codigo_pai):
         data_atual = formatar_data_atual()
@@ -618,10 +641,16 @@ class CadastrarBomTOTVS:
                 cursor = conn.cursor()
                 cursor.execute(query_atualizar_data_ultima_revisao)
                 return True
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
+        except pyodbc.Error as sql_ex:
+            # Trata erros relacionados ao SQL
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao atualizar o campo DATA ULT. REV. do código pai", 16 | 0)
-            return False
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao atualizar o campo DATA ULT. REV. do código pai", 16 | 0)
+            raise
 
     def verificar_estrutura_codigo_pai(self, codigo_pai):
         # Tente estabelecer a conexão com o banco de dados
@@ -644,11 +673,16 @@ class CadastrarBomTOTVS:
 
             return resultado_query_consulta_estrutura_totvs
 
+        except SQLAlchemyError as sql_ex:
+            # Trata erros relacionados ao SQL
+            ctypes.windll.user32.MessageBoxW(0, f"Erro de banco de dados: {str(sql_ex)}",
+                                             "Erro ao verificar estrutura no TOTVS", 16 | 0)
+            raise
         except Exception as ex:
-            # Exibe uma caixa de diálogo se a conexão ou a consulta falhar
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
-                                             "Erro ao verificar se existe estrutura no TOTVS", 16 | 0)
-
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao verificar estrutura no TOTVS", 16 | 0)
+            raise
         finally:
             # Fecha a conexão com o banco de dados se estiver aberta
             if 'engine' in locals():
@@ -669,10 +703,16 @@ class CadastrarBomTOTVS:
 
                 return valor_ultima_pk
 
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
+        except pyodbc.Error as sql_ex:
+            # Tratar erros relacionados ao SQL
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao obter última PK da tabela estrutura", 16 | 0)
-            return None
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao obter última PK da tabela estrutura", 16 | 0)
+            raise
 
     def obter_revisao_codigo_pai(self, codigo_pai, primeiro_cadastro):
         query_revisao_inicial = f"""SELECT B1_REVATU FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""
@@ -697,10 +737,16 @@ class CadastrarBomTOTVS:
 
                 return valor_revisao_inicial
 
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
+        except pyodbc.Error as sql_ex:
+            # Tratar erros relacionados ao SQL
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao consultar revisão do código pai na tabela de produtos", 16 | 0)
-            return None
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao consultar revisão do código pai na tabela de produtos", 16 | 0)
+            raise
 
     def obter_unidade_medida_codigo_filho(self, codigo_filho):
         query_unidade_medida_codigo_filho = f"""SELECT B1_UM FROM {self.database}.dbo.SB1010 WHERE 
@@ -717,10 +763,16 @@ class CadastrarBomTOTVS:
 
                 return valor_unidade_medida
 
+        except pyodbc.Error as sql_ex:
+            # Trata erros relacionados ao SQL
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(sql_ex)}",
+                                             "Erro ao consultar a unidade de medida de código filho", 16 | 0)
+            raise
         except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
-                                             "Erro ao consultar Unidade de Medida de código filho", 16 | 0)
-            return None
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao consultar a unidade de medida de código filho", 16 | 0)
+            raise
 
     def verificar_cadastro_codigo_pai(self, codigo_pai):
         query_consulta_produto_codigo_pai = f"""SELECT B1_COD FROM {self.database}.dbo.SB1010 WHERE 
@@ -743,23 +795,27 @@ class CadastrarBomTOTVS:
                                     "warning")
                     return False
 
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(ex)}",
+        except pyodbc.Error as sql_ex:
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao consultar cadastro do código pai", 16 | 0)
-            return None
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao consultar cadastro do código pai", 16 | 0)
+            raise
 
     def criar_nova_estrutura_totvs(self, codigo_pai, df_bom_excel):
-        codigo_filho, quantidade, unidade_medida = '', '', ''
-        primeiro_cadastro = True
-        ultima_pk_tabela_estrutura = self.obter_ultima_pk_tabela_estrutura()
-        revisao_inicial = self.obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
-        data_atual_formatada = formatar_data_atual()
-
+        codigo_filho, quantidade, unidade_medida, ultima_pk_tabela_estrutura = '', '', '', ''
         conn = pyodbc.connect(
             f'DRIVER='
             f'{self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
         cursor = conn.cursor()
         try:
+            primeiro_cadastro = True
+            ultima_pk_tabela_estrutura = self.obter_ultima_pk_tabela_estrutura()
+            revisao_inicial = self.obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
+            data_atual_formatada = formatar_data_atual()
             for index, row in df_bom_excel.iterrows():
                 ultima_pk_tabela_estrutura += 1
                 codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
@@ -795,14 +851,12 @@ class CadastrarBomTOTVS:
                             "info")
             return True, revisao_inicial
 
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0,
-                                             f"Falha na conexão ou consulta. Erro: {str(ex)} - "
-                                             f"PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - "
-                                             f"{quantidade} - {unidade_medida}",
-                                             "Erro ao Criar Nova Estrutura", 16 | 0)
-            return False
-
+        except pyodbc.Error as sql_ex:
+            raise Exception(f"Falha ao criar nova estrutura. Erro de banco de dados: {str(sql_ex)} - "
+                            f"PK-{ultima_pk_tabela_estrutura} - {codigo_pai} - {codigo_filho} - "
+                            f"{quantidade} - {unidade_medida}")
+        except Exception:
+            raise
         finally:
             cursor.close()
             conn.close()
@@ -813,7 +867,6 @@ class CadastrarBomTOTVS:
             f'{self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
         cursor = conn.cursor()
         try:
-
             for index, row in dataframe_codigos_em_comum.iterrows():
                 codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
                 quantidade = row.iloc[self.indice_coluna_quantidade_excel]
@@ -835,25 +888,25 @@ class CadastrarBomTOTVS:
                 cursor.execute(query_alterar_quantidade_estrutura)
             conn.commit()
 
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}",
+        except pyodbc.Error as sql_ex:
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao atualizar itens já existentes da estrutura", 16 | 0)
-
+        except Exception:
+            raise
         finally:
             cursor.close()
             conn.close()
 
-    def inserir_itens_estrutura_totvs(self, codigo_pai, dataframe_codigos_adicionados_bom,
+    def inserir_itens_estrutura_totvs(self, codigo_pai, df_codigos_adicionados,
                                       revisao_atualizada_estrutura):
-        ultima_pk_tabela_estrutura = self.obter_ultima_pk_tabela_estrutura()
-        data_atual_formatada = formatar_data_atual()
-        revisao_inicial = revisao_atualizada_estrutura
-        conn = pyodbc.connect(
-            f'DRIVER='
-            f'{self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
+        conn = pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};'
+                              f'PWD={self.password}')
         cursor = conn.cursor()
         try:
-            for index, row in dataframe_codigos_adicionados_bom.iterrows():
+            ultima_pk_tabela_estrutura = self.obter_ultima_pk_tabela_estrutura()
+            data_atual_formatada = formatar_data_atual()
+            revisao_inicial = revisao_atualizada_estrutura
+            for index, row in df_codigos_adicionados.iterrows():
                 ultima_pk_tabela_estrutura += 1
                 codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
                 quantidade = row.iloc[self.indice_coluna_quantidade_excel]
@@ -883,11 +936,12 @@ class CadastrarBomTOTVS:
             conn.commit()
             return True
 
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}",
+        except pyodbc.Error as sql_ex:
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao inserir novos itens na estrutura", 16 | 0)
-            return False
-
+            raise
+        except Exception:
+            raise
         finally:
             cursor.close()
             conn.close()
@@ -916,11 +970,15 @@ class CadastrarBomTOTVS:
             conn.commit()
             return True
 
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}",
+        except pyodbc.Error as sql_ex:
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao remover item da estrutura", 16 | 0)
-            return False
-
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao remover item da estrutura", 16 | 0)
+            raise
         finally:
             cursor.close()
             conn.close()
@@ -963,12 +1021,16 @@ class CadastrarBomTOTVS:
             conn.commit()
             return True
 
-        except Exception as ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(ex)}",
-                                             "Erro ao atualizar campo revfim dos itens já existentes da estrutura",
+        except pyodbc.Error as sql_ex:
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(sql_ex)}",
+                                             "Erro ao atualizar campo revfim da estrutura",
                                              16 | 0)
-            return False
-
+            raise
+        except Exception as ex:
+            # Trata outros erros inesperados
+            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
+                                             "Erro ao atualizar campo revfim da estrutura", 16 | 0)
+            raise
         finally:
             cursor.close()
             conn.close()
@@ -983,6 +1045,10 @@ class CadastrarBomTOTVS:
 
     def executar_logica(self):
         status_processo = None
+        mensagem_processo = {
+            "cancelado": '❌ Processo cancelado!',
+            "sucesso": '✔️ Processo finalizado com sucesso!'
+        }
         excel_file_path = obter_caminho_arquivo_excel(self.nome_desenho)
         try:
             delay = 0.4
@@ -1093,12 +1159,14 @@ class CadastrarBomTOTVS:
                                             f"removido itens da estrutura.\n\n{self.nome_desenho}"
                                             f"\n\n( ͡° ͜ʖ ͡°)\n\nEUREKA®",
                                             "info")
-            status_processo = '✔️ Processo finalizado com sucesso!'
+                        status_processo = mensagem_processo['sucesso']
+                    else:
+                        status_processo = mensagem_processo['cancelado']
         except Exception as e:
-            exibir_mensagem(self.titulo_janela, f'Falha ao cadastrar BOM {e}', 'error')
-            status_processo = '❌ Processo cancelado!'
+            exibir_mensagem(self.titulo_janela, f'Falha ao cadastrar BOM\n\n{e}', 'warning')
+            status_processo = mensagem_processo['cancelado']
         finally:
-            excluir_arquivo_excel_bom(excel_file_path)
+            # excluir_arquivo_excel_bom(excel_file_path)
             end_time = time.time()
             elapsed = end_time - self.start_time
             self.status_label.config(text=f"{status_processo}\n\n{elapsed:.3f} segundos\n\nEUREKA®")
