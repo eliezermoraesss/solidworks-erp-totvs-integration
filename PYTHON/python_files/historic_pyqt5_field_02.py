@@ -46,14 +46,13 @@ class SearchHistoryManager:
         except sqlite3.Error as e:
             print(f"Erro ao salvar histórico: {e}")
 
-    def get_history(self, field_name, limit=20):
+    def get_history(self, field_name):
         """Recupera histórico de um campo"""
         self.cursor.execute('''
             SELECT value FROM search_history 
             WHERE field_name = ? 
-            ORDER BY timestamp DESC 
-            LIMIT ?
-        ''', (field_name, limit))
+            ORDER BY timestamp DESC
+        ''', (field_name))
         return [row[0] for row in self.cursor.fetchall()]
 
     def clear_history(self, field_name=None):
@@ -89,7 +88,7 @@ class HistorySearchApp(QMainWindow):
         self.fields = {}
 
         for label, field_name in [
-            ("Usuário", "username"),
+            ("Código", "codigo"),
             ("E-mail", "email"),
             ("Produto", "product")
         ]:
