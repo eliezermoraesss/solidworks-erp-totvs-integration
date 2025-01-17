@@ -17,7 +17,7 @@ class BOMViewer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.engine = None
-        self.codigo_pai = 'E7047-001-001'
+        self.codigo_pai = 'E7047-001-182'
         self.all_components = []
         self.setWindowTitle('Visualizador de Estrutura')
         self.setGeometry(100, 100, 1200, 800)
@@ -64,10 +64,13 @@ class BOMViewer(QMainWindow):
         tree_buttons_layout = QHBoxLayout()
         expand_button = QPushButton("Expandir Tudo")
         collapse_button = QPushButton("Recolher Tudo")
+        toggle_table_button = QPushButton("Ocultar/Exibir Tabela")
         expand_button.clicked.connect(self.tree.expandAll)
         collapse_button.clicked.connect(self.tree.collapseAll)
+        toggle_table_button.clicked.connect(self.toggle_table_visibility)
         tree_buttons_layout.addWidget(expand_button)
         tree_buttons_layout.addWidget(collapse_button)
+        tree_buttons_layout.addWidget(toggle_table_button)
         tree_layout.addLayout(tree_buttons_layout)
         
         splitter.addWidget(tree_container)
@@ -92,19 +95,27 @@ class BOMViewer(QMainWindow):
     def get_components(self, parent_code: str, parent_qty: float = 1.0, level: int = 1):
         query = f"""
         SELECT 
-            G1_COD, G1_COMP, G1_XUM, G1_QUANT 
+            struct.G1_COD,
+            struct.G1_COMP,
+            prod.B1_DESC AS 'DESCRICAO',
+            struct.G1_XUM, 
+            struct.G1_QUANT 
         FROM 
-            PROTHEUS12_R27.dbo.SG1010 
+            PROTHEUS12_R27.dbo.SG1010 struct
+        INNER JOIN
+            PROTHEUS12_R27.dbo.SB1010 prod
+        ON 
+            G1_COMP = B1_COD AND prod.D_E_L_E_T_ <> '*'
         WHERE 
             G1_COD = '{parent_code}' 
             AND G1_REVFIM <> 'ZZZ' 
-            AND D_E_L_E_T_ <> '*' 
+            AND struct.D_E_L_E_T_ <> '*' 
             AND G1_REVFIM = (
                 SELECT MAX(G1_REVFIM) 
                 FROM PROTHEUS12_R27.dbo.SG1010 
                 WHERE G1_COD = '{parent_code}'
                 AND G1_REVFIM <> 'ZZZ' 
-                AND D_E_L_E_T_ <> '*'
+                AND struct.D_E_L_E_T_ <> '*'
             )
         """
         
@@ -117,9 +128,10 @@ class BOMViewer(QMainWindow):
                     
                     component = {
                         'NIVEL': level,
-                        'CODIGO': row['G1_COMP'],
-                        'CODIGO_PAI': row['G1_COD'],
-                        'UNIDADE': row['G1_XUM'],
+                        'CODIGO': row['G1_COMP'].strip(),
+                        'DESCRICAO': row['DESCRICAO'].strip(),
+                        'CODIGO_PAI': row['G1_COD'].strip(),
+                        'UNIDADE': row['G1_XUM'].strip(),
                         'QTD_NIVEL': row['G1_QUANT'],
                         'QTD_TOTAL': total_qty
                     }
@@ -135,9 +147,23 @@ class BOMViewer(QMainWindow):
         self.all_components = []
         
         # Adicionar item de nível mais alto
+        # Primeiro precisamos buscar a descrição do item pai
+        query = f"""
+        SELECT B1_DESC as DESCRICAO
+        FROM PROTHEUS12_R27.dbo.SB1010
+        WHERE B1_COD = '{codigo_pai}'
+        AND D_E_L_E_T_ <> '*'
+        """
+        try:
+            df_pai = pd.read_sql(query, self.engine)
+            descricao_pai = df_pai['DESCRICAO'].iloc[0] if not df_pai.empty else ''
+        except:
+            descricao_pai = ''
+        
         self.all_components.append({
             'NIVEL': 0,
             'CODIGO': codigo_pai,
+            'DESCRICAO': descricao_pai,
             'CODIGO_PAI': None,
             'UNIDADE': 'UN', 
             'QTD_NIVEL': 1.0,
@@ -146,6 +172,8 @@ class BOMViewer(QMainWindow):
         
         self.get_components(codigo_pai)
         self.df = pd.DataFrame(self.all_components)
+        # Reordenar as colunas
+        self.df = self.df[['NIVEL', 'CODIGO', 'CODIGO_PAI', 'DESCRICAO', 'UNIDADE', 'QTD_NIVEL', 'QTD_TOTAL']]
         self.df.to_excel('bom_hierarquica_v6.xlsx', index=False)
         
         self.setup_table()
@@ -197,45 +225,63 @@ class BOMViewer(QMainWindow):
         self.tree.clear()
         
         def build_tree_recursive(parent_item, parent_code, parent_qty):
-            # Consulta SQL para obter os filhos do componente atual
             query = f"""
             SELECT 
-                G1_COD, G1_COMP, G1_XUM, G1_QUANT 
+                struct.G1_COD,
+                struct.G1_COMP,
+                prod.B1_DESC AS 'DESCRICAO',
+                struct.G1_XUM, 
+                struct.G1_QUANT 
             FROM 
-                PROTHEUS12_R27.dbo.SG1010 
+                PROTHEUS12_R27.dbo.SG1010 struct
+            INNER JOIN
+                PROTHEUS12_R27.dbo.SB1010 prod
+            ON 
+                G1_COMP = B1_COD AND prod.D_E_L_E_T_ <> '*'
             WHERE 
                 G1_COD = '{parent_code}' 
                 AND G1_REVFIM <> 'ZZZ' 
-                AND D_E_L_E_T_ <> '*' 
+                AND struct.D_E_L_E_T_ <> '*' 
                 AND G1_REVFIM = (
                     SELECT MAX(G1_REVFIM) 
                     FROM PROTHEUS12_R27.dbo.SG1010 
                     WHERE G1_COD = '{parent_code}'
                     AND G1_REVFIM <> 'ZZZ' 
-                    AND D_E_L_E_T_ <> '*'
+                    AND struct.D_E_L_E_T_ <> '*'
                 )
             """
             
             try:
                 df = pd.read_sql(query, self.engine)
                 
-                # Iterar sobre os filhos retornados pela consulta
                 for _, row in df.iterrows():
-                    # Quantidade total = quantidade do pai * quantidade do filho
                     total_qty = parent_qty * row['G1_QUANT']
                     
-                    # Criar item de árvore para o filho
                     child_item = QTreeWidgetItem(parent_item)
-                    child_item.setText(0, f"{row['G1_COMP']} (Qtd: {total_qty:.2f})")
+                    child_item.setText(0, f"{row['G1_COMP'].strip()} - {row['DESCRICAO'].strip()} - {total_qty:.2f} {row['G1_XUM'].strip()}")
                     
-                    # Recursivamente adicionar os filhos do filho atual
                     build_tree_recursive(child_item, row['G1_COMP'], total_qty)
             except Exception as e:
                 print(f"Erro ao processar código {parent_code}: {str(e)}")
         
+        # Buscar descrição do item raiz
+        query = f"""
+        SELECT B1_DESC as DESCRICAO, B1_UM as UNIDADE
+        FROM PROTHEUS12_R27.dbo.SB1010
+        WHERE B1_COD = '{self.codigo_pai}'
+        AND D_E_L_E_T_ <> '*'
+        """
+        try:
+            df_root = pd.read_sql(query, self.engine)
+            root_desc = df_root['DESCRICAO'].iloc[0] if not df_root.empty else ''
+            root_unidade = df_root['UNIDADE'].iloc[0] if not df_root.empty else ''
+        except:
+            root_desc = ''
+            root_unidade = ''
+        
         # Iniciar a construção da árvore com o nó raiz
         root_item = QTreeWidgetItem(self.tree)
-        root_item.setText(0, f"{self.codigo_pai} (Qtd: 1.00)")
+        root_item.setText(0, f"{self.codigo_pai} - {root_desc.strip()} - 1.00 {root_unidade.strip()}")
         build_tree_recursive(root_item, self.codigo_pai, 1.0)
         
         # Expandir todos os itens por padrão
@@ -358,6 +404,12 @@ class BOMViewer(QMainWindow):
         </body>
         </html>
         '''
+
+    def toggle_table_visibility(self):
+        if self.table.isVisible():
+            self.table.hide()
+        else:
+            self.table.show()
 
 def main():
     app = QApplication(sys.argv)
