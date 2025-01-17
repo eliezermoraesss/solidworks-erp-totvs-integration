@@ -44,10 +44,26 @@ class BOMViewer(QMainWindow):
         self.table.setSortingEnabled(False)
         splitter.addWidget(self.table)
         
+        # Container para árvore e botões
+        tree_container = QWidget()
+        tree_layout = QVBoxLayout(tree_container)
+        
         # Árvore
         self.tree = QTreeWidget()
         self.tree.setHeaderLabel('Hierarquia')
-        splitter.addWidget(self.tree)
+        tree_layout.addWidget(self.tree)
+        
+        # Botões de expandir/recolher
+        tree_buttons_layout = QHBoxLayout()
+        expand_button = QPushButton("Expandir Tudo")
+        collapse_button = QPushButton("Recolher Tudo")
+        expand_button.clicked.connect(self.tree.expandAll)
+        collapse_button.clicked.connect(self.tree.collapseAll)
+        tree_buttons_layout.addWidget(expand_button)
+        tree_buttons_layout.addWidget(collapse_button)
+        tree_layout.addLayout(tree_buttons_layout)
+        
+        splitter.addWidget(tree_container)
         
         layout.addWidget(splitter)
         
