@@ -8,16 +8,17 @@ import pandas as pd
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                            QPushButton, QTableWidget, QTableWidgetItem, QTreeWidget, 
                            QTreeWidgetItem, QSplitter, QLineEdit, QLabel, QHBoxLayout,
-                           QAbstractItemView, QAction)
+                           QAbstractItemView, QAction, QFileDialog)
 from PyQt5.QtCore import Qt
 from sqlalchemy import create_engine
 from db_mssql import setup_mssql
+from datetime import datetime
 
 class BOMViewer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.engine = None
-        self.codigo_pai = 'E7047-001-182'
+        self.codigo_pai = 'E7047-001-001'
         self.all_components = []
         self.setWindowTitle('Visualizador de Estrutura')
         
@@ -99,9 +100,18 @@ class BOMViewer(QMainWindow):
         layout.addWidget(splitter)
         
         # Botão para visualização hierárquica HTML
+        bottom_buttons_layout = QHBoxLayout()
+        
         self.view_button = QPushButton('Visualizar Hierarquia no Navegador')
         self.view_button.clicked.connect(self.show_hierarchy)
-        layout.addWidget(self.view_button)
+        bottom_buttons_layout.addWidget(self.view_button)
+        
+        # Botão para exportar para Excel
+        self.export_button = QPushButton('Exportar para Excel')
+        self.export_button.clicked.connect(self.export_to_excel)
+        bottom_buttons_layout.addWidget(self.export_button)
+        
+        layout.addLayout(bottom_buttons_layout)
 
         # Setup banco de dados e carregar dados
         self.setup_database()
@@ -235,55 +245,67 @@ class BOMViewer(QMainWindow):
             csv.writer(stream, delimiter='\t').writerows(table)
             QApplication.clipboard().setText(stream.getvalue())
         
+    def format_quantity(self, value):
+        """Formata a quantidade: inteiro sem casas decimais, decimal com duas casas"""
+        if value.is_integer():
+            return f"{int(value)}"
+        return f"{value:.2f}"
+
     def populate_table(self, df):
         self.table.setRowCount(len(df))
         for i, row in df.iterrows():
             for j, value in enumerate(row):
-                item = QTableWidgetItem(str(value))
+                # Formatar quantidades (colunas QTD_NIVEL e QTD_TOTAL)
+                if j in [5, 6]:  # índices das colunas de quantidade
+                    formatted_value = self.format_quantity(value)
+                else:
+                    formatted_value = str(value)
+                item = QTableWidgetItem(formatted_value)
                 self.table.setItem(i, j, item)
     
+    def build_tree_recursive(self, parent_item, parent_code, parent_qty):
+        query = f"""
+        SELECT 
+            struct.G1_COD,
+            struct.G1_COMP,
+            prod.B1_DESC AS 'DESCRICAO',
+            struct.G1_XUM, 
+            struct.G1_QUANT 
+        FROM 
+            PROTHEUS12_R27.dbo.SG1010 struct
+        INNER JOIN
+            PROTHEUS12_R27.dbo.SB1010 prod
+        ON 
+            G1_COMP = B1_COD AND prod.D_E_L_E_T_ <> '*'
+        WHERE 
+            G1_COD = '{parent_code}' 
+            AND G1_REVFIM <> 'ZZZ' 
+            AND struct.D_E_L_E_T_ <> '*' 
+            AND G1_REVFIM = (
+                SELECT MAX(G1_REVFIM) 
+                FROM PROTHEUS12_R27.dbo.SG1010 
+                WHERE G1_COD = '{parent_code}'
+                AND G1_REVFIM <> 'ZZZ' 
+                AND struct.D_E_L_E_T_ <> '*'
+            )
+        """
+        
+        try:
+            df = pd.read_sql(query, self.engine)
+            
+            for _, row in df.iterrows():
+                total_qty = parent_qty * row['G1_QUANT']
+                
+                child_item = QTreeWidgetItem(parent_item)
+                formatted_qty = self.format_quantity(total_qty)
+                child_item.setText(0, f"{row['G1_COMP'].strip()}  |  {row['DESCRICAO'].strip()}  |  {formatted_qty} {row['G1_XUM'].strip()}")
+                
+                self.build_tree_recursive(child_item, row['G1_COMP'], total_qty)
+        except Exception as e:
+            print(f"Erro ao processar código {parent_code}: {str(e)}")
+
     def build_tree(self):
         self.tree.clear()
-        
-        def build_tree_recursive(parent_item, parent_code, parent_qty):
-            query = f"""
-            SELECT 
-                struct.G1_COD,
-                struct.G1_COMP,
-                prod.B1_DESC AS 'DESCRICAO',
-                struct.G1_XUM, 
-                struct.G1_QUANT 
-            FROM 
-                PROTHEUS12_R27.dbo.SG1010 struct
-            INNER JOIN
-                PROTHEUS12_R27.dbo.SB1010 prod
-            ON 
-                G1_COMP = B1_COD AND prod.D_E_L_E_T_ <> '*'
-            WHERE 
-                G1_COD = '{parent_code}' 
-                AND G1_REVFIM <> 'ZZZ' 
-                AND struct.D_E_L_E_T_ <> '*' 
-                AND G1_REVFIM = (
-                    SELECT MAX(G1_REVFIM) 
-                    FROM PROTHEUS12_R27.dbo.SG1010 
-                    WHERE G1_COD = '{parent_code}'
-                    AND G1_REVFIM <> 'ZZZ' 
-                    AND struct.D_E_L_E_T_ <> '*'
-                )
-            """
-            
-            try:
-                df = pd.read_sql(query, self.engine)
-                
-                for _, row in df.iterrows():
-                    total_qty = parent_qty * row['G1_QUANT']
-                    
-                    child_item = QTreeWidgetItem(parent_item)
-                    child_item.setText(0, f"{row['G1_COMP'].strip()}  |  {row['DESCRICAO'].strip()}  |  {total_qty:.2f} {row['G1_XUM'].strip()}")
-                    
-                    build_tree_recursive(child_item, row['G1_COMP'], total_qty)
-            except Exception as e:
-                print(f"Erro ao processar código {parent_code}: {str(e)}")
         
         # Buscar descrição do item raiz
         query = f"""
@@ -302,11 +324,9 @@ class BOMViewer(QMainWindow):
         
         # Iniciar a construção da árvore com o nó raiz
         root_item = QTreeWidgetItem(self.tree)
-        root_item.setText(0, f"{self.codigo_pai} - {root_desc.strip()} - 1.00 {root_unidade.strip()}")
-        build_tree_recursive(root_item, self.codigo_pai, 1.0)
-        
-        # Expandir todos os itens por padrão
-        self.tree.expandAll()
+        formatted_qty = self.format_quantity(1.0)
+        root_item.setText(0, f"{self.codigo_pai}  |  {root_desc.strip()}  |  {formatted_qty} {root_unidade.strip()}")
+        self.build_tree_recursive(root_item, self.codigo_pai, 1.0)
     
     def filter_tables(self):
         filter_codigo = self.filter_input_codigo.text().lower().strip()
@@ -458,6 +478,31 @@ class BOMViewer(QMainWindow):
             self.table.hide()
         else:
             self.table.show()
+
+    def export_to_excel(self):
+        # Gerar nome do arquivo com data e hora
+        now = datetime.now()
+        default_filename = f"estrutura_{self.codigo_pai}_{now.strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        # Obter o caminho da área de trabalho
+        desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
+        default_path = os.path.join(desktop, default_filename)
+        
+        # Abrir diálogo de salvamento
+        filename, _ = QFileDialog.getSaveFileName(
+            self,
+            "Exportar para Excel",
+            default_path,
+            "Excel Files (*.xlsx);;All Files (*)"
+        )
+        
+        if filename:
+            try:
+                self.df.to_excel(filename, index=False)
+                # Abrir o arquivo no Excel
+                os.startfile(filename)
+            except Exception as e:
+                print(f"Erro ao exportar para Excel: {str(e)}")
 
 def main():
     app = QApplication(sys.argv)
