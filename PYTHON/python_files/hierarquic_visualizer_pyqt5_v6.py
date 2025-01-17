@@ -20,7 +20,6 @@ class BOMViewer(QMainWindow):
         self.codigo_pai = 'E7047-001-182'
         self.all_components = []
         self.setWindowTitle('Visualizador de Estrutura')
-        self.setGeometry(100, 100, 1200, 800)
         
         # Widget central
         central_widget = QWidget()
@@ -29,11 +28,21 @@ class BOMViewer(QMainWindow):
         
         # Criar layout para filtro
         filter_layout = QHBoxLayout()
-        filter_label = QLabel("Filtrar:")
-        self.filter_input = QLineEdit()
-        self.filter_input.textChanged.connect(self.filter_tables)
-        filter_layout.addWidget(filter_label)
-        filter_layout.addWidget(self.filter_input)
+        
+        # Filtro por Código
+        filter_label_codigo = QLabel("Código:")
+        self.filter_input_codigo = QLineEdit()
+        self.filter_input_codigo.textChanged.connect(self.filter_tables)
+        filter_layout.addWidget(filter_label_codigo)
+        filter_layout.addWidget(self.filter_input_codigo)
+        
+        # Filtro por Descrição
+        filter_label_desc = QLabel("Descrição:")
+        self.filter_input_desc = QLineEdit()
+        self.filter_input_desc.textChanged.connect(self.filter_tables)
+        filter_layout.addWidget(filter_label_desc)
+        filter_layout.addWidget(self.filter_input_desc)
+        
         layout.addLayout(filter_layout)
         
         # Splitter para dividir tabela e árvore
@@ -57,6 +66,18 @@ class BOMViewer(QMainWindow):
         self.tree.setIndentation(20)  # Espaçamento da indentação
         self.tree.setRootIsDecorated(True)  # Mostra as linhas de conexão
         self.tree.setItemsExpandable(True)  # Permite expandir/recolher itens
+        
+        # Aumentar altura das linhas e melhorar espaçamento
+        self.tree.setStyleSheet("""
+            QTreeWidget::item {
+                height: 30px;
+                padding: 5px;
+                margin: 2px;
+            }
+            QTreeWidget::item:selected {
+                background-color: #E6E6E6;
+            }
+        """)
         
         tree_layout.addWidget(self.tree)
         
@@ -258,7 +279,7 @@ class BOMViewer(QMainWindow):
                     total_qty = parent_qty * row['G1_QUANT']
                     
                     child_item = QTreeWidgetItem(parent_item)
-                    child_item.setText(0, f"{row['G1_COMP'].strip()} - {row['DESCRICAO'].strip()} - {total_qty:.2f} {row['G1_XUM'].strip()}")
+                    child_item.setText(0, f"{row['G1_COMP'].strip()}  |  {row['DESCRICAO'].strip()}  |  {total_qty:.2f} {row['G1_XUM'].strip()}")
                     
                     build_tree_recursive(child_item, row['G1_COMP'], total_qty)
             except Exception as e:
@@ -288,24 +309,51 @@ class BOMViewer(QMainWindow):
         self.tree.expandAll()
     
     def filter_tables(self):
-        filter_text = self.filter_input.text().lower().strip()
+        filter_codigo = self.filter_input_codigo.text().lower().strip()
+        filter_desc = self.filter_input_desc.text().lower().strip()
         
-        if filter_text:
-            self.highlight_tree_items(self.tree, filter_text)
-    
-    def highlight_tree_items(self, tree, filter_text):
+        # Filtrar a tabela
+        for row in range(self.table.rowCount()):
+            row_visible = True
+            codigo = self.table.item(row, 1).text().lower()  # Coluna CODIGO
+            descricao = self.table.item(row, 3).text().lower()  # Coluna DESCRICAO
+            
+            if filter_codigo and filter_codigo not in codigo:
+                row_visible = False
+            if filter_desc and filter_desc not in descricao:
+                row_visible = False
+                
+            self.table.setRowHidden(row, not row_visible)
+        
+        # Filtrar a árvore
         def process_item(item):
             text = item.text(0).lower()
-            if filter_text in text:
+            item_visible = True
+            
+            # Verificar se o item corresponde aos critérios de filtro
+            matches_filter = True
+            if filter_codigo and filter_codigo not in text:
+                matches_filter = False
+            if filter_desc and filter_desc not in text:
+                matches_filter = False
+            
+            # Destacar ou limpar o destaque do item
+            if matches_filter and (filter_codigo or filter_desc):
                 item.setBackground(0, Qt.yellow)
             else:
                 item.setBackground(0, Qt.white)
             
+            # Processar filhos
             for i in range(item.childCount()):
-                process_item(item.child(i))
+                child_visible = process_item(item.child(i))
+                if child_visible:
+                    item_visible = True
+            
+            item.setHidden(not item_visible)
+            return item_visible or matches_filter
         
-        for i in range(tree.topLevelItemCount()):
-            process_item(tree.topLevelItem(i))
+        for i in range(self.tree.topLevelItemCount()):
+            process_item(self.tree.topLevelItem(i))
 
     def show_hierarchy(self):
         hierarchy_data = self.create_hierarchy_data()
@@ -414,7 +462,7 @@ class BOMViewer(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     viewer = BOMViewer()
-    viewer.show()
+    viewer.showMaximized()
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
