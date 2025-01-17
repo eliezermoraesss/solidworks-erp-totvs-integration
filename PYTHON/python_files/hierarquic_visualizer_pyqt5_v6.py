@@ -1,11 +1,14 @@
 import sys
 import json
 import os
+import csv
+import io
 import webbrowser
 import pandas as pd
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                            QPushButton, QTableWidget, QTableWidgetItem, QTreeWidget, 
-                           QTreeWidgetItem, QSplitter, QLineEdit, QLabel, QHBoxLayout)
+                           QTreeWidgetItem, QSplitter, QLineEdit, QLabel, QHBoxLayout,
+                           QAbstractItemView, QAction)
 from PyQt5.QtCore import Qt
 from sqlalchemy import create_engine
 from typing import List, Dict
@@ -130,6 +133,35 @@ class BOMViewer(QMainWindow):
         self.table.setHorizontalHeaderLabels(self.df.columns)
         self.populate_table(self.df)
         self.table.resizeColumnsToContents()
+        
+        # Tornar a tabela não editável
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        
+        # Permitir seleção de múltiplas linhas
+        self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        
+        # Habilitar a cópia dos dados da tabela
+        self.table.setContextMenuPolicy(Qt.ActionsContextMenu)
+        copy_action = QAction("Copiar", self.table)
+        copy_action.triggered.connect(self.copy_selection)
+        self.table.addAction(copy_action)
+        
+    def copy_selection(self):
+        selection = self.table.selectedIndexes()
+        if selection:
+            rows = sorted(index.row() for index in selection)
+            columns = sorted(index.column() for index in selection)
+            rowcount = rows[-1] - rows[0] + 1
+            colcount = columns[-1] - columns[0] + 1
+            table = [[''] * colcount for _ in range(rowcount)]
+            for index in selection:
+                row = index.row() - rows[0]
+                col = index.column() - columns[0]
+                table[row][col] = self.table.item(index.row(), index.column()).text()
+            stream = io.StringIO()
+            csv.writer(stream, delimiter='\t').writerows(table)
+            QApplication.clipboard().setText(stream.getvalue())
         
     def populate_table(self, df):
         self.table.setRowCount(len(df))
