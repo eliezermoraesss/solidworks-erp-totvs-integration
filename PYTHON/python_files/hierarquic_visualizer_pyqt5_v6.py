@@ -11,13 +11,13 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QAbstractItemView, QAction)
 from PyQt5.QtCore import Qt
 from sqlalchemy import create_engine
-from typing import List, Dict
 from db_mssql import setup_mssql
 
 class BOMViewer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.engine = None
+        self.codigo_pai = 'E7047-001-001'
         self.all_components = []
         self.setWindowTitle('Visualizador de Estrutura')
         self.setGeometry(100, 100, 1200, 800)
@@ -51,6 +51,13 @@ class BOMViewer(QMainWindow):
         # Árvore
         self.tree = QTreeWidget()
         self.tree.setHeaderLabel('Hierarquia')
+        
+        # Mostrar linhas de conexão
+        self.tree.setAlternatingRowColors(True)
+        self.tree.setIndentation(20)  # Espaçamento da indentação
+        self.tree.setRootIsDecorated(True)  # Mostra as linhas de conexão
+        self.tree.setItemsExpandable(True)  # Permite expandir/recolher itens
+        
         tree_layout.addWidget(self.tree)
         
         # Botões de expandir/recolher
@@ -124,7 +131,7 @@ class BOMViewer(QMainWindow):
             print(f"Erro ao processar código {parent_code}: {str(e)}")
 
     def load_data(self):
-        codigo_pai = 'E7047-001-001'
+        codigo_pai = self.codigo_pai
         self.all_components = []
         
         # Adicionar item de nível mais alto
@@ -189,64 +196,53 @@ class BOMViewer(QMainWindow):
     def build_tree(self):
         self.tree.clear()
         
-        # Dicionário para rastrear o caminho completo de cada item
-        processed_paths = set()
-        
-        def build_hierarchy(df, level=1, parent=None, path=None):
-            result = []
+        def build_tree_recursive(parent_item, parent_code, parent_qty):
+            # Consulta SQL para obter os filhos do componente atual
+            query = f"""
+            SELECT 
+                G1_COD, G1_COMP, G1_XUM, G1_QUANT 
+            FROM 
+                PROTHEUS12_R27.dbo.SG1010 
+            WHERE 
+                G1_COD = '{parent_code}' 
+                AND G1_REVFIM <> 'ZZZ' 
+                AND D_E_L_E_T_ <> '*' 
+                AND G1_REVFIM = (
+                    SELECT MAX(G1_REVFIM) 
+                    FROM PROTHEUS12_R27.dbo.SG1010 
+                    WHERE G1_COD = '{parent_code}'
+                    AND G1_REVFIM <> 'ZZZ' 
+                    AND D_E_L_E_T_ <> '*'
+                )
+            """
             
-            if path is None:
-                path = []
-            
-            mask = df['NIVEL'] == level
-            if parent is not None:
-                mask &= df['CODIGO_PAI'] == parent
-            
-            current_level = df[mask]
-            
-            for _, row in current_level.iterrows():
-                # Criar caminho único para este item incluindo seus ancestrais
-                current_path = tuple(path + [row['CODIGO']])
+            try:
+                df = pd.read_sql(query, self.engine)
                 
-                # Se este caminho específico já foi processado, pular
-                if current_path in processed_paths:
-                    continue
+                # Iterar sobre os filhos retornados pela consulta
+                for _, row in df.iterrows():
+                    # Quantidade total = quantidade do pai * quantidade do filho
+                    total_qty = parent_qty * row['G1_QUANT']
                     
-                processed_paths.add(current_path)
-                
-                if parent is None:
-                    tree_item = QTreeWidgetItem(self.tree)
-                else:
-                    tree_item = QTreeWidgetItem()
-                
-                tree_item.setText(0, f"{row['CODIGO']} (Qtd: {row['QTD_TOTAL']:.2f})")
-                
-                children = build_hierarchy(df, level + 1, row['CODIGO'], list(current_path))
-                if children:
-                    if parent is None:
-                        self.tree.addTopLevelItem(tree_item)
-                    for child in children:
-                        tree_item.addChild(child)
-                
-                result.append(tree_item)
-            
-            return result
+                    # Criar item de árvore para o filho
+                    child_item = QTreeWidgetItem(parent_item)
+                    child_item.setText(0, f"{row['G1_COMP']} (Qtd: {total_qty:.2f})")
+                    
+                    # Recursivamente adicionar os filhos do filho atual
+                    build_tree_recursive(child_item, row['G1_COMP'], total_qty)
+            except Exception as e:
+                print(f"Erro ao processar código {parent_code}: {str(e)}")
         
-        build_hierarchy(self.df)
+        # Iniciar a construção da árvore com o nó raiz
+        root_item = QTreeWidgetItem(self.tree)
+        root_item.setText(0, f"{self.codigo_pai} (Qtd: 1.00)")
+        build_tree_recursive(root_item, self.codigo_pai, 1.0)
+        
+        # Expandir todos os itens por padrão
         self.tree.expandAll()
     
     def filter_tables(self):
-        filter_text = self.filter_input.text().lower()
-        
-        if filter_text:
-            filtered_df = self.df[
-                self.df['CODIGO'].str.lower().str.contains(filter_text) |
-                self.df['CODIGO_PAI'].astype(str).str.lower().str.contains(filter_text)
-            ]
-        else:
-            filtered_df = self.df
-            
-        self.build_tree()
+        filter_text = self.filter_input.text().lower().strip()
         
         if filter_text:
             self.highlight_tree_items(self.tree, filter_text)
