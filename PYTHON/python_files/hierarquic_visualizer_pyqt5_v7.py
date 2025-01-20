@@ -6,14 +6,15 @@ import io
 import webbrowser
 import pandas as pd
 import locale
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
-                           QPushButton, QTableWidget, QTableWidgetItem, QTreeWidget, 
-                           QTreeWidgetItem, QSplitter, QLineEdit, QLabel, QHBoxLayout,
-                           QAbstractItemView, QAction, QFileDialog)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+                             QPushButton, QTableWidget, QTableWidgetItem, QTreeWidget,
+                             QTreeWidgetItem, QSplitter, QLineEdit, QLabel, QHBoxLayout,
+                             QAbstractItemView, QAction, QFileDialog)
 from PyQt5.QtCore import Qt
 from sqlalchemy import create_engine
 from db_mssql import setup_mssql
 from datetime import datetime
+
 
 class BOMViewer(QMainWindow):
     def __init__(self):
@@ -23,53 +24,53 @@ class BOMViewer(QMainWindow):
         locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
         self.all_components = []
         self.setWindowTitle('Visualizador de Estrutura')
-        
+
         # Widget central
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
-        
+
         # Criar layout para filtro
         filter_layout = QHBoxLayout()
-        
+
         # Filtro por Código
         filter_label_codigo = QLabel("Código:")
         self.filter_input_codigo = QLineEdit()
         self.filter_input_codigo.textChanged.connect(self.filter_tables)
         filter_layout.addWidget(filter_label_codigo)
         filter_layout.addWidget(self.filter_input_codigo)
-        
+
         # Filtro por Descrição
         filter_label_desc = QLabel("Descrição:")
         self.filter_input_desc = QLineEdit()
         self.filter_input_desc.textChanged.connect(self.filter_tables)
         filter_layout.addWidget(filter_label_desc)
         filter_layout.addWidget(self.filter_input_desc)
-        
+
         layout.addLayout(filter_layout)
-        
+
         # Splitter para dividir tabela e árvore
         splitter = QSplitter(Qt.Horizontal)
-        
+
         # Tabela
         self.table = QTableWidget()
         self.table.setSortingEnabled(False)
         splitter.addWidget(self.table)
-        
+
         # Container para árvore e botões
         tree_container = QWidget()
         tree_layout = QVBoxLayout(tree_container)
-        
+
         # Árvore
         self.tree = QTreeWidget()
         self.tree.setHeaderLabel('Hierarquia')
-        
+
         # Mostrar linhas de conexão
         self.tree.setAlternatingRowColors(True)
         self.tree.setIndentation(20)  # Espaçamento da indentação
         self.tree.setRootIsDecorated(True)  # Mostra as linhas de conexão
         self.tree.setItemsExpandable(True)  # Permite expandir/recolher itens
-        
+
         # Aumentar altura das linhas e melhorar espaçamento
         self.tree.setStyleSheet("""
             QTreeWidget::item {
@@ -81,9 +82,9 @@ class BOMViewer(QMainWindow):
                 background-color: #E6E6E6;
             }
         """)
-        
+
         tree_layout.addWidget(self.tree)
-        
+
         # Botões de expandir/recolher
         tree_buttons_layout = QHBoxLayout()
         expand_button = QPushButton("Expandir Tudo")
@@ -96,29 +97,29 @@ class BOMViewer(QMainWindow):
         tree_buttons_layout.addWidget(collapse_button)
         tree_buttons_layout.addWidget(toggle_table_button)
         tree_layout.addLayout(tree_buttons_layout)
-        
+
         splitter.addWidget(tree_container)
-        
+
         layout.addWidget(splitter)
-        
+
         # Botão para visualização hierárquica HTML
         bottom_buttons_layout = QHBoxLayout()
-        
+
         self.view_button = QPushButton('Visualizar Hierarquia no Navegador')
         self.view_button.clicked.connect(self.show_hierarchy)
         bottom_buttons_layout.addWidget(self.view_button)
-        
+
         # Botão para exportar para Excel
         self.export_button = QPushButton('Exportar para Excel')
         self.export_button.clicked.connect(self.export_to_excel)
         bottom_buttons_layout.addWidget(self.export_button)
-        
+
         layout.addLayout(bottom_buttons_layout)
 
         # Setup banco de dados e carregar dados
         self.setup_database()
         self.load_data()
-        
+
     def setup_database(self):
         username, password, database, server = setup_mssql()
         driver = '{SQL Server}'
@@ -151,14 +152,14 @@ class BOMViewer(QMainWindow):
                 AND struct.D_E_L_E_T_ <> '*'
             )
         """
-        
+
         try:
             df = pd.read_sql(query, self.engine)
-            
+
             if not df.empty:
                 for _, row in df.iterrows():
                     total_qty = parent_qty * row['G1_QUANT']
-                    
+
                     component = {
                         'NIVEL': level,
                         'CODIGO': row['G1_COMP'].strip(),
@@ -169,16 +170,16 @@ class BOMViewer(QMainWindow):
                         'QTD_TOTAL': total_qty
                     }
                     self.all_components.append(component)
-                    
+
                     self.get_components(row['G1_COMP'], total_qty, level + 1)
-                    
+
         except Exception as e:
             print(f"Erro ao processar código {parent_code}: {str(e)}")
 
     def load_data(self):
         codigo_pai = self.codigo_pai
         self.all_components = []
-        
+
         # Adicionar item de nível mais alto
         # Primeiro precisamos buscar a descrição do item pai
         query = f"""
@@ -192,45 +193,45 @@ class BOMViewer(QMainWindow):
             descricao_pai = df_pai['DESCRICAO'].iloc[0] if not df_pai.empty else ''
         except:
             descricao_pai = ''
-        
+
         self.all_components.append({
             'NIVEL': 0,
             'CODIGO': codigo_pai,
             'DESCRICAO': descricao_pai,
             'CODIGO_PAI': None,
-            'UNIDADE': 'UN', 
+            'UNIDADE': 'UN',
             'QTD_NIVEL': 1.0,
             'QTD_TOTAL': 1.0
         })
-        
+
         self.get_components(codigo_pai)
         self.df = pd.DataFrame(self.all_components)
         # Reordenar as colunas
         self.df = self.df[['NIVEL', 'CODIGO', 'CODIGO_PAI', 'DESCRICAO', 'UNIDADE', 'QTD_NIVEL', 'QTD_TOTAL']]
         self.df.to_excel('bom_hierarquica_v6.xlsx', index=False)
-        
+
         self.setup_table()
         self.build_tree()
-        
+
     def setup_table(self):
         self.table.setColumnCount(len(self.df.columns))
         self.table.setHorizontalHeaderLabels(self.df.columns)
         self.populate_table(self.df)
         self.table.resizeColumnsToContents()
-        
+
         # Tornar a tabela não editável
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        
+
         # Permitir seleção de múltiplas linhas
         self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        
+
         # Habilitar a cópia dos dados da tabela
         self.table.setContextMenuPolicy(Qt.ActionsContextMenu)
         copy_action = QAction("Copiar", self.table)
         copy_action.triggered.connect(self.copy_selection)
         self.table.addAction(copy_action)
-        
+
     def copy_selection(self):
         selection = self.table.selectedIndexes()
         if selection:
@@ -264,7 +265,7 @@ class BOMViewer(QMainWindow):
                     formatted_value = str(value)
                 item = QTableWidgetItem(formatted_value)
                 self.table.setItem(i, j, item)
-    
+
     def build_tree_recursive(self, parent_item, parent_code, parent_qty):
         query = f"""
         SELECT 
@@ -291,24 +292,25 @@ class BOMViewer(QMainWindow):
                 AND struct.D_E_L_E_T_ <> '*'
             )
         """
-        
+
         try:
             df = pd.read_sql(query, self.engine)
-            
+
             for _, row in df.iterrows():
                 total_qty = parent_qty * row['G1_QUANT']
-                
+
                 child_item = QTreeWidgetItem(parent_item)
                 formatted_qty = self.format_quantity(total_qty)
-                child_item.setText(0, f"{row['G1_COMP'].strip()}  |  {row['DESCRICAO'].strip()}  |  {formatted_qty} {row['G1_XUM'].strip()}")
-                
+                child_item.setText(0,
+                                   f"{row['G1_COMP'].strip()}  |  {row['DESCRICAO'].strip()}  |  {formatted_qty} {row['G1_XUM'].strip()}")
+
                 self.build_tree_recursive(child_item, row['G1_COMP'], total_qty)
         except Exception as e:
             print(f"Erro ao processar código {parent_code}: {str(e)}")
 
     def build_tree(self):
         self.tree.clear()
-        
+
         # Buscar descrição do item raiz
         query = f"""
         SELECT B1_DESC as DESCRICAO, B1_UM as UNIDADE
@@ -323,57 +325,57 @@ class BOMViewer(QMainWindow):
         except:
             root_desc = ''
             root_unidade = ''
-        
+
         # Iniciar a construção da árvore com o nó raiz
         root_item = QTreeWidgetItem(self.tree)
         formatted_qty = self.format_quantity(1.0)
         root_item.setText(0, f"{self.codigo_pai}  |  {root_desc.strip()}  |  {formatted_qty} {root_unidade.strip()}")
         self.build_tree_recursive(root_item, self.codigo_pai, 1.0)
-    
+
     def filter_tables(self):
         filter_codigo = self.filter_input_codigo.text().lower().strip()
         filter_desc = self.filter_input_desc.text().lower().strip()
-        
+
         # Filtrar a tabela
         for row in range(self.table.rowCount()):
             row_visible = True
             codigo = self.table.item(row, 1).text().lower()  # Coluna CODIGO
             descricao = self.table.item(row, 3).text().lower()  # Coluna DESCRICAO
-            
+
             if filter_codigo and filter_codigo not in codigo:
                 row_visible = False
             if filter_desc and filter_desc not in descricao:
                 row_visible = False
-                
+
             self.table.setRowHidden(row, not row_visible)
-        
+
         # Filtrar a árvore
         def process_item(item):
             text = item.text(0).lower()
             item_visible = True
-            
+
             # Verificar se o item corresponde aos critérios de filtro
             matches_filter = True
             if filter_codigo and filter_codigo not in text:
                 matches_filter = False
             if filter_desc and filter_desc not in text:
                 matches_filter = False
-            
+
             # Destacar ou limpar o destaque do item
             if matches_filter and (filter_codigo or filter_desc):
                 item.setBackground(0, Qt.yellow)
             else:
                 item.setBackground(0, Qt.white)
-            
+
             # Processar filhos
             for i in range(item.childCount()):
                 child_visible = process_item(item.child(i))
                 if child_visible:
                     item_visible = True
-            
+
             item.setHidden(not item_visible)
             return item_visible or matches_filter
-        
+
         for i in range(self.tree.topLevelItemCount()):
             process_item(self.tree.topLevelItem(i))
 
@@ -384,7 +386,7 @@ class BOMViewer(QMainWindow):
         with open(temp_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
         webbrowser.open('file://' + os.path.realpath(temp_path))
-    
+
     def create_hierarchy_data(self):
         data = []
         for _, row in self.df[self.df['NIVEL'] == 0].iterrows():
@@ -394,7 +396,7 @@ class BOMViewer(QMainWindow):
             }
             data.append(node)
         return data
-    
+
     def get_children(self, parent_code):
         children = []
         for _, row in self.df[self.df['CODIGO_PAI'] == parent_code].iterrows():
@@ -404,7 +406,7 @@ class BOMViewer(QMainWindow):
             }
             children.append(child)
         return children
-    
+
     def create_html_visualization(self, data):
         return f'''
         <!DOCTYPE html>
@@ -485,11 +487,11 @@ class BOMViewer(QMainWindow):
         # Gerar nome do arquivo com data e hora
         now = datetime.now()
         default_filename = f"estrutura_{self.codigo_pai}_{now.strftime('%Y%m%d_%H%M%S')}.xlsx"
-        
+
         # Obter o caminho da área de trabalho
         desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
         default_path = os.path.join(desktop, default_filename)
-        
+
         # Abrir diálogo de salvamento
         filename, _ = QFileDialog.getSaveFileName(
             self,
@@ -497,7 +499,7 @@ class BOMViewer(QMainWindow):
             default_path,
             "Excel Files (*.xlsx);;All Files (*)"
         )
-        
+
         if filename:
             try:
                 self.df.to_excel(filename, index=False)
@@ -506,11 +508,13 @@ class BOMViewer(QMainWindow):
             except Exception as e:
                 print(f"Erro ao exportar para Excel: {str(e)}")
 
+
 def main():
     app = QApplication(sys.argv)
     viewer = BOMViewer()
     viewer.showMaximized()
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     main()
