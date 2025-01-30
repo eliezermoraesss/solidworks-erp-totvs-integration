@@ -140,9 +140,9 @@ def validar_descricao(descricoes):
 class CadastrarBomTOTVS:
     def __init__(self, window):
         # Leitura dos parâmetros de conexão com o banco de dados SQL Server
-        self.codigos_removidos_bom_df = None
-        self.codigos_adicionados_bom_df = None
-        self.codigos_em_comum_df = None
+        self.itens_removidos = None
+        self.itens_adicionados = None
+        self.itens_em_comum = None
         self.username, self.password, self.database, self.server = setup_mssql()
         self.driver = '{SQL Server}'
 
@@ -158,9 +158,9 @@ class CadastrarBomTOTVS:
         self.titulo_janela = "CADASTRO DE ESTRUTURA TOTVS®"
 
         # Arrays para armazenar os códigos
-        self.codigos_adicionados_bom = []  # ITENS ADICIONADOS
-        self.codigos_removidos_bom = []  # ITENS REMOVIDOS
-        self.codigos_em_comum = []  # ITENS EM COMUM
+        self.itens_adicionados_bom = []  # ITENS ADICIONADOS
+        self.itens_removidos_bom = []  # ITENS REMOVIDOS
+        self.itens_em_comum = []  # ITENS EM COMUM
 
         self.indice_coluna_codigo_excel = 1
         self.indice_coluna_descricao_excel = 2
@@ -178,7 +178,7 @@ class CadastrarBomTOTVS:
 
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2|³|3)?(\s*\(.*\))?$'
 
-        self.nome_desenho = ler_variavel_ambiente_codigo_desenho()
+        self.nome_desenho = 'E1111-111-111' # ler_variavel_ambiente_codigo_desenho()
 
     def validar_formato_codigo_pai(self, codigo_pai):
         codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in self.formatos_codigo)
@@ -861,13 +861,13 @@ class CadastrarBomTOTVS:
             cursor.close()
             conn.close()
 
-    def atualizar_itens_estrutura_totvs(self, codigo_pai, dataframe_codigos_em_comum):
+    def atualizar_revisao_quantidade_totvs(self, codigo_pai, itens_em_comum, revisao_atualizada, revisao_anterior):
         conn = pyodbc.connect(
             f'DRIVER='
             f'{self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
         cursor = conn.cursor()
         try:
-            for index, row in dataframe_codigos_em_comum.iterrows():
+            for index, row in itens_em_comum.iterrows():
                 codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
                 quantidade = row.iloc[self.indice_coluna_quantidade_excel]
                 unidade_medida = self.obter_unidade_medida_codigo_filho(codigo_filho)
@@ -878,26 +878,83 @@ class CadastrarBomTOTVS:
                     quantidade = row.iloc[self.indice_coluna_dimensao]
                 quantidade_formatada = "{:.2f}".format(float(quantidade))
 
-                query_alterar_quantidade_estrutura = f"""UPDATE {self.database}.dbo.SG1010 SET G1_QUANT = 
-                {quantidade_formatada} WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
-                    AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-                    AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {self.database}.dbo.SG1010 WHERE G1_COD = 
-                    '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+                query = f"""
+                    UPDATE 
+                        {self.database}.dbo.SG1010 
+                    SET 
+                        G1_QUANT = {quantidade_formatada},
+                        G1_REVFIM = '{revisao_atualizada}'
+                    WHERE 
+                        G1_COD = '{codigo_pai}'
+                    AND 
+                        G1_COMP = '{codigo_filho}'
+                    AND 
+                        G1_REVFIM <> 'ZZZ'
+                    AND 
+                        D_E_L_E_T_ <> '*'
+                    AND G1_REVFIM = '{revisao_anterior}';
                 """
 
-                cursor.execute(query_alterar_quantidade_estrutura)
+                cursor.execute(query)
             conn.commit()
 
         except pyodbc.Error as sql_ex:
             ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao atualizar itens já existentes da estrutura", 16 | 0)
+            raise
         except Exception:
             raise
         finally:
             cursor.close()
             conn.close()
 
-    def inserir_itens_estrutura_totvs(self, codigo_pai, df_codigos_adicionados,
+    def atualizar_quantidade_totvs(self, codigo_pai, itens_em_comum, revisao_anterior):
+        conn = pyodbc.connect(
+            f'DRIVER='
+            f'{self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
+        cursor = conn.cursor()
+        try:
+            for index, row in itens_em_comum.iterrows():
+                codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
+                quantidade = row.iloc[self.indice_coluna_quantidade_excel]
+                unidade_medida = self.obter_unidade_medida_codigo_filho(codigo_filho)
+
+                if unidade_medida == 'KG':
+                    quantidade = row.iloc[self.indice_coluna_peso_excel]
+                elif unidade_medida in ('MT', 'M2', 'M3'):
+                    quantidade = row.iloc[self.indice_coluna_dimensao]
+                quantidade_formatada = "{:.2f}".format(float(quantidade))
+
+                query = f"""
+                    UPDATE 
+                        {self.database}.dbo.SG1010
+                    SET 
+                        G1_QUANT = {quantidade_formatada}
+                    WHERE 
+                        G1_COD = '{codigo_pai}'
+                    AND 
+                        G1_COMP = '{codigo_filho}'
+                    AND 
+                        G1_REVFIM <> 'ZZZ'
+                    AND 
+                        D_E_L_E_T_ <> '*'
+                    AND G1_REVFIM = '{revisao_anterior}';
+                """
+
+                cursor.execute(query)
+            conn.commit()
+
+        except pyodbc.Error as sql_ex:
+            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(sql_ex)}",
+                                             "Erro ao atualizar itens já existentes da estrutura", 16 | 0)
+            raise
+        except Exception:
+            raise
+        finally:
+            cursor.close()
+            conn.close()
+
+    def inserir_itens_estrutura_totvs(self, codigo_pai, df_itens_adicionados,
                                       revisao_atualizada_estrutura):
         conn = pyodbc.connect(f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};'
                               f'PWD={self.password}')
@@ -905,8 +962,10 @@ class CadastrarBomTOTVS:
         try:
             ultima_pk_tabela_estrutura = self.obter_ultima_pk_tabela_estrutura()
             data_atual_formatada = formatar_data_atual()
+
             revisao_inicial = revisao_atualizada_estrutura
-            for index, row in df_codigos_adicionados.iterrows():
+
+            for index, row in df_itens_adicionados.iterrows():
                 ultima_pk_tabela_estrutura += 1
                 codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
                 quantidade = row.iloc[self.indice_coluna_quantidade_excel]
@@ -934,7 +993,6 @@ class CadastrarBomTOTVS:
 
                 cursor.execute(query_criar_nova_estrutura_totvs)
             conn.commit()
-            return True
 
         except pyodbc.Error as sql_ex:
             ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(sql_ex)}",
@@ -946,94 +1004,26 @@ class CadastrarBomTOTVS:
             cursor.close()
             conn.close()
 
-    def remover_itens_estrutura_totvs(self, codigo_pai, codigos_removidos_bom_df, revisao_anterior):
-        conn = pyodbc.connect(
-            f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};'
-            f'PWD={self.password}')
-        cursor = conn.cursor()
-        try:
-            for index, row in codigos_removidos_bom_df.iterrows():
-                codigo_filho = row.iloc[2]
-
-                query_remover_itens_estrutura_totvs = f"""
-                UPDATE {self.database}.dbo.SG1010
-                SET
-                    D_E_L_E_T_ = N'*',
-                    R_E_C_D_E_L_ = R_E_C_N_O_
-                WHERE
-                    G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
-                    AND G1_REVFIM = N'{revisao_anterior}'
-                    AND G1_REVFIM <> 'ZZZ'
-                    AND D_E_L_E_T_ <> '*';
-                """
-                cursor.execute(query_remover_itens_estrutura_totvs)
-            conn.commit()
-            return True
-
-        except pyodbc.Error as sql_ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(sql_ex)}",
-                                             "Erro ao remover item da estrutura", 16 | 0)
-            raise
-        except Exception as ex:
-            # Trata outros erros inesperados
-            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
-                                             "Erro ao remover item da estrutura", 16 | 0)
-            raise
-        finally:
-            cursor.close()
-            conn.close()
-
     def comparar_bom_com_totvs(self, df_bom_excel, resultado_query_consulta_estrutura_totvs):
         resultado_query_consulta_estrutura_totvs['G1_COMP'] = resultado_query_consulta_estrutura_totvs[
             'G1_COMP'].str.strip()
 
         # Códigos em comum
-        self.codigos_em_comum_df = df_bom_excel[
+        self.itens_em_comum = df_bom_excel[
             df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].isin(
                 resultado_query_consulta_estrutura_totvs['G1_COMP'])].copy()
 
         # Códigos adicionados no BOM
-        self.codigos_adicionados_bom_df = df_bom_excel[
+        self.itens_adicionados = df_bom_excel[
             ~df_bom_excel.iloc[:, self.indice_coluna_codigo_excel].isin(
                 resultado_query_consulta_estrutura_totvs['G1_COMP'])].copy()
 
         # Códigos removidos no BOM
-        self.codigos_removidos_bom_df = resultado_query_consulta_estrutura_totvs[
+        self.itens_removidos = resultado_query_consulta_estrutura_totvs[
             ~resultado_query_consulta_estrutura_totvs['G1_COMP'].isin(
                 df_bom_excel.iloc[:, self.indice_coluna_codigo_excel])].copy()
 
-        return self.codigos_em_comum_df, self.codigos_adicionados_bom_df, self.codigos_removidos_bom_df
-
-    def atualizar_campo_revfim_codigos_existentes(self, codigo_pai, revisao_anterior, revisao_atualizada):
-        conn = pyodbc.connect(
-            f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};'
-            f'PWD={self.password}')
-        cursor = conn.cursor()
-        try:
-            for index, row in self.codigos_em_comum_df.iterrows():
-                codigo_filho = row.iloc[self.indice_coluna_codigo_excel]
-
-                query_atualizar_campo_revfim_estrutura = f"""UPDATE {self.database}.dbo.SG1010 SET G1_REVFIM = 
-                N'{revisao_atualizada}' WHERE G1_COD = '{codigo_pai}' AND G1_COMP = '{codigo_filho}'
-                    AND G1_REVFIM = N'{revisao_anterior}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-                """
-                cursor.execute(query_atualizar_campo_revfim_estrutura)
-            conn.commit()
-            return True
-
-        except pyodbc.Error as sql_ex:
-            ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão ou consulta. Erro: {str(sql_ex)}",
-                                             "Erro ao atualizar campo revfim da estrutura",
-                                             16 | 0)
-            raise
-        except Exception as ex:
-            # Trata outros erros inesperados
-            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
-                                             "Erro ao atualizar campo revfim da estrutura", 16 | 0)
-            raise
-        finally:
-            cursor.close()
-            conn.close()
+        return self.itens_em_comum, self.itens_adicionados, self.itens_removidos
 
     def start_task(self):
         thread = threading.Thread(target=self.executar_logica)
@@ -1053,120 +1043,112 @@ class CadastrarBomTOTVS:
         try:
             delay = 0.4
             self.status_label.config(text="Iniciando cadastro...")
+            self.update_progress(5)
             time.sleep(0.7)
-            self.update_progress(10)
 
             self.status_label.config(text="Validando formato do código pai...")
+            self.update_progress(8)
             time.sleep(delay)
             formato_codigo_pai_correto = self.validar_formato_codigo_pai(self.nome_desenho)
             nova_estrutura_cadastrada = False
-            self.update_progress(20)
 
             existe_cadastro_codigo_pai = False
             if formato_codigo_pai_correto:
                 self.status_label.config(text="Verificando cadastro do código pai...")
+                self.update_progress(10)
                 time.sleep(delay)
                 existe_cadastro_codigo_pai = self.verificar_cadastro_codigo_pai(self.nome_desenho)
-                self.status_label.config(text="")
-                self.update_progress(30)
 
             if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
                 self.status_label.config(text="Validando dados da tabela de BOM...")
+                self.update_progress(20)
                 time.sleep(delay)
                 df_bom_excel = self.validacao_de_dados_bom(excel_file_path)
-                self.update_progress(40)
-                self.status_label.config(text="Verificando se já existe estrutura cadastrada...")
-                time.sleep(delay)
-                resultado_estrutura_codigo_pai = self.verificar_estrutura_codigo_pai(self.nome_desenho)
-                self.update_progress(50)
 
-                if not df_bom_excel.empty and resultado_estrutura_codigo_pai.empty:
-                    self.status_label.config(text="Cadastrando estrutura...")
+                self.status_label.config(text="Verificando se já existe estrutura cadastrada...")
+                self.update_progress(25)
+                time.sleep(delay)
+                pai_tem_estrutura = self.verificar_estrutura_codigo_pai(self.nome_desenho)
+
+                if not df_bom_excel.empty and pai_tem_estrutura.empty:
+                    self.status_label.config(text="Cadastrando nova estrutura...")
+                    self.update_progress(50)
                     time.sleep(delay)
                     nova_estrutura_cadastrada, revisao_atualizada = self.criar_nova_estrutura_totvs(
                         self.nome_desenho, df_bom_excel)
-                    self.status_label.config(text="Atualizando revisão da estrutura...")
+                    self.status_label.config(text="Atualizando revisão do código pai...")
                     time.sleep(delay)
                     self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
-                    self.update_progress(60)
+                    self.atualizar_campo_data_ultima_revisao_do_codigo_pai(self.nome_desenho)
+                    self.update_progress(80)
 
                 if df_bom_excel.empty and not nova_estrutura_cadastrada:
                     exibir_mensagem(self.titulo_janela,
                                     f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a "
                                     f"BOM e tente novamente!\n\n{self.nome_desenho}\n\nツ\n\nEUREKA®",
                                     "warning")
-                    self.update_progress(100)
-                if not df_bom_excel.empty and not resultado_estrutura_codigo_pai.empty:
+                    status_processo = mensagem_processo['cancelado']
+                    self.update_progress(80)
+
+                elif not df_bom_excel.empty and not pai_tem_estrutura.empty:
                     mensagem = (f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!"
-                                f"\n\n{self.nome_desenho}\n\nDeseja realizar a alteração da estrutura?")
+                                f"\n\n{self.nome_desenho}\n\nDeseja realizar a atualização da estrutura?")
                     usuario_quer_alterar = exibir_janela_mensagem_opcao(self.titulo_janela, mensagem)
-                    self.update_progress(70)
+                    self.update_progress(50)
 
                     if usuario_quer_alterar:
-                        resultado = self.comparar_bom_com_totvs(df_bom_excel, resultado_estrutura_codigo_pai)
-                        codigos_em_comum_df, codigos_adicionados_bom_df, codigos_removidos_bom_df = resultado
-                        self.update_progress(80)
+                        resultado = self.comparar_bom_com_totvs(df_bom_excel, pai_tem_estrutura)
+                        itens_em_comum, itens_adicionados, itens_removidos = resultado
+                        self.status_label.config(text="Analisando estrutura...")
+                        self.update_progress(60)
+                        time.sleep(delay)
+                        primeiro_cadastro = False
+                        revisao_atualizada = self.obter_revisao_codigo_pai(self.nome_desenho, primeiro_cadastro)
+                        revisao_anterior = calculo_revisao_anterior(revisao_atualizada)
 
-                        if not codigos_em_comum_df.empty:
-                            self.status_label.config(text="Atualizando as quantidades da estrutura...")
+                        if not itens_adicionados.empty:
+                            self.status_label.config(text="Adicionando novos itens na estrutura...")
+                            self.update_progress(70)
                             time.sleep(delay)
-                            self.atualizar_itens_estrutura_totvs(self.nome_desenho, codigos_em_comum_df)
-                            self.update_progress(100)
+                            self.inserir_itens_estrutura_totvs(
+                                self.nome_desenho, itens_adicionados, revisao_atualizada)
 
-                        if not codigos_adicionados_bom_df.empty or not codigos_removidos_bom_df.empty:
-                            primeiro_cadastro = False
-                            revisao_atualizada = self.obter_revisao_codigo_pai(self.nome_desenho, primeiro_cadastro)
-                            itens_adicionados_sucesso = False
-                            itens_removidos_sucesso = False
-                            revisao_anterior = calculo_revisao_anterior(revisao_atualizada)
+                        if not itens_adicionados.empty or not itens_removidos.empty:
+                            if not itens_em_comum.empty:
+                                self.status_label.config(text="Atualizando a revisão e as quantidades...")
+                                self.update_progress(75)
+                                time.sleep(delay)
+                                self.atualizar_revisao_quantidade_totvs(self.nome_desenho, itens_em_comum, revisao_atualizada, revisao_anterior)
+
+                            self.status_label.config(text="Atualizando revisão do código pai...")
+                            self.update_progress(80)
+                            time.sleep(delay)
+
+                            self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
+                            self.atualizar_campo_data_ultima_revisao_do_codigo_pai(self.nome_desenho)
+
+                            self.status_label.config(text="Atualização de estrutura finalizada!")
                             self.update_progress(90)
-
-                            if not codigos_adicionados_bom_df.empty:
-                                self.status_label.config(text="Inserindo itens na estrutura...")
-                                time.sleep(delay)
-                                itens_adicionados_sucesso = self.inserir_itens_estrutura_totvs(
-                                    self.nome_desenho, codigos_adicionados_bom_df, revisao_atualizada)
-                                self.update_progress(95)
-
-                            if not codigos_removidos_bom_df.empty:
-                                self.status_label.config(text="Removendo itens da estrutura...")
-                                time.sleep(delay)
-                                itens_removidos_sucesso = self.remover_itens_estrutura_totvs(self.nome_desenho,
-                                                                                             codigos_removidos_bom_df,
-                                                                                             revisao_anterior)
-                                self.update_progress(98)
-
-                            if itens_adicionados_sucesso or itens_removidos_sucesso:
-                                self.status_label.config(text="Atualizando revisão da estrutura...")
-                                time.sleep(delay)
-                                self.atualizar_campo_revfim_codigos_existentes(self.nome_desenho, revisao_anterior,
-                                                                               revisao_atualizada)
-                                self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
-                                self.atualizar_campo_data_ultima_revisao_do_codigo_pai(self.nome_desenho)
-                                self.update_progress(100)
-                                self.status_label.config(text="Alteração da estrutura finalizada!")
-                                time.sleep(delay)
-                                exibir_mensagem(self.titulo_janela,
-                                                f"Alteração da estrutura realizada com sucesso!"
-                                                f"\n\n{self.nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEUREKA®",
-                                                "info")
-
-                        else:
-                            self.status_label.config(text="Atualização de quantidades finalizada!")
                             time.sleep(delay)
-                            exibir_mensagem(self.titulo_janela,
-                                            f"Quantidades atualizadas com sucesso!\n\nNão foi adicionado e/ou "
-                                            f"removido itens da estrutura.\n\n{self.nome_desenho}"
-                                            f"\n\n( ͡° ͜ʖ ͡°)\n\nEUREKA®",
-                                            "info")
+                        else:
+                            self.atualizar_quantidade_totvs(self.nome_desenho, itens_em_comum, revisao_anterior)
+                            self.status_label.config(text="Quantidades atualizadas. Nenhum item adicionado ou removido!")
+                            self.update_progress(90)
+                            time.sleep(delay)
+
+                        exibir_mensagem(self.titulo_janela,
+                                        f"Atualização de estrutura realizada com sucesso!"
+                                        f"\n\n{self.nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEUREKA®",
+                                        "info")
                         status_processo = mensagem_processo['sucesso']
                     else:
                         status_processo = mensagem_processo['cancelado']
+
         except Exception as e:
             exibir_mensagem(self.titulo_janela, f'Falha ao cadastrar BOM\n\n{e}', 'warning')
             status_processo = mensagem_processo['cancelado']
         finally:
-            excluir_arquivo_excel_bom(excel_file_path)
+            # excluir_arquivo_excel_bom(excel_file_path) # TODO: Descomentar
             end_time = time.time()
             elapsed = end_time - self.start_time
             self.status_label.config(text=f"{status_processo}\n\n{elapsed:.3f} segundos\n\nEUREKA®")
