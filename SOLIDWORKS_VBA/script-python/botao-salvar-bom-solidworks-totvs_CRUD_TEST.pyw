@@ -1099,7 +1099,7 @@ class CadastrarBomTOTVS:
                     if usuario_quer_alterar:
                         resultado = self.comparar_bom_com_totvs(df_bom_excel, pai_tem_estrutura)
                         itens_em_comum, itens_adicionados, itens_removidos = resultado
-                        self.status_label.config(text="Analisando estrutura...")
+                        self.status_label.config(text="Analisando se houve mudanças na estrutura...")
                         self.update_progress(60)
                         time.sleep(delay)
                         primeiro_cadastro = False
@@ -1132,7 +1132,7 @@ class CadastrarBomTOTVS:
                             time.sleep(delay)
                         else:
                             self.atualizar_quantidade_totvs(self.nome_desenho, itens_em_comum, revisao_anterior)
-                            self.status_label.config(text="Quantidades atualizadas. Nenhum item adicionado ou removido!")
+                            self.status_label.config(text="Atualização das quantidades finalizada!")
                             self.update_progress(90)
                             time.sleep(delay)
 
