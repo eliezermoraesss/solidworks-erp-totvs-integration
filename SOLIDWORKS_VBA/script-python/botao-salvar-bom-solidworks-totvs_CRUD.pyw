@@ -1,3 +1,5 @@
+import webbrowser
+
 import pyodbc
 import pandas as pd
 import ctypes
@@ -139,7 +141,7 @@ def validar_descricao(descricoes):
 
 class CadastrarBomTOTVS:
     def __init__(self, window):
-        # Leitura dos parâmetros de conexão com o banco de dados SQL Server
+        self.window = window
         self.itens_removidos = None
         self.itens_adicionados = None
         self.itens_em_comum = None
@@ -148,13 +150,29 @@ class CadastrarBomTOTVS:
         self.driver = '{SQL Server}'
 
         window.title("Monitor de progresso")
+        window.resizable(False, False)
         self.start_time = time.time()
 
         self.progress = ttk.Progressbar(window, orient="horizontal", length="300", mode="determinate")
         self.progress.pack(pady=20)
 
         self.status_label = tk.Label(window, text="")
-        self.status_label.pack(pady=30)
+        self.status_label.pack(pady=20)
+
+        # Botão Sobre
+        self.about_button = tk.Button(
+            window,
+            text="ℹ️ Sobre",
+            command=self.show_about,
+            bg='#374151',  # bg-gray-700
+            fg='white',
+            relief='flat',
+            padx=15,
+            pady=4,
+            font=('Segoe UI', 9),
+            cursor='hand2'
+        )
+        self.about_button.pack(pady=10)
 
         self.titulo_janela = "CADASTRO DE ESTRUTURA TOTVS®"
 
@@ -180,6 +198,172 @@ class CadastrarBomTOTVS:
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2|³|3)?(\s*\(.*\))?$'
 
         self.nome_desenho = ler_variavel_ambiente_codigo_desenho()
+
+    def show_about(self):
+        about_window = tk.Toplevel(self.window)
+        about_window.title("Sobre")
+        about_window.geometry("600x450")
+        about_window.configure(bg='#111827')
+
+        # Torna a janela modal
+        about_window.transient(self.window)
+        about_window.grab_set()
+
+        # Frame principal do about
+        about_frame = tk.Frame(about_window, bg='#111827', padx=30, pady=20)
+        about_frame.pack(expand=True, fill='both')
+
+        font = 'Segoe UI'
+        # Título
+        title_label = tk.Label(
+            about_frame,
+            text="Cadastro de Estrutura SolidWorks® TOTVS®",
+            font=(font, 14, 'bold'),
+            bg='#111827',
+            fg='white'
+        )
+        title_label.pack(pady=(0, 20))
+
+        title_label = tk.Label(
+            about_frame,
+            text="Autor: Eliezer Moraes Silva",
+            font=(font, 12, 'bold'),
+            bg='#111827',
+            fg='white'
+        )
+        title_label.pack(pady=(0, 20))
+
+        # Frame para informações em duas colunas
+        info_frame = tk.Frame(about_frame, bg='#111827')
+        info_frame.pack(fill='x', pady=10)
+
+        # Coluna da esquerda - Contato
+        left_frame = tk.Frame(info_frame, bg='#111827')
+        left_frame.pack(side='left', padx=10)
+
+        tk.Label(
+            left_frame,
+            text="Contato:",
+            font=(font, 10, 'bold'),
+            bg='#111827',
+            fg='white'
+        ).pack(anchor='w')
+
+        email_label = tk.Label(
+            left_frame,
+            text="eliezer.moraes@outlook.com",
+            bg='#111827',
+            fg='yellow',
+            font=(font, 9, 'underline'),
+            cursor='hand2'
+        )
+        email_label.pack(anchor='w')
+        email_label.bind("<Button-1>", lambda e: webbrowser.open_new("mailto:eliezer.moraes@outlook.com"))
+
+        linkedin_label = tk.Label(
+            left_frame,
+            text="LinkedIn",
+            bg='#111827',
+            fg='yellow',
+            font=(font, 9, 'underline'),
+            cursor='hand2'
+        )
+        linkedin_label.pack(anchor='w')
+        linkedin_label.bind("<Button-1>", lambda e: webbrowser.open_new("https://www.linkedin.com/in/eliezer-moraes-silva-80b68010b"))
+
+        # Add a blank line
+        tk.Label(info_frame, text="", bg='#111827').pack(anchor='w')
+
+        # Coluna da direita - Técnico
+        right_frame = tk.Frame(info_frame, bg='#111827')
+        right_frame.pack(side='right', padx=10)
+
+        tk.Label(
+            right_frame,
+            text="Técnico:",
+            font=(font, 10, 'bold'),
+            bg='#111827',
+            fg='white'
+        ).pack(anchor='w')
+
+        github_label = tk.Label(
+            right_frame,
+            text="GitHub (código-fonte)",
+            bg='#111827',
+            fg='yellow',
+            font=(font, 9, 'underline'),
+            cursor='hand2'
+        )
+        github_label.pack(anchor='w')
+        github_label.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/eliezermoraesss"))
+
+        tk.Label(
+            right_frame,
+            text="Versão: 2.0.0",
+            bg='#111827',
+            fg='white',
+            font=(font, 9)
+        ).pack(anchor='w')
+
+        mit_label = tk.Label(
+            right_frame,
+            text="Licença: MIT",
+            bg='#111827',
+            fg='yellow',
+            font=(font, 9, 'underline'),
+            cursor='hand2'
+        )
+        mit_label.pack(anchor='w')
+        mit_label.bind("<Button-1>", lambda e: webbrowser.open_new("https://opensource.org/licenses/MIT"))
+
+        # Seção de agradecimentos
+        tk.Label(
+            about_frame,
+            text="\nAgradecimentos:",
+            font=(font, 10, 'bold'),
+            bg='#111827',
+            fg='white'
+        ).pack(pady=(20, 10))
+
+        thanks_frame = tk.Frame(about_frame, bg='#111827')
+        thanks_frame.pack(fill='x', padx=30)
+
+        for item in ["Ao time de engenharia e/ou todos os usuários que forneceram insights e feedbacks."]:
+            tk.Label(
+                thanks_frame,
+                text=f"{item}",
+                bg='#111827',
+                fg='white',
+                font=(font, 9)
+            ).pack()
+
+        # Rodapé
+        enaplic_label = tk.Label(
+            about_frame,
+            text="\n© 2025 Enaplic®",
+            bg='#111827',
+            fg='yellow',
+            font=(font, 9, 'underline'),
+            cursor='hand2'
+        )
+        enaplic_label.pack()
+        enaplic_label.bind("<Button-1>", lambda e: webbrowser.open_new("https://enaplic.com.br"))
+
+        tk.Label(
+            about_frame,
+            text="Todos os direitos reservados.",
+            bg='#111827',
+            fg='white',
+            font=(font, 9)
+        ).pack()
+
+        tk.Label(
+            about_frame,
+            text="Eureka®",
+            bg='#111827',
+            fg='white',
+            font=(font, 9)
+        ).pack()
 
     def validar_formato_codigo_pai(self, codigo_pai):
         codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in self.formatos_codigo)
@@ -1240,5 +1424,5 @@ if __name__ == "__main__":
     cadastro = CadastrarBomTOTVS(root)
     cadastro.start_task()
     root.attributes('-topmost', True)
-    root.geometry("400x200")
+    root.geometry("400x250")
     root.mainloop()
