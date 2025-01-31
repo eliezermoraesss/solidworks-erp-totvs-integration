@@ -295,7 +295,7 @@ class CadastrarBomTOTVS:
             cursor='hand2'
         )
         github_label.pack(anchor='w')
-        github_label.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/eliezermoraesss"))
+        github_label.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/eliezermoraesss/solidworks-erp-totvs-integration"))
 
         tk.Label(
             right_frame,
