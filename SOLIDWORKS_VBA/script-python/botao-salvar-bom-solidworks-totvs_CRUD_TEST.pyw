@@ -143,6 +143,7 @@ class CadastrarBomTOTVS:
         self.itens_removidos = None
         self.itens_adicionados = None
         self.itens_em_comum = None
+        self.pai_tem_estrutura = None
         self.username, self.password, self.database, self.server = setup_mssql()
         self.driver = '{SQL Server}'
 
@@ -178,7 +179,7 @@ class CadastrarBomTOTVS:
 
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2|³|3)?(\s*\(.*\))?$'
 
-        self.nome_desenho = 'E1111-111-111' # ler_variavel_ambiente_codigo_desenho()
+        self.nome_desenho = 'E1111-111-114' # ler_variavel_ambiente_codigo_desenho()
 
     def validar_formato_codigo_pai(self, codigo_pai):
         codigo_pai_validado = any(re.match(formato, str(codigo_pai)) for formato in self.formatos_codigo)
@@ -217,8 +218,14 @@ class CadastrarBomTOTVS:
             codigos_sem_cadastro = []
             for codigo_produto in codigos_filho:
                 query_consulta_produto = f"""
-                SELECT B1_COD FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_produto.strip()}' 
-                AND D_E_L_E_T_ <> '*';
+                SELECT 
+                    B1_COD 
+                FROM 
+                    {self.database}.dbo.SB1010 
+                WHERE 
+                    B1_COD = '{codigo_produto.strip()}' 
+                AND 
+                    D_E_L_E_T_ <> '*';
                 """
 
                 cursor.execute(query_consulta_produto)
@@ -263,12 +270,27 @@ class CadastrarBomTOTVS:
                 cursor.execute(query_consulta_tipo_produto)
                 resultado_tipo_produto = cursor.fetchone()
                 if resultado_tipo_produto:
-                    query_consulta_estrutura_totvs = f"""SELECT *
-                        FROM {self.database}.dbo.SG1010
-                        WHERE G1_COD = '{codigo_produto}' 
-                        AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-                        AND G1_REVFIM = (SELECT MAX(G1_REVFIM) FROM {self.database}.dbo.SG1010 WHERE 
-                        G1_COD = '{codigo_produto}'AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*');
+                    query_consulta_estrutura_totvs = f"""
+                    SELECT 
+                        *
+                    FROM 
+                        {self.database}.dbo.SG1010
+                    WHERE 
+                        G1_COD = '{codigo_produto}' 
+                    AND 
+                        G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+                    AND 
+                        G1_REVFIM = (
+                            SELECT 
+                                MAX(G1_REVFIM) 
+                            FROM 
+                                {self.database}.dbo.SG1010 
+                            WHERE 
+                                G1_COD = '{codigo_produto}' 
+                            AND 
+                                G1_REVFIM <> 'ZZZ' 
+                            AND 
+                                D_E_L_E_T_ <> '*');
                     """
                     cursor.execute(query_consulta_estrutura_totvs)
                     resultado = cursor.fetchone()
@@ -464,8 +486,16 @@ class CadastrarBomTOTVS:
                 codigo = row.iloc[self.indice_coluna_codigo_excel]
                 descricao = row.iloc[self.indice_coluna_descricao_excel]
                 query_retorna_valor_campo_bloqueio = f"""
-                SELECT B1_MSBLQL FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo}' 
-                AND B1_REVATU <> 'ZZZ' AND D_E_L_E_T_ <> '*';
+                SELECT 
+                    B1_MSBLQL 
+                FROM 
+                    {self.database}.dbo.SB1010 
+                WHERE 
+                    B1_COD = '{codigo}' 
+                AND 
+                    B1_REVATU <> 'ZZZ' 
+                AND 
+                    D_E_L_E_T_ <> '*';
                 """
 
                 cursor.execute(query_retorna_valor_campo_bloqueio)
@@ -609,8 +639,15 @@ class CadastrarBomTOTVS:
             raise Exception(f"Erro durante a validação da BOM\n\n{str(e)}")
 
     def atualizar_campo_revisao_do_codigo_pai(self, codigo_pai, numero_revisao):
-        query_atualizar_campo_revisao = f"""UPDATE {self.database}.dbo.SB1010 SET B1_REVATU = N'{numero_revisao}' 
-        WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
+        query_atualizar_campo_revisao = f"""
+        UPDATE 
+            {self.database}.dbo.SB1010 
+        SET 
+            B1_REVATU = N'{numero_revisao}' 
+        WHERE 
+            B1_COD = N'{codigo_pai}' 
+        AND 
+            D_E_L_E_T_ <> '*';"""
         try:
             # Uso do Context Manager para garantir o fechamento adequado da conexão
             with pyodbc.connect(
@@ -632,8 +669,15 @@ class CadastrarBomTOTVS:
 
     def atualizar_campo_data_ultima_revisao_do_codigo_pai(self, codigo_pai):
         data_atual = formatar_data_atual()
-        query_atualizar_data_ultima_revisao = f"""UPDATE {self.database}.dbo.SB1010 SET B1_UREV = N'{data_atual}' 
-        WHERE B1_COD = N'{codigo_pai}' AND D_E_L_E_T_ <> '*';"""
+        query_atualizar_data_ultima_revisao = f"""
+            UPDATE 
+                {self.database}.dbo.SB1010 
+            SET 
+                B1_UREV = N'{data_atual}' 
+            WHERE 
+                B1_COD = N'{codigo_pai}' 
+            AND 
+                D_E_L_E_T_ <> '*';"""
         try:
             with pyodbc.connect(
                     f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};'
@@ -658,20 +702,35 @@ class CadastrarBomTOTVS:
                     f'PWD={self.password}')
         engine = create_engine(f'mssql+pyodbc:///?odbc_connect={conn_str}')
         try:
-            query_consulta_estrutura_totvs = f"""
-                SELECT * FROM {self.database}.dbo.SG1010
-                WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
-                    AND G1_REVFIM = (
-                        SELECT MAX(G1_REVFIM)
-                        FROM {self.database}.dbo.SG1010
-                        WHERE G1_COD = '{codigo_pai}' AND G1_REVFIM <> 'ZZZ' AND D_E_L_E_T_ <> '*'
+            query = f"""
+                SELECT 
+                    * 
+                FROM 
+                    {self.database}.dbo.SG1010
+                WHERE 
+                    G1_COD = '{codigo_pai}' 
+                AND 
+                    G1_REVFIM <> 'ZZZ'
+                AND 
+                    D_E_L_E_T_ <> '*'
+                AND 
+                    G1_REVFIM = (
+                        SELECT 
+                            MAX(G1_REVFIM)
+                        FROM 
+                            {self.database}.dbo.SG1010
+                        WHERE 
+                            G1_COD = '{codigo_pai}' 
+                        AND 
+                            G1_REVFIM <> 'ZZZ' 
+                        AND 
+                            D_E_L_E_T_ <> '*'
                     );
             """
 
             # Executa a query SELECT e obtém os resultados em um DataFrame
-            resultado_query_consulta_estrutura_totvs = pd.read_sql(query_consulta_estrutura_totvs, engine)
-
-            return resultado_query_consulta_estrutura_totvs
+            result = pd.DataFrame()
+            self.pai_tem_estrutura = pd.read_sql(query, engine)
 
         except SQLAlchemyError as sql_ex:
             # Trata erros relacionados ao SQL
@@ -689,8 +748,13 @@ class CadastrarBomTOTVS:
                 engine.dispose()
 
     def obter_ultima_pk_tabela_estrutura(self):
-        query_ultima_pk_tabela_estrutura = f"""SELECT TOP 1 R_E_C_N_O_ FROM {self.database}.dbo.SG1010 
-        ORDER BY R_E_C_N_O_ DESC;"""
+        query_ultima_pk_tabela_estrutura = f"""
+            SELECT 
+                TOP 1 R_E_C_N_O_ 
+            FROM 
+                {self.database}.dbo.SG1010 
+            ORDER BY 
+                R_E_C_N_O_ DESC;"""
         try:
             # Uso do Context Manager para garantir o fechamento adequado da conexão
             with pyodbc.connect(
@@ -715,7 +779,13 @@ class CadastrarBomTOTVS:
             raise
 
     def obter_revisao_codigo_pai(self, codigo_pai, primeiro_cadastro):
-        query_revisao_inicial = f"""SELECT B1_REVATU FROM {self.database}.dbo.SB1010 WHERE B1_COD = '{codigo_pai}'"""
+        query_revisao_inicial = f"""
+        SELECT 
+            B1_REVATU 
+        FROM 
+            {self.database}.dbo.SB1010 
+        WHERE 
+            B1_COD = '{codigo_pai}'"""
         try:
             # Uso do Context Manager para garantir o fechamento adequado da conexão
             with pyodbc.connect(
@@ -749,8 +819,13 @@ class CadastrarBomTOTVS:
             raise
 
     def obter_unidade_medida_codigo_filho(self, codigo_filho):
-        query_unidade_medida_codigo_filho = f"""SELECT B1_UM FROM {self.database}.dbo.SB1010 WHERE 
-        B1_COD = '{codigo_filho}'"""
+        query_unidade_medida_codigo_filho = f"""
+            SELECT 
+                B1_UM 
+            FROM 
+                {self.database}.dbo.SB1010 
+            WHERE 
+                B1_COD = '{codigo_filho}'"""
         try:
             with pyodbc.connect(
                     f'DRIVER={self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};'
@@ -775,8 +850,13 @@ class CadastrarBomTOTVS:
             raise
 
     def verificar_cadastro_codigo_pai(self, codigo_pai):
-        query_consulta_produto_codigo_pai = f"""SELECT B1_COD FROM {self.database}.dbo.SB1010 WHERE 
-        B1_COD = '{codigo_pai}'"""
+        query_consulta_produto_codigo_pai = f"""
+            SELECT 
+                B1_COD 
+            FROM 
+                {self.database}.dbo.SB1010 
+            WHERE 
+                B1_COD = '{codigo_pai}'"""
         try:
             with pyodbc.connect(
                     f'DRIVER='
@@ -789,32 +869,24 @@ class CadastrarBomTOTVS:
                 if resultado:
                     return True
                 else:
-                    exibir_mensagem(self.titulo_janela,
-                                    f"O cadastro do item pai não foi encontrado!\n\nEfetue o cadastro "
-                                    f"do código {codigo_pai} e, em seguida, tente novamente.\n\nツ",
-                                    "warning")
-                    return False
+                    message = f"O cadastro do item pai não foi encontrado!"
+                    raise ValueError(message)
 
         except pyodbc.Error as sql_ex:
             ctypes.windll.user32.MessageBoxW(0, f"Falha na conexão com o TOTVS ou consulta. Erro: {str(sql_ex)}",
                                              "Erro ao consultar cadastro do código pai", 16 | 0)
             raise
-        except Exception as ex:
-            # Trata outros erros inesperados
-            ctypes.windll.user32.MessageBoxW(0, f"Erro inesperado: {str(ex)}",
-                                             "Erro ao consultar cadastro do código pai", 16 | 0)
+        except Exception:
             raise
 
-    def criar_nova_estrutura_totvs(self, codigo_pai, df_bom_excel):
+    def criar_nova_estrutura_totvs(self, codigo_pai, df_bom_excel, revisao_inicial):
         codigo_filho, quantidade, unidade_medida, ultima_pk_tabela_estrutura = '', '', '', ''
         conn = pyodbc.connect(
             f'DRIVER='
             f'{self.driver};SERVER={self.server};DATABASE={self.database};UID={self.username};PWD={self.password}')
         cursor = conn.cursor()
         try:
-            primeiro_cadastro = True
             ultima_pk_tabela_estrutura = self.obter_ultima_pk_tabela_estrutura()
-            revisao_inicial = self.obter_revisao_codigo_pai(codigo_pai, primeiro_cadastro)
             data_atual_formatada = formatar_data_atual()
             for index, row in df_bom_excel.iterrows():
                 ultima_pk_tabela_estrutura += 1
@@ -845,11 +917,6 @@ class CadastrarBomTOTVS:
 
                 cursor.execute(query_criar_nova_estrutura_totvs)
             conn.commit()
-
-            exibir_mensagem(self.titulo_janela,
-                            f"Estrutura cadastrada com sucesso!\n\n{codigo_pai}\n\n( ͡° ͜ʖ ͡°)\n\nEUREKA®",
-                            "info")
-            return True, revisao_inicial
 
         except pyodbc.Error as sql_ex:
             raise Exception(f"Falha ao criar nova estrutura. Erro de banco de dados: {str(sql_ex)} - "
@@ -892,7 +959,8 @@ class CadastrarBomTOTVS:
                         G1_REVFIM <> 'ZZZ'
                     AND 
                         D_E_L_E_T_ <> '*'
-                    AND G1_REVFIM = '{revisao_anterior}';
+                    AND 
+                        G1_REVFIM = '{revisao_anterior}';
                 """
 
                 cursor.execute(query)
@@ -938,7 +1006,8 @@ class CadastrarBomTOTVS:
                         G1_REVFIM <> 'ZZZ'
                     AND 
                         D_E_L_E_T_ <> '*'
-                    AND G1_REVFIM = '{revisao_anterior}';
+                    AND 
+                        G1_REVFIM = '{revisao_anterior}';
                 """
 
                 cursor.execute(query)
@@ -1050,7 +1119,6 @@ class CadastrarBomTOTVS:
             self.update_progress(8)
             time.sleep(delay)
             formato_codigo_pai_correto = self.validar_formato_codigo_pai(self.nome_desenho)
-            nova_estrutura_cadastrada = False
 
             existe_cadastro_codigo_pai = False
             if formato_codigo_pai_correto:
@@ -1065,39 +1133,47 @@ class CadastrarBomTOTVS:
                 time.sleep(delay)
                 df_bom_excel = self.validacao_de_dados_bom(excel_file_path)
 
-                self.status_label.config(text="Verificando se já existe estrutura cadastrada...")
-                self.update_progress(25)
-                time.sleep(delay)
-                pai_tem_estrutura = self.verificar_estrutura_codigo_pai(self.nome_desenho)
-
-                if not df_bom_excel.empty and pai_tem_estrutura.empty:
-                    self.status_label.config(text="Cadastrando nova estrutura...")
-                    self.update_progress(50)
-                    time.sleep(delay)
-                    nova_estrutura_cadastrada, revisao_atualizada = self.criar_nova_estrutura_totvs(
-                        self.nome_desenho, df_bom_excel)
-                    self.status_label.config(text="Atualizando revisão do código pai...")
-                    time.sleep(delay)
-                    self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
-                    self.atualizar_campo_data_ultima_revisao_do_codigo_pai(self.nome_desenho)
-                    self.update_progress(80)
-
-                if df_bom_excel.empty and not nova_estrutura_cadastrada:
+                # VEFIFICA SE BOM ESTÁ VAZIA
+                if df_bom_excel.empty:
                     exibir_mensagem(self.titulo_janela,
                                     f"OPS!\n\nA BOM está vazia!\n\nPor gentileza, preencha adequadamente a "
                                     f"BOM e tente novamente!\n\n{self.nome_desenho}\n\nツ\n\nEUREKA®",
                                     "warning")
                     status_processo = mensagem_processo['cancelado']
                     self.update_progress(80)
+                    raise Exception("BOM vazia")
 
-                elif not df_bom_excel.empty and not pai_tem_estrutura.empty:
+                self.status_label.config(text="Verificando se já existe estrutura cadastrada...")
+                self.update_progress(25)
+                time.sleep(delay)
+                self.verificar_estrutura_codigo_pai(self.nome_desenho)
+
+                # CADASTRO DE NOVA ESTRUTURA NO TOTVS
+                if not df_bom_excel.empty and self.pai_tem_estrutura.empty:
+                    primeiro_cadastro = True
+                    revisao_inicial = self.obter_revisao_codigo_pai(self.nome_desenho, primeiro_cadastro)
+                    self.status_label.config(text="Cadastrando nova estrutura...")
+                    self.update_progress(50)
+                    time.sleep(delay)
+                    self.criar_nova_estrutura_totvs(self.nome_desenho, df_bom_excel, revisao_inicial)
+                    self.status_label.config(text="Atualizando revisão do código pai...")
+                    self.update_progress(80)
+                    time.sleep(delay)
+                    self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_inicial)
+                    self.atualizar_campo_data_ultima_revisao_do_codigo_pai(self.nome_desenho)
+                    status_processo = mensagem_processo['sucesso']
+                    exibir_mensagem(self.titulo_janela,
+                                    f"Estrutura cadastrada com sucesso!\n\n{self.nome_desenho}\n\n( ͡° ͜ʖ ͡°)\n\nEUREKA®",
+                                    "info")
+
+                elif not df_bom_excel.empty and not self.pai_tem_estrutura.empty:
                     mensagem = (f"ESTRUTURA EXISTENTE\n\nJá existe uma estrutura cadastrada no TOTVS para este produto!"
                                 f"\n\n{self.nome_desenho}\n\nDeseja realizar a atualização da estrutura?")
                     usuario_quer_alterar = exibir_janela_mensagem_opcao(self.titulo_janela, mensagem)
                     self.update_progress(50)
 
                     if usuario_quer_alterar:
-                        resultado = self.comparar_bom_com_totvs(df_bom_excel, pai_tem_estrutura)
+                        resultado = self.comparar_bom_com_totvs(df_bom_excel, self.pai_tem_estrutura)
                         itens_em_comum, itens_adicionados, itens_removidos = resultado
                         self.status_label.config(text="Analisando se houve mudanças na estrutura...")
                         self.update_progress(60)
@@ -1106,6 +1182,7 @@ class CadastrarBomTOTVS:
                         revisao_atualizada = self.obter_revisao_codigo_pai(self.nome_desenho, primeiro_cadastro)
                         revisao_anterior = calculo_revisao_anterior(revisao_atualizada)
 
+                        # ADICIONA OS NOVOS ITENS DA BOM NA ESTRUTURA NO TOTVS
                         if not itens_adicionados.empty:
                             self.status_label.config(text="Adicionando novos itens na estrutura...")
                             self.update_progress(70)
@@ -1113,6 +1190,9 @@ class CadastrarBomTOTVS:
                             self.inserir_itens_estrutura_totvs(
                                 self.nome_desenho, itens_adicionados, revisao_atualizada)
 
+                        # VERIFICA SE FOI ADICIONADO OU REMOVIDO ITENS NA BOM.
+                        # SE SIM, ATUALIZA A REVISÃO E AS QUANTIDADES
+                        # SE NÃO, ATUALIZA APENAS AS QUANTIDADES
                         if not itens_adicionados.empty or not itens_removidos.empty:
                             if not itens_em_comum.empty:
                                 self.status_label.config(text="Atualizando a revisão e as quantidades...")
@@ -1148,7 +1228,7 @@ class CadastrarBomTOTVS:
             exibir_mensagem(self.titulo_janela, f'Falha ao cadastrar BOM\n\n{e}', 'warning')
             status_processo = mensagem_processo['cancelado']
         finally:
-            # excluir_arquivo_excel_bom(excel_file_path) # TODO: Descomentar
+            # excluir_arquivo_excel_bom(excel_file_path)
             end_time = time.time()
             elapsed = end_time - self.start_time
             self.status_label.config(text=f"{status_processo}\n\n{elapsed:.3f} segundos\n\nEUREKA®")
