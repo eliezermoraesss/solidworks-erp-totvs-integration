@@ -7,7 +7,7 @@ import os
 import re
 from datetime import date
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, font
 import threading
 import time
 from sqlalchemy import create_engine
@@ -152,12 +152,22 @@ class CadastrarBomTOTVS:
         window.title("Monitor de progresso")
         window.resizable(False, False)
         self.start_time = time.time()
+        
+        font_type = 'Segoe UI'
+        # Título
+        self.title_label = tk.Label(
+            window,
+            text="Cadastro de Estrutura SolidWorks® TOTVS®",
+            font=(font_type, 12, 'bold')
+        )
+        self.title_label.pack(pady=10)
 
-        self.progress = ttk.Progressbar(window, orient="horizontal", length="300", mode="determinate")
-        self.progress.pack(pady=20)
+        self.progress = ttk.Progressbar(window, orient="horizontal", length="353", mode="determinate")
+        self.progress.pack(pady=(0, 10))
 
-        self.status_label = tk.Label(window, text="")
-        self.status_label.pack(pady=20)
+        custom_font = font.Font(family="Segoe UI", size=10)
+        self.log_text = tk.Text(window, height=10, width=50, font=custom_font)
+        self.log_text.pack(pady=10, padx=5)
 
         # Botão Sobre
         self.about_button = tk.Button(
@@ -198,7 +208,11 @@ class CadastrarBomTOTVS:
         self.regex_campo_dimensao = r'^\d*([,.]?\d+)?[mtMT](²|2|³|3)?(\s*\(.*\))?$'
 
         self.nome_desenho = 'E1111-111-114' # ler_variavel_ambiente_codigo_desenho()
-
+    
+    def log_message(self, message):
+        self.log_text.insert(tk.END, message + "\n")
+        self.log_text.see(tk.END)
+        
     def show_about(self):
         about_window = tk.Toplevel(self.window)
         about_window.title("Sobre")
@@ -1289,30 +1303,30 @@ class CadastrarBomTOTVS:
     def executar_logica(self):
         status_processo = None
         mensagem_processo = {
-            "cancelado": '❌ Processo cancelado!',
-            "sucesso": '✔️ Processo finalizado com sucesso!'
+            "cancelado": '\n❌ Processo cancelado!',
+            "sucesso": '\n✔️ Processo finalizado com sucesso!'
         }
         excel_file_path = obter_caminho_arquivo_excel(self.nome_desenho)
         try:
             delay = 0.4
-            self.status_label.config(text="Iniciando cadastro...")
+            self.log_message("Iniciando o cadastro da estrutura")
             self.update_progress(5)
             time.sleep(0.7)
 
-            self.status_label.config(text="Validando formato do código pai...")
+            self.log_message("Validando formato do código pai")
             self.update_progress(8)
             time.sleep(delay)
             formato_codigo_pai_correto = self.validar_formato_codigo_pai(self.nome_desenho)
 
             existe_cadastro_codigo_pai = False
             if formato_codigo_pai_correto:
-                self.status_label.config(text="Verificando cadastro do código pai...")
+                self.log_message("Verificando cadastro do código pai")
                 self.update_progress(10)
                 time.sleep(delay)
                 existe_cadastro_codigo_pai = self.verificar_cadastro_codigo_pai(self.nome_desenho)
 
             if formato_codigo_pai_correto and existe_cadastro_codigo_pai:
-                self.status_label.config(text="Validando dados da tabela de BOM...")
+                self.log_message("Validando dados da tabela de BOM")
                 self.update_progress(20)
                 time.sleep(delay)
                 df_bom_excel = self.validacao_de_dados_bom(excel_file_path)
@@ -1327,7 +1341,7 @@ class CadastrarBomTOTVS:
                     self.update_progress(80)
                     raise Exception("BOM vazia")
 
-                self.status_label.config(text="Verificando se já existe estrutura cadastrada...")
+                self.log_message("Verificando se já existe estrutura cadastrada")
                 self.update_progress(25)
                 time.sleep(delay)
                 self.verificar_estrutura_codigo_pai(self.nome_desenho)
@@ -1336,11 +1350,11 @@ class CadastrarBomTOTVS:
                 if not df_bom_excel.empty and self.pai_tem_estrutura.empty:
                     primeiro_cadastro = True
                     revisao_inicial = self.obter_revisao_codigo_pai(self.nome_desenho, primeiro_cadastro)
-                    self.status_label.config(text="Cadastrando nova estrutura...")
+                    self.log_message("Cadastrando nova estrutura")
                     self.update_progress(50)
                     time.sleep(delay)
                     self.criar_nova_estrutura_totvs(self.nome_desenho, df_bom_excel, revisao_inicial)
-                    self.status_label.config(text="Atualizando revisão do código pai...")
+                    self.log_message("Atualizando revisão do código pai")
                     self.update_progress(80)
                     time.sleep(delay)
                     self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_inicial)
@@ -1359,7 +1373,7 @@ class CadastrarBomTOTVS:
                     if usuario_quer_alterar:
                         resultado = self.comparar_bom_com_totvs(df_bom_excel, self.pai_tem_estrutura)
                         itens_em_comum, itens_adicionados, itens_removidos = resultado
-                        self.status_label.config(text="Analisando se houve mudanças na estrutura...")
+                        self.log_message("Analisando se houve mudanças na estrutura")
                         self.update_progress(60)
                         time.sleep(delay)
                         primeiro_cadastro = False
@@ -1368,7 +1382,7 @@ class CadastrarBomTOTVS:
 
                         # ADICIONA OS NOVOS ITENS DA BOM NA ESTRUTURA NO TOTVS
                         if not itens_adicionados.empty:
-                            self.status_label.config(text="Adicionando novos itens na estrutura...")
+                            self.log_message("Adicionando novos itens na estrutura")
                             self.update_progress(70)
                             time.sleep(delay)
                             self.inserir_itens_estrutura_totvs(
@@ -1379,24 +1393,24 @@ class CadastrarBomTOTVS:
                         # SE NÃO, ATUALIZA APENAS AS QUANTIDADES
                         if not itens_adicionados.empty or not itens_removidos.empty:
                             if not itens_em_comum.empty:
-                                self.status_label.config(text="Atualizando a revisão e as quantidades...")
+                                self.log_message("Atualizando a revisão e as quantidades")
                                 self.update_progress(75)
                                 time.sleep(delay)
                                 self.atualizar_revisao_quantidade_totvs(self.nome_desenho, itens_em_comum, revisao_atualizada, revisao_anterior)
 
-                            self.status_label.config(text="Atualizando revisão do código pai...")
+                            self.log_message("Atualizando revisão do código pai")
                             self.update_progress(80)
                             time.sleep(delay)
 
                             self.atualizar_campo_revisao_do_codigo_pai(self.nome_desenho, revisao_atualizada)
                             self.atualizar_campo_data_ultima_revisao_do_codigo_pai(self.nome_desenho)
 
-                            self.status_label.config(text="Atualização de estrutura finalizada!")
+                            self.log_message("Atualização de estrutura finalizada!")
                             self.update_progress(90)
                             time.sleep(delay)
                         else:
                             self.atualizar_quantidade_totvs(self.nome_desenho, itens_em_comum, revisao_anterior)
-                            self.status_label.config(text="Atualização das quantidades finalizada!")
+                            self.log_message("Atualização das quantidades finalizada!")
                             self.update_progress(90)
                             time.sleep(delay)
 
@@ -1415,7 +1429,7 @@ class CadastrarBomTOTVS:
             # excluir_arquivo_excel_bom(excel_file_path)
             end_time = time.time()
             elapsed = end_time - self.start_time
-            self.status_label.config(text=f"{status_processo}\n\n{elapsed:.3f} segundos\n\nEUREKA®")
+            self.log_message(f"{status_processo}\n\n{elapsed:.3f} segundos\n\nEUREKA®")
             self.update_progress(100)
 
 
@@ -1424,5 +1438,5 @@ if __name__ == "__main__":
     cadastro = CadastrarBomTOTVS(root)
     cadastro.start_task()
     root.attributes('-topmost', True)
-    root.geometry("400x250")
+    root.geometry("400x335")
     root.mainloop()
