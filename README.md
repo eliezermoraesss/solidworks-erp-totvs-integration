@@ -8,14 +8,14 @@ Realiza a validação e cadastro de produtos e estruturas (BOM) em um banco de d
 ## Imagens
 ### Cadastro de estrutura no ERP TOTVS pela BOM do SOLIDWORKS
 
-![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/cadastro_estrutura_janela_sucesso_003.png)
-![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/cadastro_estrutura_janela_sucesso_002.png)
-![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/002_alterar_estrutura_adicionando_itens.gif)
-![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/feature-bom-item-filho-sem-estrutura.png)
-![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/vscode_debugg_001.png)
-![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/vscode_PYTHON_commit-history_02.png)
-![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/vscode_PYTHON_commit-history_03.png)
-![](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/dbeaver_sql_%20imagem_02.png)
+![SW-TOTVS](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/cadastro_estrutura_janela_sucesso_003.png)
+![SW-TOTVS](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/cadastro_estrutura_janela_sucesso_002.png)
+![SW-TOTVS](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/002_alterar_estrutura_adicionando_itens.gif)
+![SW-TOTVS](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/feature-bom-item-filho-sem-estrutura.png)
+![SW-TOTVS](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/vscode_debugg_001.png)
+![SW-TOTVS](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/vscode_PYTHON_commit-history_02.png)
+![SW-TOTVS](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/vscode_PYTHON_commit-history_03.png)
+![SW-TOTVS](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/blob/main/assets/images/dbeaver_sql_%20imagem_02.png)
 
 ### Cadastro de produto no ERP TOTVS pelo formulário de propriedades personalizadas do SOLIDWORKS
 
