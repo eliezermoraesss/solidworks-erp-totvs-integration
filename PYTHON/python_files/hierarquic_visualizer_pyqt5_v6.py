@@ -348,7 +348,10 @@ class BOMViewer(QMainWindow):
             self.table.setRowHidden(row, not row_visible)
         
         # Filtrar a árvore
+        first_match = None  # Variável para armazenar o primeiro item encontrado
+        
         def process_item(item):
+            nonlocal first_match
             text = item.text(0).lower()
             item_visible = True
             
@@ -362,6 +365,8 @@ class BOMViewer(QMainWindow):
             # Destacar ou limpar o destaque do item
             if matches_filter and (filter_codigo or filter_desc):
                 item.setBackground(0, Qt.yellow)
+                if first_match is None:  # Se ainda não encontramos um item
+                    first_match = item
             else:
                 item.setBackground(0, Qt.white)
             
@@ -376,6 +381,16 @@ class BOMViewer(QMainWindow):
         
         for i in range(self.tree.topLevelItemCount()):
             process_item(self.tree.topLevelItem(i))
+        
+        # Se encontrou algum item, navegar até ele
+        if first_match and (filter_codigo or filter_desc):
+            self.tree.scrollToItem(first_match)  # Rola até o item
+            self.tree.setCurrentItem(first_match)  # Seleciona o item
+            # Expande todos os pais do item encontrado
+            parent = first_match.parent()
+            while parent:
+                parent.setExpanded(True)
+                parent = parent.parent()
 
     def show_hierarchy(self):
         hierarchy_data = self.create_hierarchy_data()
