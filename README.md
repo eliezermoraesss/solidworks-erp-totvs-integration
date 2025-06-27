@@ -108,18 +108,18 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 
 ## 📅 Sobre
 
-Projeto desenvolvido entre **julho de 2023** e **dezembro de 2023**  
-**Associado à Enaplic**
+Projeto desenvolvido entre **julho de 2023** e **dezembro de 2023**
 
 ---
 
 ## Desenvolvido com 💙 por
 
 **Eliezer Moraes Silva**  
-[eliezer.moraes@outlook.com](mailto:eliezer.moraes@outlook.com)
+[eliezer.moraes@outlook.com](mailto:eliezer.moraes@outlook.com)  
+[LinkedIn](https://www.linkedin.com/in/eliezer-moraes-silva-80b68010b/)
 
 ---
 
 ## 📄 Licença
 
-MIT License
+Este projeto está licenciado sob a [MIT License](https://opensource.org/licenses/MIT).
