@@ -108,7 +108,7 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 
 ## 📅 Sobre
 
-Projeto desenvolvido entre **setembro de 2023** e **dezembro de 2023**  
+Projeto desenvolvido entre **julho de 2023** e **dezembro de 2023**  
 **Associado à Enaplic**
 
 ---
