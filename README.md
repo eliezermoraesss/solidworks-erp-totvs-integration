@@ -20,6 +20,12 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 - **ROI significativo:**  
   Economia anual estimada em **R$ 321.000,00**, graças à redução de horas de mão-de-obra especializada e menor disputa por licenças do TOTVS em horários de pico.
 
+ - **Aumento da produtividade:**    
+    Foram horas de mão-de-obra especializada de engenheiros/projetistas economizadas, sem contar que esse projeto
+    eliminou o problema de compartilhamento de licenças do TOTVS, que eram disputadas pelos usuários
+    constantemente, gerando ainda mais atrasos na entrega das demandas, estresse, e claro, diminuição da
+    produtividade da equipe.
+
 ---
 
 ## 💡 Aprendizados
@@ -42,13 +48,7 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 
 ## 🏆 Competências Desenvolvidas
 
-Python · SQL · Banco de dados · Desenvolvimento de software · Comunicação
-
----
-
-## 🔗 Repositório
-
-[Acesse o repositório do projeto](https://github.com/eliezermoraesss/solidworks-erp-totvs-integration)
+```Python · SQL · Banco de dados · Desenvolvimento de software · Comunicação```
 
 ---
 
