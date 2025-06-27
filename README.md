@@ -94,15 +94,23 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 ## 🔧 Tecnologias e Ferramentas
 
 - ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+- ![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat&logo=pandas&logoColor=white)
 - ![VBA](https://img.shields.io/badge/VBA-217346?style=flat&logo=microsoft-excel&logoColor=white)
 - ![SQL Server](https://img.shields.io/badge/SQL%20Server-CC2927?style=flat&logo=microsoft-sql-server&logoColor=white)
 - ![Excel](https://img.shields.io/badge/Excel-217346?style=flat&logo=microsoft-excel&logoColor=white)
+- ![PyCharm](https://img.shields.io/badge/PyCharm-000000?style=flat&logo=pycharm&logoColor=white)
+- ![VS Code](https://img.shields.io/badge/VS%20Code-007ACC?style=flat&logo=visual-studio-code&logoColor=white)
+- ![DBeaver](https://img.shields.io/badge/DBeaver-372923?style=flat&logo=dbeaver&logoColor=white)
+- ![Git](https://img.shields.io/badge/Git-F05032?style=flat&logo=git&logoColor=white)
+- ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)
+- ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
+- ![WSL](https://img.shields.io/badge/WSL-4D4D4D?style=flat&logo=windows&logoColor=white)
 
 ---
 
 ## 🏆 Competências Desenvolvidas
 
-```Python · SQL · Banco de dados · Desenvolvimento de software · Comunicação```
+Banco de dados relacional · Desenvolvimento de software · Arquitetura de software · Colaboração · Gestão de projeto · Análise de requisitos funcionais e não funcionais · POO · ETL · Debug · Comunicação
 
 ---
 
