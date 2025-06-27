@@ -37,6 +37,60 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 
 ---
 
+## 📸 Exemplos Visuais da Solução
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/aut000.png" alt="Tela Sobre" width="600"/>
+  <br><em>Sobre a automação</em>
+</p>
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/aut001.png" alt="Finalização com sucesso" width="600"/>
+  <br><em>Tela de finalização com sucesso</em>
+</p>
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/aut002.gif" alt="GIF de automação"/>
+  <br><em>Execução automatizada do processo</em>
+</p>
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/aut003.gif" alt="GIF de automação 2"/>
+  <br><em>Outro fluxo automatizado</em>
+</p>
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/aut003.png" alt="Finalização com sucesso 2" width="600"/>
+  <br><em>Tela de finalização com sucesso (variação)</em>
+</p>
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/cadastro_estrutura_janela_sucesso_003.png" alt="Janela de sucesso 003" width="600"/>
+  <br><em>Cadastro de estrutura finalizado com sucesso</em>
+</p>
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/cadastro_estrutura_janela_sucesso_002.png" alt="Janela de sucesso 002" width="600"/>
+  <br><em>Confirmação de cadastro realizado</em>
+</p>
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/002_alterar_estrutura_adicionando_itens.gif" alt="Alterando estrutura" width="600"/>
+  <br><em>Alteração de estrutura adicionando itens</em>
+</p>
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/feature-bom-item-filho-sem-estrutura.png" alt="Item filho sem estrutura" width="600"/>
+  <br><em>Visualização de item filho sem estrutura</em>
+</p>
+
+<p align="center">
+  <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/008.png" alt="Cadastro de produto no ERP TOTVS" width="600"/>
+  <br><em>Cadastro de produto no ERP TOTVS pelo formulário de propriedades personalizadas do SOLIDWORKS</em>
+</p>
+
+---
+
 ## 🔧 Tecnologias e Ferramentas
 
 - ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
