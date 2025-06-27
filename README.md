@@ -41,7 +41,7 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 
 <p align="center">
   <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/aut000.png" alt="Tela Sobre" width="600"/>
-  <br><em>Sobre a automação</em>
+  <br><em>About (Sobre)</em>
 </p>
 
 <p align="center">
@@ -51,17 +51,17 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 
 <p align="center">
   <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/aut002.gif" alt="GIF de automação"/>
-  <br><em>Execução automatizada do processo</em>
+  <br><em>Execução automatizada do processo v1</em>
 </p>
 
 <p align="center">
   <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/aut003.gif" alt="GIF de automação 2"/>
-  <br><em>Outro fluxo automatizado</em>
+  <br><em>Execução automatizada do processo v2</em>
 </p>
 
 <p align="center">
   <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/aut003.png" alt="Finalização com sucesso 2" width="600"/>
-  <br><em>Tela de finalização com sucesso (variação)</em>
+  <br><em>Tela de lista de materiais cadastrado com sucesso no ERP Totvs</em>
 </p>
 
 <p align="center">
@@ -71,7 +71,7 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 
 <p align="center">
   <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/cadastro_estrutura_janela_sucesso_002.png" alt="Janela de sucesso 002" width="600"/>
-  <br><em>Confirmação de cadastro realizado</em>
+  <br><em>Confirmação de cadastro realizado com sucesso</em>
 </p>
 
 <p align="center">
@@ -81,7 +81,7 @@ Para resolver esse problema, desenvolvi uma integração entre o SolidWorks e o 
 
 <p align="center">
   <img src="https://github.com/eliezermoraesss/solidworks-erp-totvs-integration/raw/main/assets/images/feature-bom-item-filho-sem-estrutura.png" alt="Item filho sem estrutura" width="600"/>
-  <br><em>Visualização de item filho sem estrutura</em>
+  <br><em>Alerta de notificação de item filho sem estrutura cadastrado no Totvs</em>
 </p>
 
 <p align="center">
